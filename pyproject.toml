@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "varchiver"
+version = "0.1.0"
+description = "Advanced Archive Management Tool"
+authors = ["instancer-kirik <kirik@instance.select>"]
+license = "Proprietary"
+readme = "README.md"
+packages = [{include = "varchiver"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+PyQt6 = "^6.7.1"
+rarfile = "^4.2.0"
+pyqt6-sip = "^13.8.0"
+psutil = "^6.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pyinstaller = "^6.11.1"
+pyarmor = "8.5.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+varchiver = "varchiver.main:main"
