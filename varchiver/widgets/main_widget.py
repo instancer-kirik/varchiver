@@ -58,7 +58,7 @@ class MainWidget(QWidget):
         donation_layout = QHBoxLayout()
         donation_widget.setLayout(donation_layout)
         
-        eth_label = QLabel("Free the source! $Instancer or ETH:")
+        eth_label = QLabel("Donations welcome! $Instancer or ETH:")
         eth_label.setStyleSheet("font-weight: bold;")
         donation_layout.addWidget(eth_label)
         
@@ -82,7 +82,7 @@ class MainWidget(QWidget):
         
         donation_layout.addStretch()
         layout.addWidget(donation_widget)
-        layout.addWidget(QLabel("Src repo (currently private): https://github.com/instancer-kirik/Varchiver"))
+        layout.addWidget(QLabel("Src repo: https://github.com/instancer-kirik/Varchiver"))
         
         # Add separator
         separator = QFrame()
