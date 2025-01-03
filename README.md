@@ -2,6 +2,8 @@
 
 A powerful cross-platform archive management tool with advanced features and modern UI.
 
+Current version: 0.2.4
+
 ## Features
 
 - Support for multiple archive formats:
@@ -51,9 +53,10 @@ git clone https://github.com/kirik/varchiver.git
 cd varchiver
 ```
 
-2. Install dependencies:
+2. Install uv and dependencies:
 ```bash
-poetry install
+pip install uv
+uv pip install -e .[dev]
 ```
 
 3. Build:
@@ -78,9 +81,9 @@ varchiver
 
 ## Requirements
 
-- Python 3.10
+- Python 3.10+
 - PyQt6
-- Poetry (for building from source)
+- uv (for building from source)
 - unrar (for RAR support)
 
 ## License

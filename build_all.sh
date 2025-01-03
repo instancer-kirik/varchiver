@@ -3,13 +3,18 @@
 # Ensure we're in the project directory
 cd "$(dirname "$0")"
 
+# Install uv if not already installed
+if ! command -v uv &> /dev/null; then
+    pip install uv
+fi
+
 # Install dependencies
-poetry install
+uv pip install -e .[dev]
 
 # Function to build for Linux
 build_linux() {
     echo "Building Linux executable..."
-    poetry run pyinstaller --clean \
+    uv pip run pyinstaller --clean \
         --onefile \
         --name varchiver-linux \
         --add-data "varchiver:varchiver" \
@@ -21,7 +26,7 @@ build_linux() {
 # Function to build for Windows
 build_windows() {
     echo "Building Windows executable..."
-    poetry run pyinstaller --clean \
+    uv pip run pyinstaller --clean \
         --onefile \
         --name varchiver-windows \
         --add-data "varchiver;varchiver" \

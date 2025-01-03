@@ -9,14 +9,19 @@ cd "$(dirname "$0")"
 python_version=$(python --version 2>&1 | awk '{print $2}')
 echo "Using Python version: $python_version"
 
+# Install uv if not already installed
+if ! command -v uv &> /dev/null; then
+    pip install uv
+fi
+
 # Install dependencies
-poetry install
+uv pip install -e .[dev]
 
 # Clean previous builds (but preserve source)
 rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/
 
 # Create single binary with PyInstaller
-poetry run pyinstaller \
+uv pip run pyinstaller \
     --clean \
     --onefile \
     --name varchiver \
