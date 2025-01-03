@@ -23,3 +23,13 @@ def format_size(size):
             return f"{size/1024:.1f} KB"
         else:
             return f"{size/(1024*1024):.1f} MB"
+
+def is_rar_available():
+    """Check if RAR support is available on the system"""
+    try:
+        import rarfile
+        # Try to find unrar executable
+        unrar_path = rarfile.UNRAR_TOOL
+        return os.path.exists(unrar_path) if unrar_path else False
+    except ImportError:
+        return False

@@ -13,28 +13,18 @@ echo "Using Python version: $python_version"
 poetry install
 
 # Clean previous builds (but preserve source)
-rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/ .pyarmor/
-
-# Create obfuscated package with PyArmor 8
-poetry run pyarmor gen \
-    --platform linux.x86_64 \
-    --output dist/obfuscated \
-    varchiver/bootstrap.py
+rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/
 
 # Create single binary with PyInstaller
 poetry run pyinstaller \
     --clean \
     --onefile \
     --name varchiver \
-    --add-data "dist/obfuscated/pyarmor_runtime_000000:pyarmor_runtime_000000" \
     --hidden-import PyQt6 \
     --hidden-import rarfile \
     --hidden-import varchiver \
     --collect-submodules varchiver \
-    dist/obfuscated/bootstrap.py
-
-# Clean up intermediate files (but preserve source)
-rm -rf build/ dist/obfuscated/ varchiver/__pycache__/
+    varchiver/main.py
 
 # Create dist directory if it doesn't exist
 mkdir -p dist

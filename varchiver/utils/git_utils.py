@@ -220,8 +220,25 @@ class GitConfigHandler:
             'head': self._get_head_ref(),
             'hooks': self._get_hooks(),
             'submodules': self._get_submodules(),
-            'modules': self._get_modules()
+            'modules': self._get_modules(),
+            'gitignores': {}  # Store all .gitignore files
         }
+
+        # Add .gitignore content if it exists
+        for root, _, files in os.walk(self.project_path):
+            # Skip deps directories
+            if 'deps' in root.split(os.sep):
+                continue
+
+            if '.gitignore' in files:
+                gitignore_path = os.path.join(root, '.gitignore')
+                try:
+                    with open(gitignore_path, 'r') as f:
+                        rel_path = os.path.relpath(root, self.project_path)
+                        config['gitignores'][rel_path] = f.read()
+                except (IOError, OSError):
+                    pass
+
         return config
         
     def _get_remotes(self) -> Dict[str, str]:
@@ -378,6 +395,10 @@ class GitConfigHandler:
     def restore_config(config_path: str, target_dir: str) -> bool:
         """Restore Git configuration from a saved JSON file."""
         try:
+            # Skip deps directories
+            if 'deps' in target_dir.split(os.sep):
+                return True  # Return success since we intentionally skip deps
+                
             with open(config_path, 'r') as f:
                 config = json.load(f)
                 
@@ -398,6 +419,19 @@ class GitConfigHandler:
                     cwd=target_dir
                 )
                 
+            # Restore .gitignore if it exists in the backup
+            if 'gitignores' in config:
+                for rel_path, content in config['gitignores'].items():
+                    # Skip deps directories
+                    if 'deps' in rel_path.split(os.sep):
+                        continue
+                    gitignore_path = os.path.join(target_dir, rel_path, '.gitignore')
+                    os.makedirs(os.path.dirname(gitignore_path), exist_ok=True)
+                    try:
+                        with open(gitignore_path, 'w') as f:
+                            f.write(content)
+                    except (IOError, OSError):
+                        pass
             # Restore hooks
             hooks_dir = os.path.join(target_dir, '.git', 'hooks')
             os.makedirs(hooks_dir, exist_ok=True)
@@ -681,6 +715,10 @@ class GitConfigHandler:
             
         # Then look for git directories in subdirectories
         for root, dirs, _ in os.walk(self.project_path):
+            # Skip deps directories
+            if 'deps' in root.split(os.sep):
+                continue
+
             if '.git' in dirs:
                 git_dir = os.path.join(root, '.git')
                 # Check if it's a real git dir or just a submodule reference
@@ -765,6 +803,50 @@ class GitConfigHandler:
         except Exception as e:
             raise GitSecurityError(f"Failed to serialize git files: {e}")
 
+    def restore_git_files(self, backup_path: str) -> bool:
+        """
+        Restore git files from a serialized backup.
+        Returns True if successful.
+        """
+        try:
+            with open(backup_path, 'r') as f:
+                data = json.load(f)
+                
+            # Process main repository files
+            for rel_path, content in data.get('files', {}).items():
+                file_path = os.path.join(self.git_dir, rel_path)
+                # Skip deps directories
+                if 'deps' in file_path.split(os.sep):
+                    continue
+                try:
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, 'wb') as f:
+                        f.write(base64.b64decode(content))
+                except (IOError, OSError):
+                    continue
+            
+            # Process nested repositories
+            for nested_config in data.get('nested_git_configs', []):
+                repo_path = os.path.join(self.project_path, nested_config['path'])
+                # Skip deps directories
+                if 'deps' in repo_path.split(os.sep):
+                    continue
+                git_dir = os.path.join(repo_path, '.git')
+                
+                for rel_path, content in nested_config.get('files', {}).items():
+                    file_path = os.path.join(git_dir, rel_path)
+                    try:
+                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                        with open(file_path, 'wb') as f:
+                            f.write(base64.b64decode(content))
+                    except (IOError, OSError):
+                        continue
+            
+            return True
+            
+        except Exception as e:
+            raise GitSecurityError(f"Failed to restore git files: {e}")
+
     def remove_git_files(self, backup_path: Optional[str] = None) -> bool:
         """
         Remove all git-related files from the repository.
@@ -784,58 +866,30 @@ class GitConfigHandler:
             
             # Remove all git directories
             for git_dir in git_dirs:
+                # Skip deps directories
+                if 'deps' in git_dir.split(os.sep):
+                    continue
                 try:
                     if os.path.exists(git_dir):
                         shutil.rmtree(git_dir)
                 except (IOError, OSError) as e:
                     print(f"Warning: Failed to remove {git_dir}: {e}")
                     
+            # Also remove .gitignore files
+            for root, _, files in os.walk(self.project_path):
+                # Skip deps directories
+                if 'deps' in root.split(os.sep):
+                    continue
+                if '.gitignore' in files:
+                    try:
+                        os.remove(os.path.join(root, '.gitignore'))
+                    except (IOError, OSError) as e:
+                        print(f"Warning: Failed to remove {root}/.gitignore: {e}")
+                    
             return True
             
         except Exception as e:
             raise GitSecurityError(f"Failed to remove git files: {e}")
-
-    def restore_git_files(self, backup_path: str) -> bool:
-        """
-        Restore git files from a serialized backup.
-        Returns True if successful.
-        """
-        try:
-            # Load backup
-            with open(backup_path, 'r') as f:
-                backup_data = json.load(f)
-            
-            # Restore main repository
-            if self.is_git_repo():
-                shutil.rmtree(self.git_dir)
-            os.makedirs(self.git_dir)
-            
-            # Restore main repository files
-            for rel_path, content in backup_data['files'].items():
-                file_path = os.path.join(self.git_dir, rel_path)
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                with open(file_path, 'wb') as f:
-                    f.write(base64.b64decode(content))
-            
-            # Restore nested repositories
-            for nested in backup_data.get('nested_git_configs', []):
-                repo_path = os.path.join(self.project_path, nested['path'])
-                git_dir = os.path.join(repo_path, '.git')
-                
-                # Create nested git directory
-                os.makedirs(git_dir, exist_ok=True)
-                
-                # Restore nested repository files
-                for rel_path, content in nested['files'].items():
-                    file_path = os.path.join(git_dir, rel_path)
-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    with open(file_path, 'wb') as f:
-                        f.write(base64.b64decode(content))
-            
-            return True
-            
-        except Exception as e:
-            raise GitSecurityError(f"Failed to restore git files: {e}")
         
 def backup_git_configs(source_dir: str, backup_dir: str, visited: Optional[Set[str]] = None) -> List[str]:
     """

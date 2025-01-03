@@ -1,0 +1,35 @@
+124312 MainProcess 2025-01-03 14:28:38,084
+Traceback (most recent call last):
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/core/__init__.py", line 65, in _import_pytransform3
+    return __import__(
+        'pytransform3', globals=globals(), locals=locals(),
+        fromlist=('__pyarmor__',), level=1
+    )
+ModuleNotFoundError: No module named 'pyarmor.cli.core.pytransform3'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/__main__.py", line 754, in main
+    main_entry(sys.argv[1:])
+    ~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/__main__.py", line 742, in main_entry
+    return args.func(ctx, args)
+           ~~~~~~~~~^^^^^^^^^^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/__main__.py", line 244, in cmd_gen
+    builder.process(options)
+    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/generate.py", line 179, in process
+    Pytransform3.pre_build(self.ctx)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/core/__init__.py", line 107, in pre_build
+    m = Pytransform3.init(ctx)
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/core/__init__.py", line 85, in init
+    Pytransform3._pytransform3 = m = _import_pytransform3()
+                                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/core/__init__.py", line 70, in _import_pytransform3
+    plat, arch = check_and_install_prebuilt_package()
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/kirik/Code/varchiver/.venv/lib/python3.13/site-packages/pyarmor/cli/core/__init__.py", line 54, in check_and_install_prebuilt_package
+    raise RuntimeError('"%s" is still not supported by Pyarmor' % platname)
+RuntimeError: "l.i.n.u.x...x.8.6._.6.4" is still not supported by Pyarmor

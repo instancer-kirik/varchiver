@@ -18,7 +18,7 @@ from ..threads.extraction_thread import ExtractionThread
 from ..threads.browse_thread import BrowseThread
 from ..threads.directory_update_thread import DirectoryUpdateThread
 from ..utils.constants import DEFAULT_SKIP_PATTERNS, ARCHIVE_EXTENSIONS
-from ..utils.archive_utils import get_archive_type
+from ..utils.archive_utils import get_archive_type, is_rar_available
 from ..sevenz import SevenZipHandler
 from ..utils.git_utils import backup_git_configs, restore_git_configs, GitConfigHandler
 from ..utils.theme_manager import ThemeManager
@@ -41,6 +41,9 @@ class MainWidget(QWidget):
         self.skip_checkboxes = {}  # Skip pattern checkboxes
         self.extraction_queue = []  # Queue for pending extractions
         self.setWindowTitle('Varchiver')
+        
+        # Check RAR availability
+        self.rar_available = is_rar_available()
         
         # Initialize Git UI elements
         self.git_repo_path = QLineEdit()
@@ -82,7 +85,7 @@ class MainWidget(QWidget):
         
         donation_layout.addStretch()
         layout.addWidget(donation_widget)
-        layout.addWidget(QLabel("Src repo (currently private): https://github.com/instancer-kirik/Varchiver"))
+        layout.addWidget(QLabel("Src repo: https://github.com/instancer-kirik/Varchiver"))
         
         # Add separator
         separator = QFrame()
@@ -1032,8 +1035,11 @@ class MainWidget(QWidget):
                 "TGZ Archives (*.tgz)": ".tgz",
                 "Bzip2 TAR Archives (*.tar.bz2)": ".tar.bz2",
                 "7z Archives (*.7z)": ".7z",
-                "RAR Archives (*.rar)": ".rar"
             }
+            
+            # Only add RAR if available
+            if self.rar_available:
+                extensions["RAR Archives (*.rar)"] = ".rar"
             
             if selected_filter in extensions:
                 current_name = os.path.splitext(dialog.selectedFiles()[0] if dialog.selectedFiles() else "archive")[0]
