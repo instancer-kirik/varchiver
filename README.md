@@ -86,3 +86,13 @@ varchiver
 ## License
 
 Proprietary - All rights reserved
+
+## Support the Project
+
+Varchiver is an open-source project that relies on community support. If you find this tool useful, please consider supporting its development. You can find more details about how to contribute in our [funding.json](./funding.json) file.
+
+To support the project directly, you can send Solana to the following address:
+4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq
+`4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq`
+
+Your support helps ensure the continued development and maintenance of Varchiver. Thank you!
