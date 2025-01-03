@@ -1,7 +1,13 @@
 #!/bin/bash
 
+set -e  # Exit immediately if a command exits with a non-zero status.
+
 # Ensure we're in the project directory
 cd "$(dirname "$0")"
+
+# Check Python version
+python_version=$(python --version 2>&1 | awk '{print $2}')
+echo "Using Python version: $python_version"
 
 # Install dependencies
 poetry install
@@ -35,7 +41,10 @@ mkdir -p dist
 
 # Package the binary with permissions preserved
 cd dist
-tar czf varchiver-linux-x86_64.tar.gz varchiver
-cd ..
-
-echo "Build complete! Binary is packaged in dist/varchiver-linux-x86_64.tar.gz"
+if [ -f varchiver ]; then
+    tar czf varchiver-linux-x86_64.tar.gz varchiver
+    echo "Build complete! Binary is packaged in dist/varchiver-linux-x86_64.tar.gz"
+else
+    echo "Error: varchiver binary not found. Build may have failed."
+    exit 1
+fi
