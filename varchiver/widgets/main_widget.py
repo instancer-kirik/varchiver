@@ -61,7 +61,7 @@ class MainWidget(QWidget):
         donation_layout = QHBoxLayout()
         donation_widget.setLayout(donation_layout)
         
-        eth_label = QLabel("Free the source! $Instancer or ETH:")
+        eth_label = QLabel("Donations welcome! $Instancer or ETH:")
         eth_label.setStyleSheet("font-weight: bold;")
         donation_layout.addWidget(eth_label)
         
