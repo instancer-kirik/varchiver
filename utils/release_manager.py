@@ -211,12 +211,29 @@ class ReleaseThread(QThread):
         if not self.aur_dir.exists():
             subprocess.run(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
         
-        # Copy PKGBUILD and update
+        # Copy PKGBUILD and update for AUR
         pkgbuild_src = self.project_dir / "PKGBUILD"
         pkgbuild_dest = self.aur_dir / "PKGBUILD"
         
-        with pkgbuild_src.open() as src, pkgbuild_dest.open('w') as dest:
-            dest.write(src.read())
+        # Read the development PKGBUILD
+        with pkgbuild_src.open() as f:
+            content = f.read()
+        
+        # Modify for AUR (use GitHub source instead of local files)
+        content = re.sub(
+            r'source=\(["\'.]*\)',
+            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+            content
+        )
+        content = re.sub(
+            r'cd \$srcdir',
+            'cd "$pkgname-$pkgver"',
+            content
+        )
+        
+        # Write the modified PKGBUILD to AUR repo
+        with pkgbuild_dest.open('w') as f:
+            f.write(content)
             
         # Generate and update .SRCINFO
         self.progress.emit("Generating .SRCINFO...")

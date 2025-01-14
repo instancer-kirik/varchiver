@@ -16,11 +16,13 @@ depends=(
 makedepends=(
     'uv'
 )
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+# Use local files during development
+source=('.')
 sha256sums=('SKIP')
 
 build() {
-    cd "$pkgname-$pkgver"
+    # Use current directory
+    cd .
     # Create virtual environment and install dependencies
     uv venv .venv
     source .venv/bin/activate
