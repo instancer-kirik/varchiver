@@ -406,7 +406,7 @@ class ReleaseManager(QWidget):
             except Exception:
                 pass
         
-        self.version_input.setPlaceholderText(current_version or "0.3.6")
+        self.version_input.setText(current_version or "0.3.6")
         self.version_input.setStyleSheet("""
             QLineEdit {
                 padding: 4px;

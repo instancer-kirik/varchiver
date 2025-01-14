@@ -28,12 +28,15 @@ build() {
     export PATH="$VIRTUAL_ENV/bin:$PATH"
     unset PYTHONHOME
     
+    # Install uv in the virtual environment
+    python -m pip install uv
+    
     # Install dependencies
-    $VIRTUAL_ENV/bin/uv pip install pyinstaller
-    $VIRTUAL_ENV/bin/uv pip install .
+    uv pip install pyinstaller
+    uv pip install .
     
     # Run pyinstaller
-    $VIRTUAL_ENV/bin/python -m pyinstaller --clean \
+    python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
