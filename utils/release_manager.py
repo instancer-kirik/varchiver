@@ -189,7 +189,7 @@ class ReleaseThread(QThread):
             result = subprocess.run(
                 cmd,
                 cwd=cwd or self.project_dir,
-                capture_output=True,
+            capture_output=True,
                 text=True,
                 timeout=timeout,
                 env=merged_env,
@@ -273,7 +273,7 @@ class ReleaseThread(QThread):
             if not status_result.stdout.strip():
                 self.output.emit("No changes to commit")
                 return
-                
+            
             # Add and commit changes
             self.output.emit("Adding and committing changes...")
             self._run_command(["git", "add", "."])
@@ -315,7 +315,7 @@ class ReleaseThread(QThread):
             pkgbuild_path = self.project_dir / "PKGBUILD"
             with pkgbuild_path.open('r') as f:
                 content = f.read()
-                
+            
             # Handle both single and multiline sha256sums formats
             content = re.sub(
                 r'sha256sums=\([^)]*\)',
@@ -326,7 +326,7 @@ class ReleaseThread(QThread):
             
             with pkgbuild_path.open('w') as f:
                 f.write(content)
-                
+            
             # Create GitHub release
             self.output.emit("Creating GitHub release...")
             
@@ -350,37 +350,41 @@ class ReleaseThread(QThread):
                 "--verify-tag"  # Ensure the tag exists before creating release
             ]
             
-            # First create the release
-            self._run_command(release_args)
-            
-            # Then upload the assets separately
-            self.output.emit("Uploading release assets...")
-            
-            # Upload source archive
-            self._run_command([
-                "gh", "release", "upload",
-                f"v{self.version}",
-                str(archive_path),
-                "--clobber"  # Overwrite existing asset if needed
-            ])
-            
-            # Upload package if it exists
-            if pkg_file:
+            try:
+                # First create the release
+                self._run_command(release_args)
+                
+                # Then upload the assets separately
+                self.output.emit("Uploading release assets...")
+                
+                # Upload source archive
                 self._run_command([
                     "gh", "release", "upload",
                     f"v{self.version}",
-                    str(pkg_file),
-                    "--clobber"
+                    str(archive_path),
+                    "--clobber"  # Overwrite existing asset if needed
                 ])
-            
-            # Verify release assets with retries
-            if not self._verify_release_assets(self.version):
-                raise Exception("Failed to verify release assets after maximum retries")
                 
-            self.output.emit("GitHub release created and verified successfully")
-            
+                # Upload package if it exists
+                if pkg_file:
+                    self._run_command([
+                        "gh", "release", "upload",
+                        f"v{self.version}",
+                        str(pkg_file),
+                        "--clobber"
+                    ])
+                
+                # Verify release assets with retries
+                if not self._verify_release_assets(self.version):
+                    raise Exception("Failed to verify release assets after maximum retries")
+                
+                self.output.emit("GitHub release created and verified successfully")
+                
+            except Exception as e:
+                self.output.emit(f"Error creating GitHub release: {e}")
+                raise
         except Exception as e:
-            self.output.emit(f"Error creating GitHub release: {e}")
+            self.output.emit(f"Error in GitHub release process: {e}")
             raise
 
     def _update_aur(self):
@@ -408,7 +412,7 @@ class ReleaseThread(QThread):
             except Exception:
                 # If checkout fails, create master branch
                 self._run_command(["git", "checkout", "-b", "master", "origin/master"], cwd=self.aur_dir)
-        
+            
             # Copy PKGBUILD and update for AUR
             pkgbuild_src = self.project_dir / "PKGBUILD"
             pkgbuild_dest = self.aur_dir / "PKGBUILD"
@@ -438,8 +442,8 @@ class ReleaseThread(QThread):
             # Generate and update .SRCINFO
             self.progress.emit("Generating .SRCINFO...")
             srcinfo_result = self._run_command(
-                ["makepkg", "--printsrcinfo"],
-                cwd=self.aur_dir,
+                ["makepkg", "--printsrcinfo"], 
+                cwd=self.aur_dir, 
                 timeout=30
             )
             
