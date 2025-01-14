@@ -18,11 +18,11 @@ makedepends=(
     'python-wheel'
     'python-pip'
 )
-source=()
-sha256sums=()
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
 
 build() {
-    cd ..
+    cd "$pkgname-$pkgver"
     # Create and activate virtual environment
     python -m venv .venv
     source .venv/bin/activate
@@ -36,7 +36,7 @@ build() {
 }
 
 package() {
-    cd ..
+    cd "$pkgname-$pkgver"
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     
