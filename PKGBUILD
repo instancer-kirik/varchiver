@@ -18,6 +18,7 @@ makedepends=(
     'python-installer'
     'python-wheel'
     'python-pip'
+    'python-pyinstaller'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
@@ -29,7 +30,7 @@ build() {
 
 package() {
     cd "$pkgname-$pkgver"
-    uv pip run pyinstaller --clean --onefile --name varchiver varchiver/main.py
+    uv run pyinstaller --clean --onefile --name varchiver varchiver/main.py
     python -m installer --destdir="$pkgdir" dist/*.whl
     
     # Install desktop file
