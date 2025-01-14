@@ -8,6 +8,7 @@ import subprocess
 import os
 import re
 from pathlib import Path
+import time
 
 print("Imports completed in release_manager module")
 
@@ -177,295 +178,243 @@ class ReleaseThread(QThread):
             
         self.progress.emit("Build completed successfully")
 
+    def _run_command(self, cmd, cwd=None, timeout=60, env=None, check=True):
+        """Helper function to run commands with consistent error handling and timeouts"""
+        try:
+            merged_env = os.environ.copy()
+            if env:
+                merged_env.update(env)
+            
+            self.output.emit(f"Running: {' '.join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                cwd=cwd or self.project_dir,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=merged_env,
+                check=check
+            )
+            return result
+        except subprocess.TimeoutExpired:
+            self.output.emit(f"Command timed out after {timeout} seconds: {' '.join(cmd)}")
+            raise
+        except subprocess.CalledProcessError as e:
+            self.output.emit(f"Command failed with exit code {e.returncode}:")
+            self.output.emit(f"Command: {' '.join(cmd)}")
+            if e.stdout:
+                self.output.emit(f"Output:\n{e.stdout}")
+            if e.stderr:
+                self.output.emit(f"Error:\n{e.stderr}")
+            raise
+        except Exception as e:
+            self.output.emit(f"Unexpected error running command: {e}")
+            raise
+
+    def _verify_release_assets(self, version, max_retries=10, retry_delay=30):
+        """Verify release assets with retries"""
+        archive_name = f"{self.project_dir.name}-{version}"
+        archive_url = f"{self.url}/releases/download/v{version}/{archive_name}.tar.gz"
+        
+        for attempt in range(max_retries):
+            try:
+                self.output.emit(f"Verifying release assets (attempt {attempt + 1}/{max_retries})...")
+                result = self._run_command(["curl", "-I", archive_url], timeout=30, check=False)
+                
+                if "HTTP/2 200" in result.stdout:
+                    self.output.emit("Release assets verified successfully")
+                    return True
+                    
+                if attempt < max_retries - 1:
+                    self.output.emit(f"Assets not ready yet, waiting {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+            except Exception as e:
+                self.output.emit(f"Verification attempt failed: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    
+        return False
+
     def _create_github_release(self):
+        """Create a GitHub release with improved error handling and verification"""
         self.progress.emit("Creating GitHub release...")
         
-        # Check if there are any changes to commit
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        
-        if not status.stdout.strip():
-            self.output.emit("No changes to commit")
-            return
+        try:
+            # Get system architecture
+            arch_result = self._run_command(["uname", "-m"])
+            arch = arch_result.stdout.strip()
             
-        # Add and commit changes
-        self.output.emit("Adding and committing changes...")
-        add_result = subprocess.run(
-            ["git", "add", "."],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if add_result.returncode != 0:
-            self.output.emit(f"Git add failed:\n{add_result.stderr}")
-            raise Exception("Failed to add files to git")
+            # Check for changes
+            status_result = self._run_command(["git", "status", "--porcelain"])
+            if not status_result.stdout.strip():
+                self.output.emit("No changes to commit")
+                return
+                
+            # Add and commit changes
+            self.output.emit("Adding and committing changes...")
+            self._run_command(["git", "add", "."])
+            self._run_command(["git", "commit", "-m", f"Release v{self.version}"])
             
-        commit_result = subprocess.run(
-            ["git", "commit", "-m", f"Release v{self.version}"],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if commit_result.returncode != 0:
-            self.output.emit(f"Git commit failed:\n{commit_result.stderr}")
-            raise Exception("Failed to commit changes")
+            # Create and push tag
+            self.output.emit("Creating and pushing tag...")
+            self._run_command(["git", "tag", "-f", f"v{self.version}"])
+            self._run_command(["git", "push", "-f", "origin", self.git_branch])
+            self._run_command(["git", "push", "-f", "origin", f"v{self.version}"])
             
-        # Create and push tag
-        self.output.emit("Creating and pushing tag...")
-        tag_result = subprocess.run(
-            ["git", "tag", "-f", f"v{self.version}"],  # Force update tag if exists
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if tag_result.returncode != 0:
-            self.output.emit(f"Git tag failed:\n{tag_result.stderr}")
-            raise Exception("Failed to create tag")
+            # Create source archive
+            self.output.emit("Creating source archive...")
+            archive_name = f"{self.project_dir.name}-{self.version}"
+            archive_path = self.project_dir / f"{archive_name}.tar.gz"
             
-        # Push changes and tag
-        self.output.emit("Pushing changes and tag...")
-        push_result = subprocess.run(
-            ["git", "push", "-f", "origin", self.git_branch],  # Force push changes
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if push_result.returncode != 0:
-            self.output.emit(f"Git push failed:\n{push_result.stderr}")
-            raise Exception("Failed to push changes")
+            # Create archive with explicit prefix
+            self._run_command([
+                "git", "archive",
+                "--format=tar.gz",
+                "--prefix", f"{archive_name}/",
+                "-o", str(archive_path),
+                f"v{self.version}"
+            ])
             
-        push_tag_result = subprocess.run(
-            ["git", "push", "-f", "origin", f"v{self.version}"],  # Force push tag
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if push_tag_result.returncode != 0:
-            self.output.emit(f"Git tag push failed:\n{push_tag_result.stderr}")
-            raise Exception("Failed to push tag")
+            # Calculate and update SHA256
+            sha256_result = self._run_command(["sha256sum", str(archive_path)])
+            sha256 = sha256_result.stdout.split()[0]
             
-        # Create source archive for AUR
-        self.output.emit("Creating source archive...")
-        archive_name = f"{self.project_dir.name}-{self.version}"
-        archive_path = self.project_dir / f"{archive_name}.tar.gz"
-        
-        # Create archive excluding .git and other unnecessary files
-        archive_result = subprocess.run(
-            ["git", "archive", "--format=tar.gz", "--prefix", f"{archive_name}/",
-             "-o", str(archive_path), f"v{self.version}"],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if archive_result.returncode != 0:
-            self.output.emit(f"Archive creation failed:\n{archive_result.stderr}")
-            raise Exception("Failed to create source archive")
+            # Update PKGBUILD with proper multiline handling
+            pkgbuild_path = self.project_dir / "PKGBUILD"
+            with pkgbuild_path.open('r') as f:
+                content = f.read()
+                
+            # Handle both single and multiline sha256sums formats
+            content = re.sub(
+                r'sha256sums=\([^)]*\)',
+                f'sha256sums=("{sha256}")',
+                content,
+                flags=re.MULTILINE | re.DOTALL
+            )
             
-        # Calculate SHA256 hash
-        sha256_result = subprocess.run(
-            ["sha256sum", str(archive_path)],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if sha256_result.returncode != 0:
-            self.output.emit(f"SHA256 calculation failed:\n{sha256_result.stderr}")
-            raise Exception("Failed to calculate SHA256 hash")
+            with pkgbuild_path.open('w') as f:
+                f.write(content)
+                
+            # Create GitHub release
+            self.output.emit("Creating GitHub release...")
             
-        # Update PKGBUILD with hash
-        pkgbuild_path = self.project_dir / "PKGBUILD"
-        with pkgbuild_path.open('r') as f:
-            content = f.read()
+            # Find built package
+            pkg_glob = f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"
+            pkg_file = next(self.project_dir.glob(pkg_glob), None)
             
-        sha256 = sha256_result.stdout.split()[0]
-        content = re.sub(
-            r'sha256sums=\([^)]*\)',
-            f'sha256sums=("{sha256}")',
-            content
-        )
-        
-        with pkgbuild_path.open('w') as f:
-            f.write(content)
+            # Prepare release command
+            release_args = [
+                "gh", "release", "create",
+                f"v{self.version}",
+                "--title", f"Release v{self.version}",
+                "--notes", f"Release v{self.version}",
+                "--target", self.git_branch,
+                str(archive_path)
+            ]
             
-        # Create GitHub release using gh cli
-        self.output.emit("Creating GitHub release...")
-        
-        # Find the built package
-        pkg_file = next(self.project_dir.glob(f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"), None)
-        if not pkg_file:
-            self.output.emit("Warning: Could not find built package")
+            if pkg_file:
+                release_args.append(str(pkg_file))
+                
+            # Create release
+            self._run_command(release_args)
             
-        # Create release with both source archive and package
-        release_args = [
-            "gh", "release", "create", f"v{self.version}",
-            "--title", f"Release v{self.version}",
-            "--notes", f"Release v{self.version}",
-            "--target", self.git_branch,
-            str(archive_path)  # Source archive
-        ]
-        
-        if pkg_file:
-            release_args.append(str(pkg_file))  # Built package
+            # Verify release was created
+            self._run_command(["gh", "release", "view", f"v{self.version}"])
             
-        release_result = subprocess.run(
-            release_args,
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if release_result.returncode != 0:
-            self.output.emit(f"GitHub release creation failed:\n{release_result.stderr}")
-            raise Exception("Failed to create GitHub release")
+            # Verify release assets with retries
+            if not self._verify_release_assets(self.version):
+                raise Exception("Failed to verify release assets after maximum retries")
+                
+            self.output.emit("GitHub release created and verified successfully")
             
-        # Verify the release was created
-        verify_result = subprocess.run(
-            ["gh", "release", "view", f"v{self.version}"],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if verify_result.returncode != 0:
-            self.output.emit(f"Failed to verify release:\n{verify_result.stderr}")
-            raise Exception("Failed to verify GitHub release")
-            
-        # Verify the source archive was uploaded
-        self.output.emit("Verifying source archive upload...")
-        archive_url = f"{self.url}/releases/download/v{self.version}/{archive_name}.tar.gz"
-        verify_archive = subprocess.run(
-            ["curl", "-I", archive_url],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
-        if "HTTP/2 404" in verify_archive.stdout:
-            self.output.emit("Warning: Source archive not accessible yet. This might take a few minutes to propagate.")
-            
-        self.output.emit("GitHub release created successfully")
+        except Exception as e:
+            self.output.emit(f"Error creating GitHub release: {e}")
+            raise
 
     def _update_aur(self):
+        """Update AUR package with proper .SRCINFO handling"""
         if not self.use_aur:
             return
             
         self.progress.emit("Updating AUR package...")
         
+        # Clone AUR repo if it doesn't exist
         if not self.aur_dir.exists():
-            subprocess.run(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
+            self._run_command(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
             
         # Make sure we're on master branch
         self.output.emit("Switching to master branch...")
         
-        # Fetch latest changes
-        fetch_result = subprocess.run(
-            ["git", "fetch", "origin", "master"],
-            cwd=self.aur_dir,
-            capture_output=True,
-            text=True
-        )
-        if fetch_result.returncode != 0:
-            self.output.emit(f"Failed to fetch master: {fetch_result.stderr}")
-            raise Exception("Failed to fetch master branch")
-            
-        # Reset to origin/master
-        reset_result = subprocess.run(
-            ["git", "reset", "--hard", "origin/master"],
-            cwd=self.aur_dir,
-            capture_output=True,
-            text=True
-        )
-        if reset_result.returncode != 0:
-            self.output.emit(f"Failed to reset to master: {reset_result.stderr}")
-            raise Exception("Failed to reset to master branch")
-            
-        # Checkout master
-        checkout_result = subprocess.run(
-            ["git", "checkout", "master"],
-            cwd=self.aur_dir,
-            capture_output=True,
-            text=True
-        )
-        if checkout_result.returncode != 0:
-            # If checkout fails, try to create master branch
-            create_result = subprocess.run(
-                ["git", "checkout", "-b", "master", "origin/master"],
-                cwd=self.aur_dir,
-                capture_output=True,
-                text=True
-            )
-            if create_result.returncode != 0:
-                self.output.emit(f"Failed to create master branch: {create_result.stderr}")
-                raise Exception("Failed to switch to master branch")
-        
-        # Copy PKGBUILD and update for AUR
-        pkgbuild_src = self.project_dir / "PKGBUILD"
-        pkgbuild_dest = self.aur_dir / "PKGBUILD"
-        
-        # Read the development PKGBUILD
-        with pkgbuild_src.open() as f:
-            content = f.read()
-        
-        # Modify for AUR (use GitHub source instead of local files)
-        content = re.sub(
-            r'source=\(["\'.]*\)',
-            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-            content
-        )
-        content = re.sub(
-            r'cd \$srcdir',
-            'cd "$pkgname-$pkgver"',
-            content
-        )
-        
-        # Write the modified PKGBUILD to AUR repo
-        with pkgbuild_dest.open('w') as f:
-            f.write(content)
-            
-        # Generate and update .SRCINFO
-        self.progress.emit("Generating .SRCINFO...")
         try:
-            result = subprocess.run(
-                ["makepkg", "--printsrcinfo"], 
-                cwd=self.aur_dir, 
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            srcinfo_path = self.aur_dir / ".SRCINFO"
-            srcinfo_path.write_text(result.stdout)
-        except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to generate .SRCINFO: {e.stderr}")
-        
-        # Check for changes
-        status = subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=self.aur_dir,
-            capture_output=True,
-            text=True
-        )
-        
-        if not status.stdout.strip():
-            self.output.emit("No changes detected in AUR package")
-            return
+            # Fetch and reset to latest master
+            self._run_command(["git", "fetch", "origin", "master"], cwd=self.aur_dir)
+            self._run_command(["git", "reset", "--hard", "origin/master"], cwd=self.aur_dir)
             
-        # Commit and push to AUR
-        self.progress.emit("Pushing to AUR...")
-        commands = [
-            ["git", "add", "PKGBUILD", ".SRCINFO"],
-            ["git", "commit", "-m", f"Update to version {self.version}"],
-            ["git", "push", "origin", "master"]  # Push directly to master
-        ]
+            try:
+                # Try to checkout master
+                self._run_command(["git", "checkout", "master"], cwd=self.aur_dir)
+            except Exception:
+                # If checkout fails, create master branch
+                self._run_command(["git", "checkout", "-b", "master", "origin/master"], cwd=self.aur_dir)
         
-        for cmd in commands:
-            result = subprocess.run(cmd, cwd=self.aur_dir, capture_output=True, text=True)
-            if result.returncode != 0:
-                self.output.emit(f"Command failed: {' '.join(cmd)}")
-                self.output.emit(f"Error: {result.stderr}")
-                raise Exception(f"AUR update failed: {result.stderr}")
+            # Copy PKGBUILD and update for AUR
+            pkgbuild_src = self.project_dir / "PKGBUILD"
+            pkgbuild_dest = self.aur_dir / "PKGBUILD"
+            
+            # Read the development PKGBUILD
+            with pkgbuild_src.open() as f:
+                content = f.read()
+            
+            # Modify for AUR (use GitHub source instead of local files)
+            content = re.sub(
+                r'source=\([^)]*\)',
+                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                content,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
+            # Update cd command if needed
+            if 'cd "$srcdir"' in content:
+                content = content.replace('cd "$srcdir"', 'cd "$srcdir/$pkgname-$pkgver"')
+            elif "cd $srcdir" in content:
+                content = content.replace("cd $srcdir", 'cd "$srcdir/$pkgname-$pkgver"')
+            
+            # Write updated PKGBUILD
+            with pkgbuild_dest.open('w') as f:
+                f.write(content)
                 
-        self.progress.emit("AUR package updated successfully")
+            # Generate and update .SRCINFO
+            self.progress.emit("Generating .SRCINFO...")
+            srcinfo_result = self._run_command(
+                ["makepkg", "--printsrcinfo"],
+                cwd=self.aur_dir,
+                timeout=30
+            )
+            
+            srcinfo_path = self.aur_dir / ".SRCINFO"
+            srcinfo_path.write_text(srcinfo_result.stdout)
+            
+            # Check for changes
+            status_result = self._run_command(["git", "status", "--porcelain"], cwd=self.aur_dir)
+            
+            if not status_result.stdout.strip():
+                self.output.emit("No changes detected in AUR package")
+                return
+                
+            # Commit and push changes
+            self.progress.emit("Pushing to AUR...")
+            self._run_command(["git", "add", "PKGBUILD", ".SRCINFO"], cwd=self.aur_dir)
+            self._run_command(
+                ["git", "commit", "-m", f"Update to version {self.version}"],
+                cwd=self.aur_dir
+            )
+            self._run_command(["git", "push", "origin", "master"], cwd=self.aur_dir)
+            
+            self.progress.emit("AUR package updated successfully")
+            
+        except Exception as e:
+            self.output.emit(f"Error updating AUR package: {e}")
+            raise
 
     def _update_file_version(self, file_path, pattern, replacement):
         content = file_path.read_text()
