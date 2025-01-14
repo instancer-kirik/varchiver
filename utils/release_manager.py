@@ -334,6 +334,21 @@ class ReleaseThread(QThread):
             with pkgbuild_path.open('r') as f:
                 content = f.read()
             
+            # Update version
+            content = re.sub(
+                r'pkgver=.*',
+                f'pkgver={self.version}',
+                content
+            )
+            
+            # Update source array
+            content = re.sub(
+                r'source=\([^)]*\)',
+                'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                content,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
             # Handle both single and multiline sha256sums formats
             content = re.sub(
                 r'sha256sums=\([^)]*\)',
