@@ -259,11 +259,25 @@ class ReleaseThread(QThread):
                     
         return False
 
+    def _check_github_authentication(self):
+        """Check if the user is authenticated with GitHub CLI and prompt to log in if not."""
+        self.progress.emit("Checking GitHub authentication...")
+        try:
+            auth_status = self._run_command(["gh", "auth", "status"], check=False)
+            if "not logged into any GitHub hosts" in auth_status.stdout:
+                raise Exception("Not authenticated with GitHub. Please run 'gh auth login' to authenticate.")
+        except Exception as e:
+            self.error.emit(str(e))
+            raise
+
     def _create_github_release(self):
         """Create a GitHub release with improved error handling and verification"""
         self.progress.emit("Creating GitHub release...")
         
         try:
+            # Check GitHub authentication
+            self._check_github_authentication()
+            
             # Get system architecture
             arch_result = self._run_command(["uname", "-m"])
             arch = arch_result.stdout.strip()
@@ -352,27 +366,32 @@ class ReleaseThread(QThread):
             
             try:
                 # First create the release
+                self.output.emit("Running: " + " ".join(release_args))
                 self._run_command(release_args)
                 
                 # Then upload the assets separately
                 self.output.emit("Uploading release assets...")
                 
                 # Upload source archive
-                self._run_command([
+                upload_args = [
                     "gh", "release", "upload",
                     f"v{self.version}",
                     str(archive_path),
                     "--clobber"  # Overwrite existing asset if needed
-                ])
+                ]
+                self.output.emit("Running: " + " ".join(upload_args))
+                self._run_command(upload_args)
                 
                 # Upload package if it exists
                 if pkg_file:
-                    self._run_command([
+                    pkg_upload_args = [
                         "gh", "release", "upload",
                         f"v{self.version}",
                         str(pkg_file),
                         "--clobber"
-                    ])
+                    ]
+                    self.output.emit("Running: " + " ".join(pkg_upload_args))
+                    self._run_command(pkg_upload_args)
                 
                 # Verify release assets with retries
                 if not self._verify_release_assets(self.version):
