@@ -298,9 +298,9 @@ class ReleaseThread(QThread):
             
             # Create and push tag
             self.output.emit("Creating and pushing tag...")
-            tag_result = self._run_command(["git", "tag", "-f", f"v{self.version}"])
+            tag_result = self._run_command(["git", "tag", "-a", f"v{self.version}", "-m", f"Release v{self.version}"])
             self.output.emit(f"Tag creation output: {tag_result.stdout}")
-            push_tag_result = self._run_command(["git", "push", "-f", "origin", f"v{self.version}"])
+            push_tag_result = self._run_command(["git", "push", "origin", f"v{self.version}"])
             self.output.emit(f"Tag push output: {push_tag_result.stdout}")
             
             # Wait a moment for GitHub to process the tag
