@@ -2,7 +2,7 @@ print("Loading release_manager module")
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLineEdit, QLabel, QComboBox, QProgressBar, QMessageBox, QDialog,
-                            QFileDialog, QGroupBox, QFormLayout)
+                            QFileDialog, QGroupBox, QFormLayout, QTextEdit)
 from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot
 import subprocess
 import os
@@ -14,6 +14,7 @@ print("Imports completed in release_manager module")
 class ReleaseThread(QThread):
     progress = pyqtSignal(str)
     error = pyqtSignal(str)
+    output = pyqtSignal(str)
     finished = pyqtSignal(bool)
 
     def __init__(self, version, tasks):
@@ -124,14 +125,32 @@ class ReleaseThread(QThread):
     def _build_packages(self):
         self.progress.emit("Building packages...")
         
-        # Use makepkg to build the package
+        # Install dependencies first
+        self.output.emit("Installing dependencies...")
+        deps = subprocess.run(["makepkg", "-s", "--noconfirm"], 
+                            cwd=self.project_dir, 
+                            capture_output=True, 
+                            text=True)
+        self.output.emit(deps.stdout)
+        if deps.stderr:
+            self.output.emit(deps.stderr)
+        
+        if deps.returncode != 0:
+            raise Exception("Failed to install dependencies")
+        
+        # Then build the package
+        self.output.emit("\nBuilding package...")
         result = subprocess.run(["makepkg", "-f"], 
                               cwd=self.project_dir, 
                               capture_output=True, 
                               text=True)
         
+        self.output.emit(result.stdout)
+        if result.stderr:
+            self.output.emit(result.stderr)
+        
         if result.returncode != 0:
-            raise Exception(f"Build failed: {result.stderr}")
+            raise Exception("Build failed")
             
         self.progress.emit("Build completed successfully")
 
@@ -203,7 +222,7 @@ class ReleaseThread(QThread):
 
 class ReleaseManager(QWidget):
     def __init__(self):
-        print("Initializing ReleaseManager")  # Debug print
+        print("Initializing ReleaseManager")
         super().__init__()
         self.settings = QSettings("Varchiver", "ReleaseManager")
         
@@ -215,6 +234,16 @@ class ReleaseManager(QWidget):
         self.progress_bar = QProgressBar()
         self.progress_label = QLabel()
         self.release_button = QPushButton("Start Release")
+        self.output_text = QTextEdit()
+        self.output_text.setReadOnly(True)
+        self.output_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                font-family: monospace;
+                padding: 8px;
+            }
+        """)
         self.task_combos = {}
         self.config_dialog = None
         
@@ -223,22 +252,22 @@ class ReleaseManager(QWidget):
         
         # Check paths and update UI
         if not self.settings.value("project_path"):
-            print("No project path, showing config")  # Debug print
+            print("No project path, showing config")
             self.show_config()
         else:
             self.check_paths()
             self.update_ui_from_settings()
         
-        print("ReleaseManager initialized")  # Debug print
+        print("ReleaseManager initialized")
 
     def show_config(self):
         """Show configuration dialog"""
-        print("show_config called")  # Debug print
+        print("show_config called")
         if not self.config_dialog:
-            print("Creating new config dialog")  # Debug print
+            print("Creating new config dialog")
             self.config_dialog = ConfigDialog(self)
         result = self.config_dialog.exec()
-        print(f"Dialog result: {result}")  # Debug print
+        print(f"Dialog result: {result}")
         if result == QDialog.DialogCode.Accepted:
             self.check_paths()
             self.update_ui_from_settings()
@@ -364,6 +393,13 @@ class ReleaseManager(QWidget):
         
         layout.addWidget(tasks_group)
         
+        # Terminal output section
+        output_group = QGroupBox("Build Output")
+        output_layout = QVBoxLayout()
+        output_group.setLayout(output_layout)
+        output_layout.addWidget(self.output_text)
+        layout.addWidget(output_group)
+        
         # Progress section
         progress_group = QGroupBox("Progress")
         progress_layout = QVBoxLayout()
@@ -406,7 +442,8 @@ class ReleaseManager(QWidget):
         
         self.setLayout(layout)
         self.setWindowTitle("Release Manager")
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(700)
+        self.setMinimumHeight(600)
 
     def check_paths(self):
         """Check if required paths are configured and enable/disable release button accordingly"""
@@ -444,6 +481,9 @@ class ReleaseManager(QWidget):
 
     def start_release(self):
         """Start the release process"""
+        # Clear previous output
+        self.output_text.clear()
+        
         version = self.version_input.text()
         if not version:
             QMessageBox.warning(self, "Error", "Please enter a version number")
@@ -467,6 +507,7 @@ class ReleaseManager(QWidget):
         self.release_thread = ReleaseThread(version, selected_tasks)
         self.release_thread.progress.connect(self.update_progress)
         self.release_thread.error.connect(self.show_error)
+        self.release_thread.output.connect(self.update_output)
         self.release_thread.finished.connect(self.release_finished)
         
         self.release_button.setEnabled(False)
@@ -495,8 +536,17 @@ class ReleaseManager(QWidget):
             QMessageBox.information(self, "Success", "Release completed successfully!")
         else:
             self.progress_label.setText("Release failed")
+
+    def update_output(self, text):
+        """Update terminal output"""
+        self.output_text.append(text)
+        # Scroll to bottom
+        cursor = self.output_text.textCursor()
+        cursor.movePosition(cursor.End)
+        self.output_text.setTextCursor(cursor)
+
     def show_config2(self):
-        print("show_config2 called")  # Debug print
+        print("show_config2 called")
         self.show_config()
 
 class ConfigDialog(QDialog):
