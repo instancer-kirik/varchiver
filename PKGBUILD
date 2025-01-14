@@ -15,6 +15,7 @@ depends=(
 )
 makedepends=(
     'uv'
+    'python-pip'
 )
 # Build from parent directory
 source=()
@@ -22,16 +23,14 @@ sha256sums=()
 
 build() {
     cd ..
-    # Create and activate virtual environment
-    uv venv .venv
+    # Create and activate virtual environment with pip
+    python -m venv .venv
     export VIRTUAL_ENV="$PWD/.venv"
     export PATH="$VIRTUAL_ENV/bin:$PATH"
     unset PYTHONHOME
     
-    # Install uv in the virtual environment
-    python -m pip install uv
-    
     # Install dependencies
+    python -m pip install uv
     uv pip install pyinstaller
     uv pip install .
     
