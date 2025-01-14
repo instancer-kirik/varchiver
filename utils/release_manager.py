@@ -124,21 +124,11 @@ class ReleaseThread(QThread):
     def _build_packages(self):
         self.progress.emit("Building packages...")
         
-        # Run the build script
-        if self.build_command:
-            cmd_parts = self.build_command.split()
-            result = subprocess.run(cmd_parts, cwd=self.project_dir, capture_output=True, text=True)
-        else:
-            build_script = self.project_dir / "build.sh"
-            if not build_script.exists():
-                raise Exception("build.sh not found")
-            
-            result = subprocess.run(["bash", str(build_script)], 
+        # Use makepkg to build the package
+        result = subprocess.run(["makepkg", "-f"], 
                               cwd=self.project_dir, 
                               capture_output=True, 
                               text=True)
-            
-        
         
         if result.returncode != 0:
             raise Exception(f"Build failed: {result.stderr}")
@@ -619,9 +609,9 @@ class ConfigDialog(QDialog):
         """Set default patterns based on project type"""
         patterns = {
             "Python": {
-                "files": "pyproject.toml,setup.py",
-                "patterns": 'version = "*",version="*"',
-                "build": "./build.sh"
+                "files": "pyproject.toml,PKGBUILD",
+                "patterns": 'version = "*",pkgver=*',
+                "build": "makepkg -f"
             },
             "Node.js": {
                 "files": "package.json",
