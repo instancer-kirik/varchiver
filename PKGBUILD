@@ -53,3 +53,9 @@ package() {
 get_version() {
     grep '^pkgver=' PKGBUILD | cut -d'=' -f2
 }
+
+# Force rebuild during release
+force_rebuild() {
+    rm -rf pkg/ src/ *.pkg.tar.zst
+    makepkg -f --noconfirm --skipchecksums
+}
