@@ -21,7 +21,7 @@ uv pip install -e .[dev]
 rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/
 
 # Create single binary with PyInstaller
-uv pip run pyinstaller \
+uv pip pyinstaller \
     --clean \
     --onefile \
     --name varchiver \

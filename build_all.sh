@@ -14,7 +14,7 @@ uv pip install -e .[dev]
 # Function to build for Linux
 build_linux() {
     echo "Building Linux executable..."
-    uv pip run pyinstaller --clean \
+    uv pip pyinstaller --clean \
         --onefile \
         --name varchiver-linux \
         --add-data "varchiver:varchiver" \
@@ -26,7 +26,7 @@ build_linux() {
 # Function to build for Windows
 build_windows() {
     echo "Building Windows executable..."
-    uv pip run pyinstaller --clean \
+    uv pip pyinstaller --clean \
         --onefile \
         --name varchiver-windows \
         --add-data "varchiver;varchiver" \
