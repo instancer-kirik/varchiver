@@ -11,7 +11,6 @@ depends=(
     'python-pyqt6'
     'python-pyqt6-webengine'
     'python-uv'
-    'python-pyinstaller'
 )
 makedepends=(
     'python-build'
@@ -28,11 +27,12 @@ build() {
     python -m venv .venv
     source .venv/bin/activate
     
-    # Install dependencies
+    # Install dependencies including PyInstaller
     uv pip install .
+    uv pip install pyinstaller
     
     # Build executable
-    python varchiver/bootstrap.py --release
+    python -m PyInstaller --clean --onefile --name varchiver varchiver/bootstrap.py
 }
 
 package() {
