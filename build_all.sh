@@ -11,6 +11,9 @@ fi
 # Install dependencies
 uv pip install -e .[dev]
 
+# Ensure pyinstaller is installed
+uv pip install pyinstaller
+
 # Function to build for Linux
 build_linux() {
     echo "Building Linux executable..."

@@ -17,6 +17,9 @@ fi
 # Install dependencies
 uv pip install -e .[dev]
 
+# Ensure pyinstaller is installed
+uv pip install pyinstaller
+
 # Clean previous builds (but preserve source)
 rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/
 
