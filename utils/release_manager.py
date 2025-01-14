@@ -300,6 +300,18 @@ class ReleaseThread(QThread):
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to generate .SRCINFO: {e.stderr}")
         
+        # Check for changes
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=self.aur_dir,
+            capture_output=True,
+            text=True
+        )
+        
+        if not status.stdout.strip():
+            self.output.emit("No changes detected in AUR package")
+            return
+            
         # Commit and push to AUR
         self.progress.emit("Pushing to AUR...")
         commands = [
