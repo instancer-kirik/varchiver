@@ -30,7 +30,7 @@ build() {
 
 package() {
     cd "$pkgname-$pkgver"
-    uv run pyinstaller --clean --onefile --name varchiver varchiver/main.py
+    uv pip pyinstaller --clean --onefile --name varchiver varchiver/main.py
     python -m installer --destdir="$pkgdir" dist/*.whl
     
     # Install desktop file
