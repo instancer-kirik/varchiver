@@ -211,7 +211,7 @@ class ReleaseThread(QThread):
             self.output.emit(f"Unexpected error running command: {e}")
             raise
 
-    def _verify_release_assets(self, version, max_retries=10, retry_delay=30):
+    def _verify_release_assets(self, version, max_retries=20, retry_delay=15):
         """Verify release assets with retries"""
         archive_name = f"{self.project_dir.name}-{version}"
         archive_url = f"{self.url}/releases/download/v{version}/{archive_name}.tar.gz"
@@ -219,11 +219,35 @@ class ReleaseThread(QThread):
         for attempt in range(max_retries):
             try:
                 self.output.emit(f"Verifying release assets (attempt {attempt + 1}/{max_retries})...")
-                result = self._run_command(["curl", "-I", archive_url], timeout=30, check=False)
                 
-                if "HTTP/2 200" in result.stdout:
-                    self.output.emit("Release assets verified successfully")
-                    return True
+                # First verify the release exists
+                release_result = self._run_command(
+                    ["gh", "release", "view", f"v{version}"],
+                    check=False
+                )
+                
+                if release_result.returncode != 0:
+                    self.output.emit("Release not found yet...")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                    continue
+                
+                # Then verify the asset is downloadable
+                result = self._run_command(
+                    ["curl", "-IL", archive_url],
+                    timeout=30,
+                    check=False
+                )
+                
+                if "HTTP/2 200" in result.stdout or "HTTP/1.1 200" in result.stdout:
+                    # Try to actually download a small part of the file to verify it's really there
+                    test_download = self._run_command(
+                        ["curl", "-r", "0-1024", "-o", "/dev/null", archive_url],
+                        check=False
+                    )
+                    if test_download.returncode == 0:
+                        self.output.emit("Release assets verified successfully")
+                        return True
                     
                 if attempt < max_retries - 1:
                     self.output.emit(f"Assets not ready yet, waiting {retry_delay} seconds...")
@@ -261,19 +285,27 @@ class ReleaseThread(QThread):
             self._run_command(["git", "push", "-f", "origin", self.git_branch])
             self._run_command(["git", "push", "-f", "origin", f"v{self.version}"])
             
+            # Wait a moment for GitHub to process the tag
+            time.sleep(5)
+            
             # Create source archive
             self.output.emit("Creating source archive...")
             archive_name = f"{self.project_dir.name}-{self.version}"
             archive_path = self.project_dir / f"{archive_name}.tar.gz"
             
-            # Create archive with explicit prefix
+            # Create archive with explicit prefix and all files
             self._run_command([
                 "git", "archive",
                 "--format=tar.gz",
                 "--prefix", f"{archive_name}/",
                 "-o", str(archive_path),
+                "--verbose",
                 f"v{self.version}"
             ])
+            
+            # Verify the archive was created and has content
+            if not archive_path.exists() or archive_path.stat().st_size == 0:
+                raise Exception("Failed to create source archive or archive is empty")
             
             # Calculate and update SHA256
             sha256_result = self._run_command(["sha256sum", str(archive_path)])
@@ -302,24 +334,44 @@ class ReleaseThread(QThread):
             pkg_glob = f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"
             pkg_file = next(self.project_dir.glob(pkg_glob), None)
             
-            # Prepare release command
+            # Delete existing release if it exists
+            self._run_command(
+                ["gh", "release", "delete", f"v{self.version}", "--yes"],
+                check=False
+            )
+            
+            # Create new release with source archive
             release_args = [
                 "gh", "release", "create",
                 f"v{self.version}",
                 "--title", f"Release v{self.version}",
                 "--notes", f"Release v{self.version}",
                 "--target", self.git_branch,
-                str(archive_path)
+                "--verify-tag"  # Ensure the tag exists before creating release
             ]
             
-            if pkg_file:
-                release_args.append(str(pkg_file))
-                
-            # Create release
+            # First create the release
             self._run_command(release_args)
             
-            # Verify release was created
-            self._run_command(["gh", "release", "view", f"v{self.version}"])
+            # Then upload the assets separately
+            self.output.emit("Uploading release assets...")
+            
+            # Upload source archive
+            self._run_command([
+                "gh", "release", "upload",
+                f"v{self.version}",
+                str(archive_path),
+                "--clobber"  # Overwrite existing asset if needed
+            ])
+            
+            # Upload package if it exists
+            if pkg_file:
+                self._run_command([
+                    "gh", "release", "upload",
+                    f"v{self.version}",
+                    str(pkg_file),
+                    "--clobber"
+                ])
             
             # Verify release assets with retries
             if not self._verify_release_assets(self.version):
