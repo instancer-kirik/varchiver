@@ -621,7 +621,7 @@ class ConfigDialog(QDialog):
             "Python": {
                 "files": "pyproject.toml,setup.py",
                 "patterns": 'version = "*",version="*"',
-                "build": "./build.sh all"
+                "build": "./build.sh"
             },
             "Node.js": {
                 "files": "package.json",
