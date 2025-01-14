@@ -16,12 +16,12 @@ depends=(
 makedepends=(
     'uv'
 )
-# Local development source
-source=("${pkgname}-${pkgver}"::"file://${PWD}")
-sha256sums=('SKIP')
+# Build from parent directory
+source=()
+sha256sums=()
 
 build() {
-    cd "${pkgname}-${pkgver}"
+    cd ..
     # Create virtual environment and install dependencies
     uv venv .venv
     source .venv/bin/activate
@@ -41,7 +41,7 @@ build() {
 }
 
 package() {
-    cd "${pkgname}-${pkgver}"
+    cd ..
     # Install the binary
     install -Dm755 "dist/varchiver" "$pkgdir/usr/bin/varchiver"
     
