@@ -22,10 +22,11 @@ sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
 
 build() {
     cd "$pkgname-$pkgver"
-    # Install the package
+    # Install dependencies directly with uv
+    uv pip install --system pyinstaller
     uv pip install --system --no-deps .
-    # Use system pyinstaller directly
-    pyinstaller --clean \
+    # Run pyinstaller through uv
+    uv run pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
