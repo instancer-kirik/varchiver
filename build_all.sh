@@ -14,25 +14,25 @@ uv pip install -e .[dev]
 # Function to build for Linux
 build_linux() {
     echo "Building Linux executable..."
-    uv pip pyinstaller --clean \
+    python -m pyinstaller --clean \
         --onefile \
         --name varchiver-linux \
         --add-data "varchiver:varchiver" \
         --hidden-import PyQt6 \
         --hidden-import rarfile \
-        varchiver/main.py
+        varchiver/bootstrap.py
 }
 
 # Function to build for Windows
 build_windows() {
     echo "Building Windows executable..."
-    uv pip pyinstaller --clean \
+    python -m pyinstaller --clean \
         --onefile \
         --name varchiver-windows \
         --add-data "varchiver;varchiver" \
         --hidden-import PyQt6 \
         --hidden-import rarfile \
-        varchiver/main.py
+        varchiver/bootstrap.py
 }
 
 # Create dist directory if it doesn't exist

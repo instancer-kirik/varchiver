@@ -26,12 +26,20 @@ sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
 build() {
     cd "$pkgname-$pkgver"
     uv pip install --system --no-deps .
+    python -m pyinstaller --clean \
+        --onefile \
+        --name varchiver \
+        --hidden-import PyQt6 \
+        --hidden-import rarfile \
+        --hidden-import varchiver \
+        --collect-submodules varchiver \
+        varchiver/bootstrap.py
 }
 
 package() {
     cd "$pkgname-$pkgver"
-    uv pip pyinstaller --clean --onefile --name varchiver varchiver/main.py
-    python -m installer --destdir="$pkgdir" dist/*.whl
+    # Install the binary
+    install -Dm755 "dist/varchiver" "$pkgdir/usr/bin/varchiver"
     
     # Install desktop file
     install -Dm644 "varchiver.desktop" \

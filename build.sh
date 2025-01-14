@@ -21,7 +21,7 @@ uv pip install -e .[dev]
 rm -rf build/ dist/ __pycache__/ varchiver/__pycache__/
 
 # Create single binary with PyInstaller
-uv pip pyinstaller \
+python -m pyinstaller \
     --clean \
     --onefile \
     --name varchiver \
@@ -29,7 +29,7 @@ uv pip pyinstaller \
     --hidden-import rarfile \
     --hidden-import varchiver \
     --collect-submodules varchiver \
-    varchiver/main.py
+    varchiver/bootstrap.py
 
 # Create dist directory if it doesn't exist
 mkdir -p dist
