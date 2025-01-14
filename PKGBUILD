@@ -29,11 +29,11 @@ build() {
     unset PYTHONHOME
     
     # Install dependencies
-    uv pip install pyinstaller
-    uv pip install .
+    $VIRTUAL_ENV/bin/uv pip install pyinstaller
+    $VIRTUAL_ENV/bin/uv pip install .
     
     # Run pyinstaller
-    python -m pyinstaller --clean \
+    $VIRTUAL_ENV/bin/python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
@@ -59,4 +59,9 @@ package() {
     # Install license
     install -Dm644 "LICENSE" \
         "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+# Get version from PKGBUILD
+get_version() {
+    grep '^pkgver=' PKGBUILD | cut -d'=' -f2
 }

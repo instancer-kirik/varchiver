@@ -335,8 +335,8 @@ class ReleaseManager(QWidget):
         self.project_dir_label.setStyleSheet("""
             QLabel {
                 padding: 4px;
-                background-color: #e0e0e0;  /* Darker background for better contrast */
-                color: #000000;  /* Black text */
+                background-color: #e0e0e0;
+                color: #000000;
                 border-radius: 4px;
                 min-width: 300px;
             }
@@ -347,8 +347,8 @@ class ReleaseManager(QWidget):
         self.project_type_label.setStyleSheet("""
             QLabel {
                 padding: 4px;
-                background-color: #e0e0e0;  /* Darker background for better contrast */
-                color: #000000;  /* Black text */
+                background-color: #e0e0e0;
+                color: #000000;
                 border-radius: 4px;
             }
         """)
@@ -358,8 +358,8 @@ class ReleaseManager(QWidget):
         self.aur_dir_label.setStyleSheet("""
             QLabel {
                 padding: 4px;
-                background-color: #e0e0e0;  /* Darker background for better contrast */
-                color: #000000;  /* Black text */
+                background-color: #e0e0e0;
+                color: #000000;
                 border-radius: 4px;
                 min-width: 300px;
             }
@@ -392,7 +392,21 @@ class ReleaseManager(QWidget):
         
         version_input_layout = QHBoxLayout()
         version_input_layout.addWidget(QLabel("New Version:"))
-        self.version_input.setPlaceholderText("0.2.5")
+        
+        # Get current version from PKGBUILD
+        pkgbuild_path = Path(self.settings.value("project_path")) / "PKGBUILD"
+        current_version = ""
+        if pkgbuild_path.exists():
+            try:
+                with pkgbuild_path.open() as f:
+                    for line in f:
+                        if line.startswith("pkgver="):
+                            current_version = line.split("=")[1].strip()
+                            break
+            except Exception:
+                pass
+        
+        self.version_input.setPlaceholderText(current_version or "0.3.6")
         self.version_input.setStyleSheet("""
             QLineEdit {
                 padding: 4px;
