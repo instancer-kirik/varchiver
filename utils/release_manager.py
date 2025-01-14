@@ -109,3 +109,25 @@ class ReleaseManager(QWidget):
         """Update UI elements based on current settings"""
         project_path = self.settings.value("project_path", "Not configured")
         self.project_dir_label.setText(project_path) 
+
+    def _build_packages(self):
+        self.progress.emit("Building packages...")
+        if not self.build_command:
+            raise Exception("Build command not configured")
+            
+        if self.project_type == "Python":
+            # For Python projects, use specific build commands
+            commands = [
+                ["python", "-m", "build", "--wheel", "--sdist"],  # Build distributions
+                ["uv", "pip", "install", "-e", "."]  # Install in editable mode
+            ]
+            for cmd in commands:
+                result = subprocess.run(cmd, cwd=self.project_dir, capture_output=True, text=True)
+                if result.returncode != 0:
+                    raise Exception(f"Build failed: {result.stderr}")
+        else:
+            # For other project types, use the configured build command
+            cmd_parts = self.build_command.split()
+            result = subprocess.run(cmd_parts, cwd=self.project_dir, capture_output=True, text=True)
+            if result.returncode != 0:
+                raise Exception(f"Build failed: {result.stderr}") 
