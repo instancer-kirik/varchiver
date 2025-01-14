@@ -189,12 +189,15 @@ class ReleaseThread(QThread):
             result = subprocess.run(
                 cmd,
                 cwd=cwd or self.project_dir,
-            capture_output=True,
+                capture_output=True,
                 text=True,
                 timeout=timeout,
                 env=merged_env,
                 check=check
             )
+            self.output.emit(f"Command output: {result.stdout}")
+            if result.stderr:
+                self.output.emit(f"Command error: {result.stderr}")
             return result
         except subprocess.TimeoutExpired:
             self.output.emit(f"Command timed out after {timeout} seconds: {' '.join(cmd)}")
@@ -295,7 +298,8 @@ class ReleaseThread(QThread):
             
             # Create and push tag
             self.output.emit("Creating and pushing tag...")
-            self._run_command(["git", "tag", "-f", f"v{self.version}"])
+            tag_result = self._run_command(["git", "tag", "-f", f"v{self.version}"])
+            self.output.emit(f"Tag creation output: {tag_result.stdout}")
             self._run_command(["git", "push", "-f", "origin", self.git_branch])
             self._run_command(["git", "push", "-f", "origin", f"v{self.version}"])
             
@@ -367,7 +371,8 @@ class ReleaseThread(QThread):
             try:
                 # First create the release
                 self.output.emit("Running: " + " ".join(release_args))
-                self._run_command(release_args)
+                release_result = self._run_command(release_args)
+                self.output.emit(f"Release creation output: {release_result.stdout}")
                 
                 # Then upload the assets separately
                 self.output.emit("Uploading release assets...")
@@ -380,7 +385,8 @@ class ReleaseThread(QThread):
                     "--clobber"  # Overwrite existing asset if needed
                 ]
                 self.output.emit("Running: " + " ".join(upload_args))
-                self._run_command(upload_args)
+                upload_result = self._run_command(upload_args)
+                self.output.emit(f"Upload output: {upload_result.stdout}")
                 
                 # Upload package if it exists
                 if pkg_file:
@@ -391,7 +397,8 @@ class ReleaseThread(QThread):
                         "--clobber"
                     ]
                     self.output.emit("Running: " + " ".join(pkg_upload_args))
-                    self._run_command(pkg_upload_args)
+                    pkg_upload_result = self._run_command(pkg_upload_args)
+                    self.output.emit(f"Package upload output: {pkg_upload_result.stdout}")
                 
                 # Verify release assets with retries
                 if not self._verify_release_assets(self.version):
