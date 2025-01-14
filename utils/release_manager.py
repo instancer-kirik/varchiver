@@ -296,6 +296,7 @@ class ReleaseThread(QThread):
             ["gh", "release", "create", f"v{self.version}",
              "--title", f"Release v{self.version}",
              "--notes", f"Release v{self.version}",
+             "--target", self.git_branch,
              str(archive_path)  # Add the archive as an asset
             ],
             cwd=self.project_dir,
@@ -305,6 +306,29 @@ class ReleaseThread(QThread):
         if release_result.returncode != 0:
             self.output.emit(f"GitHub release creation failed:\n{release_result.stderr}")
             raise Exception("Failed to create GitHub release")
+            
+        # Verify the release was created
+        verify_result = subprocess.run(
+            ["gh", "release", "view", f"v{self.version}"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if verify_result.returncode != 0:
+            self.output.emit(f"Failed to verify release:\n{verify_result.stderr}")
+            raise Exception("Failed to verify GitHub release")
+            
+        # Verify the asset was uploaded
+        self.output.emit("Verifying source archive upload...")
+        archive_url = f"{self.url}/releases/download/v{self.version}/{archive_name}.tar.gz"
+        verify_archive = subprocess.run(
+            ["curl", "-I", archive_url],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if "HTTP/2 404" in verify_archive.stdout:
+            self.output.emit("Warning: Source archive not accessible yet. This might take a few minutes to propagate.")
             
         self.output.emit("GitHub release created successfully")
 
