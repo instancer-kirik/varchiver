@@ -22,11 +22,14 @@ sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
 
 build() {
     cd "$pkgname-$pkgver"
-    # Install dependencies directly with uv
+    # Create virtual environment and install dependencies
+    uv venv .venv
+    source .venv/bin/activate
+    # Install dependencies
     uv pip install --system pyinstaller
     uv pip install --system --no-deps .
-    # Run pyinstaller through uv
-    uv run pyinstaller --clean \
+    # Run pyinstaller with the virtual environment's Python
+    .venv/bin/python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
@@ -34,6 +37,7 @@ build() {
         --hidden-import varchiver \
         --collect-submodules varchiver \
         varchiver/bootstrap.py
+    deactivate
 }
 
 package() {
