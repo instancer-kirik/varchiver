@@ -132,11 +132,11 @@ class ReleaseThread(QThread):
             
         # Install dependencies first
         self.output.emit("Installing dependencies...")
-        self.output.emit("Running: makepkg -s --noconfirm")
+        self.output.emit("Running: makepkg -s --noconfirm --skipchecksums")
         
-        # Run makepkg with syncdeps
+        # Run makepkg with syncdeps and skip checksums
         deps = subprocess.run(
-            ["makepkg", "-s", "--noconfirm"], 
+            ["makepkg", "-s", "--noconfirm", "--skipchecksums"], 
             cwd=self.project_dir, 
             capture_output=True, 
             text=True,
@@ -167,9 +167,9 @@ class ReleaseThread(QThread):
         
         # Then build the package
         self.output.emit("\nBuilding package...")
-        self.output.emit("Running: makepkg -f")
+        self.output.emit("Running: makepkg -f --skipchecksums")
         result = subprocess.run(
-            ["makepkg", "-f"], 
+            ["makepkg", "-f", "--skipchecksums"], 
             cwd=self.project_dir, 
             capture_output=True, 
             text=True
@@ -212,7 +212,7 @@ class ReleaseThread(QThread):
             subprocess.run(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
         
         # Copy PKGBUILD and update
-        pkgbuild_src = self.project_dir / "pkg/arch/PKGBUILD"
+        pkgbuild_src = self.project_dir / "PKGBUILD"
         pkgbuild_dest = self.aur_dir / "PKGBUILD"
         
         with pkgbuild_src.open() as src, pkgbuild_dest.open('w') as dest:
@@ -694,7 +694,7 @@ class ConfigDialog(QDialog):
         patterns = {
             "Python": {
                 "files": "pyproject.toml,PKGBUILD",
-                "patterns": 'version = "*",pkgver=*',
+                "patterns": 'version = "*",pkgver=*,version="*"',
                 "build": "makepkg -f"
             },
             "Node.js": {

@@ -1,6 +1,6 @@
 # Maintainer: kirik
 pkgname=varchiver
-pkgver=0.2.4
+pkgver=0.3.6
 pkgrel=1
 pkgdesc="Advanced Archive Management Tool with modern UI"
 arch=('any')
@@ -17,7 +17,7 @@ makedepends=(
     'uv'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
+sha256sums=('SKIP')
 
 build() {
     cd "$pkgname-$pkgver"
