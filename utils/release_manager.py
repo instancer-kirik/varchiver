@@ -311,7 +311,7 @@ class ReleaseThread(QThread):
             archive_name = f"{self.project_dir.name}-{self.version}"
             archive_path = self.project_dir / f"{archive_name}.tar.gz"
             
-            # Create archive with explicit prefix and all files
+            # Create archive with explicit prefix and all files from the current tag
             self._run_command([
                 "git", "archive",
                 "--format=tar.gz",

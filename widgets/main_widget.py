@@ -3,9 +3,10 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                             QGroupBox, QCheckBox, QDialog, QGridLayout, QFrame,
                             QInputDialog, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QSlider,
                             QTreeWidget, QTreeWidgetItem, QHeaderView, QApplication, QStyle, QDialogButtonBox,
-                            QProgressDialog, QTreeView, QTabWidget,  QMenu)
+                            QProgressDialog, QTreeView, QTabWidget,  QMenu, QListWidget, QScrollArea)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent, QSettings
 from PyQt6.QtGui import QAction
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Any
 import os
 import subprocess
@@ -27,6 +28,7 @@ from ..utils.release_manager import ReleaseManager
 from .file_preview_dialog import FilePreviewDialog
 from .collision_dialog import CollisionDialog
 from datetime import datetime
+from ..utils.git_config_manager import GitConfigManager
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
@@ -52,6 +54,7 @@ class MainWidget(QWidget):
         self.git_repo_path = QLineEdit()
         self.git_output_path = QLineEdit()
         self.git_status_label = QLabel("Select repository to begin")
+        self.git_config_status = QLabel("Select a Git repository to begin")
         self.git_error_text = QTextEdit()
         self.git_progress_bar = QProgressBar()
         
@@ -67,7 +70,6 @@ class MainWidget(QWidget):
         sol_label = QLabel("Free the source! $Instancer or SOL:")
         sol_label.setStyleSheet("font-weight: bold;")
         donation_layout.addWidget(sol_label)
-        
         sol_address = "4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq"
         sol_input = QLineEdit(sol_address)
         sol_input.setReadOnly(True)
@@ -105,6 +107,7 @@ class MainWidget(QWidget):
         mode_layout = QVBoxLayout()
         self.mode_group.setLayout(mode_layout)
         
+        layout.addWidget(self.git_config_status)
         # Add theme toggle and release manager next to mode selector
         mode_header = QHBoxLayout()
         self.mode_combo = QComboBox()
@@ -136,9 +139,8 @@ class MainWidget(QWidget):
         # Current archive label
         self.current_archive_label = QLabel('')
         layout.addWidget(self.current_archive_label)
-
         # Status label for detailed progress
-        self.status_label = QLabel("Please select an archive or directory to begin")
+        self.status_label = QLabel(" ")
         self.status_label.setStyleSheet("""
             QLabel {
                 color: #666666;
@@ -1319,7 +1321,7 @@ class MainWidget(QWidget):
     def review_git_configs(self):
         """Show dialog to review git configurations"""
         dialog = QDialog(self)
-        dialog.setWindowTitle("Git Configuration Manager")
+        dialog.setWindowTitle("GitConfigManager")
         dialog.setMinimumWidth(700)
         dialog.setMinimumHeight(500)
         
@@ -1351,7 +1353,7 @@ class MainWidget(QWidget):
         gitignore_layout.addWidget(save_gitignore_btn)
         
         # Add tabs
-        tabs.addTab(config_tab, "Git Config")
+        tabs.addTab(config_tab, "GitConfig")
         tabs.addTab(gitignore_tab, "Gitignore")
         layout.addWidget(tabs)
         
@@ -1365,7 +1367,7 @@ class MainWidget(QWidget):
                     
                     # Add local config
                     if config.get('local_config'):
-                        config_str.append("Local Config:")
+                        config_str.append("LocalConfig:")
                         config_str.extend(f"  {k} = {v}" for k, v in config['local_config'].items())
                         config_str.append("")
                     
@@ -1398,7 +1400,7 @@ class MainWidget(QWidget):
                     
                     # Add modules more compactly
                     if config.get('modules'):
-                        config_str.append("Git Modules:")
+                        config_str.append("GitModules:")
                         for path, module_config in config['modules'].items():
                             config_str.append(f"  {path}")
                             if module_config.get('remotes'):
@@ -1482,13 +1484,20 @@ class MainWidget(QWidget):
         """Handle mode change between archive and dev tools modes"""
         if mode == 'Dev Tools':
             # Show Git-related UI elements
-            git_group = QGroupBox("Git Tools")
+            git_group = QGroupBox("GitTools")
             git_layout = QVBoxLayout()
             git_group.setLayout(git_layout)
 
-            # Repository selection
+            # Repository selection at the top level
             repo_section = QHBoxLayout()
-            repo_label = QLabel("Git Repository:")
+            repo_label = QLabel("GitRepository:")
+            self.git_repo_path = QLineEdit()
+            
+            # Use release manager settings if available
+            settings = QSettings("Varchiver", "ReleaseManager")
+            if settings.value("project_path"):
+                self.git_repo_path.setText(settings.value("project_path"))
+            
             repo_section.addWidget(repo_label)
             repo_section.addWidget(self.git_repo_path)
             select_repo_button = QPushButton("Select Repository")
@@ -1496,50 +1505,96 @@ class MainWidget(QWidget):
             repo_section.addWidget(select_repo_button)
             git_layout.addLayout(repo_section)
 
-            # Output directory selection
-            output_section = QHBoxLayout()
-            output_label = QLabel("Output Directory:")
-            output_section.addWidget(output_label)
-            output_section.addWidget(self.git_output_path)
-            select_output_button = QPushButton("Select Output")
-            select_output_button.clicked.connect(self.select_git_output)
-            output_section.addWidget(select_output_button)
-            git_layout.addLayout(output_section)
+            # Create tabs for different Git tools
+            git_tabs = QTabWidget()
+            
+            # Git Config tab (simpler version without redundant path selector)
+            git_config_tab = QWidget()
+            config_layout = QVBoxLayout()
+            git_config_tab.setLayout(config_layout)
+            
+            # Git config manager container
+            self.git_config_container = QWidget()
+            self.git_config_container.setLayout(QVBoxLayout())
+            config_layout.addWidget(self.git_config_container)
+            
+            git_tabs.addTab(git_config_tab, "GitConfigManager")
+            
+            # Git Archive tab
+            archive_tab = QWidget()
+            archive_layout = QVBoxLayout()
+            archive_tab.setLayout(archive_layout)
+
+            # Archive storage location
+            storage_section = QHBoxLayout()
+            storage_label = QLabel("Archive Storage:")
+            self.git_storage_path = QLineEdit()
+            
+            # Set default archive storage location
+            default_storage = os.path.join(os.path.expanduser("~"), ".varchiver", "git_archives")
+            self.git_storage_path.setText(default_storage)
+            os.makedirs(default_storage, exist_ok=True)
+            
+            storage_section.addWidget(storage_label)
+            storage_section.addWidget(self.git_storage_path)
+            select_storage_button = QPushButton("Select Location")
+            select_storage_button.clicked.connect(self.select_git_storage)
+            storage_section.addWidget(select_storage_button)
+            archive_layout.addLayout(storage_section)
 
             # Git operations buttons
             operations_section = QHBoxLayout()
-
-            # Backup button
-            backup_button = QPushButton("Backup Git Files")
-            backup_button.clicked.connect(self.backup_git_files)
-            operations_section.addWidget(backup_button)
-            self.backup_git_button = backup_button  # Store reference to the button
+            archive_button = QPushButton("GitSequester")
+            archive_button.clicked.connect(self.archive_git_state)
+            operations_section.addWidget(archive_button)
+            self.archive_git_button = archive_button
             
-            # Restore button
-            restore_button = QPushButton("Restore Git Files")
-            restore_button.clicked.connect(self.restore_git_files)
+            restore_button = QPushButton("GitRestore")
+            restore_button.clicked.connect(self.restore_git_state)
             operations_section.addWidget(restore_button)
-            self.restore_git_button = restore_button  # Store reference to the button
+            self.restore_git_button = restore_button
             
-            # Git Config button
-            config_button = QPushButton("Review Git Config")
-            config_button.clicked.connect(self.review_git_configs)
-            operations_section.addWidget(config_button)
+            archive_layout.addLayout(operations_section)
+
+            # Add untracked files section
+            untracked_group = QGroupBox("Untracked Files")
+            untracked_layout = QVBoxLayout()
+            untracked_group.setLayout(untracked_layout)
+
+            refresh_untracked = QPushButton("Refresh Untracked Files")
+            refresh_untracked.clicked.connect(self.refresh_untracked_files)
+            untracked_layout.addWidget(refresh_untracked)
+
+            self.untracked_list = QListWidget()
+            self.untracked_list.setMinimumHeight(200)
+            untracked_layout.addWidget(self.untracked_list)
             
-            git_layout.addLayout(operations_section)
+            archive_layout.addWidget(untracked_group)
 
             # Status and progress
-            git_layout.addWidget(self.git_status_label)
-            git_layout.addWidget(self.git_progress_bar)
-            git_layout.addWidget(self.git_error_text)
+            self.git_status_label = QLabel("Select repository to begin")
+            archive_layout.addWidget(self.git_status_label)
+            self.git_progress_bar = QProgressBar()
+            archive_layout.addWidget(self.git_progress_bar)
+            self.git_error_text = QTextEdit()
+            archive_layout.addWidget(self.git_error_text)
             self.git_error_text.setVisible(False)
             self.git_progress_bar.setVisible(False)
+
+            git_tabs.addTab(archive_tab, "GitSequester")
+
+            # Add tabs to layout
+            git_layout.addWidget(git_tabs)
 
             # Add Git group to main layout
             self.layout().insertWidget(self.layout().count() - 1, git_group)
             
             # Hide archive-related UI elements
             self.hide_archive_ui()
+            
+            # Initialize Git config manager if repo is set
+            if self.git_repo_path.text():
+                self.init_git_config_manager(Path(self.git_repo_path.text()))
         else:
             # Show archive-related UI elements
             self.show_archive_ui()
@@ -1547,33 +1602,58 @@ class MainWidget(QWidget):
             # Remove Git-related UI elements if they exist
             self.remove_git_ui()
 
-    def select_git_output(self):
-        """Select output directory for git backups"""
-        # Start from current output path if set, otherwise use repo parent dir
-        start_dir = self.git_output_path.text()
-        if not start_dir and self.git_repo_path.text():
-            start_dir = os.path.dirname(self.git_repo_path.text())
-        if not start_dir:
-            start_dir = QDir.homePath()
+    def select_git_storage(self):
+        """Select storage directory for git archives"""
+        start_dir = self.git_storage_path.text() or os.path.join(os.path.expanduser("~"), ".varchiver", "git_archives")
             
-        output_dir = QFileDialog.getExistingDirectory(
-            self, "Select Output Directory for Git Backups",
+        storage_dir = QFileDialog.getExistingDirectory(
+            self, "Select Git Archive Storage Location",
             start_dir,
             QFileDialog.Option.ShowDirsOnly
         )
-        if output_dir:
-            self.git_output_path.setText(output_dir)
+        if storage_dir:
+            self.git_storage_path.setText(storage_dir)
             self._update_git_buttons()
+
+    def archive_git_state(self):
+        """Archive the current Git state"""
+        self.backup_git_files()  # Reuse existing functionality with new name
+
+    def restore_git_state(self):
+        """Restore a previously archived Git state"""
+        self.restore_git_files()  # Reuse existing functionality with new name
+
+    def _update_git_buttons(self):
+        """Update git operation buttons based on selected paths"""
+        has_repo = bool(self.git_repo_path.text())
+        has_storage = bool(self.git_storage_path.text())
+        
+        self.archive_git_button.setEnabled(has_repo)  # Only needs repo path
+        self.restore_git_button.setEnabled(has_storage)  # Only needs storage dir for browsing archives
+        
+        if has_repo:
+            self.git_status_label.setText("Ready for operations")
+        else:
+            self.git_status_label.setText("Select repository to begin")
 
     def select_git_repo(self):
         """Select repository directory"""
+        # Start from current repo path or release manager path
+        settings = QSettings("Varchiver", "ReleaseManager")
+        start_dir = self.git_repo_path.text() or settings.value("project_path") or QDir.homePath()
+        
         repo_dir = QFileDialog.getExistingDirectory(
             self, "Select Repository Directory",
-            QDir.homePath(),
+            start_dir,
             QFileDialog.Option.ShowDirsOnly
         )
         if repo_dir:
             self.git_repo_path.setText(repo_dir)
+            
+            # Update Git config tab
+            if hasattr(self, 'git_repo_path_edit'):
+                self.git_repo_path_edit.setText(repo_dir)
+                self.init_git_config_manager(Path(repo_dir))
             
             # Set default output location if not already set
             if not self.git_output_path.text():
@@ -1583,19 +1663,6 @@ class MainWidget(QWidget):
                 os.makedirs(default_output, exist_ok=True)
             
             self._update_git_buttons()
-
-    def _update_git_buttons(self):
-        """Update git operation buttons based on selected paths"""
-        has_repo = bool(self.git_repo_path.text())
-        has_output = bool(self.git_output_path.text())
-        
-        self.backup_git_button.setEnabled(has_repo)  # Only needs repo path
-        self.restore_git_button.setEnabled(has_output)  # Only needs output dir for browsing backups
-        
-        if has_repo:
-            self.git_status_label.setText("Ready for operations")
-        else:
-            self.git_status_label.setText("Select repository to begin")
 
     def backup_git_files(self):
         """Backup and remove git files from repository"""
@@ -1829,13 +1896,22 @@ class MainWidget(QWidget):
 
     def select_git_repo(self):
         """Select repository directory"""
+        # Start from current repo path or release manager path
+        settings = QSettings("Varchiver", "ReleaseManager")
+        start_dir = self.git_repo_path.text() or settings.value("project_path") or QDir.homePath()
+        
         repo_dir = QFileDialog.getExistingDirectory(
             self, "Select Repository Directory",
-            QDir.homePath(),
+            start_dir,
             QFileDialog.Option.ShowDirsOnly
         )
         if repo_dir:
             self.git_repo_path.setText(repo_dir)
+            
+            # Update Git config tab
+            if hasattr(self, 'git_repo_path_edit'):
+                self.git_repo_path_edit.setText(repo_dir)
+                self.init_git_config_manager(Path(repo_dir))
             
             # Set default output location if not already set
             if not self.git_output_path.text():
@@ -1845,19 +1921,6 @@ class MainWidget(QWidget):
                 os.makedirs(default_output, exist_ok=True)
             
             self._update_git_buttons()
-
-    def _update_git_buttons(self):
-        """Update git operation buttons based on selected paths"""
-        has_repo = bool(self.git_repo_path.text())
-        has_output = bool(self.git_output_path.text())
-        
-        self.backup_git_button.setEnabled(has_repo)  # Only needs repo path
-        self.restore_git_button.setEnabled(has_output)  # Only needs output dir for browsing backups
-        
-        if has_repo:
-            self.git_status_label.setText("Ready for operations")
-        else:
-            self.git_status_label.setText("Select repository to begin")
 
     def _select_current_dir(self, dialog):
         """Helper to select current directory in file dialog"""
@@ -2070,6 +2133,265 @@ class MainWidget(QWidget):
         # Force configuration dialog to show if paths aren't set
         if not settings.value("project_path") or (settings.value("use_aur") == "Yes" and not settings.value("aur_path")):
             self.release_manager.show_config2()
+
+    def init_ui(self):
+        """Initialize the user interface"""
+        layout = QVBoxLayout()
+        
+        # Create tab widget
+        self.tabs = QTabWidget()
+        
+        # Add existing tabs
+        self.tabs.addTab(self.create_archive_tab(), "Archive")
+        self.tabs.addTab(self.create_extract_tab(), "Extract")
+        self.tabs.addTab(self.create_browse_tab(), "Browse")
+        self.tabs.addTab(self.create_release_tab(), "Release")
+        
+        # Add new Git configuration tab
+        self.tabs.addTab(self.create_git_config_tab(), "Git Config")
+      
+        layout.addWidget(self.tabs)
+        self.setLayout(layout)
+
+    def create_git_config_tab(self):
+        """Create the Git configuration tab."""
+        tab = QWidget()
+        layout = QVBoxLayout()
+        tab.setLayout(layout)
+
+        # Repository selection section
+        repo_group = QGroupBox("Git Repository")
+        repo_layout = QHBoxLayout()
+        repo_group.setLayout(repo_layout)
+
+        repo_path = QLineEdit()
+        repo_path.setPlaceholderText("Select Git repository")
+        repo_layout.addWidget(repo_path)
+        self.git_repo_path_edit = repo_path  # Store reference
+
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(self.browse_git_repo)
+        repo_layout.addWidget(browse_button)
+
+        layout.addWidget(repo_group)
+
+        # Create tab widget for Git tools
+        git_tabs = QTabWidget()
+
+        # Patterns tab
+        patterns_tab = QWidget()
+        patterns_layout = QVBoxLayout()
+        patterns_tab.setLayout(patterns_layout)
+
+        # Common gitattributes patterns section
+        patterns_group = QGroupBox("Common .gitattributes Patterns")
+        patterns_layout = QVBoxLayout()
+        patterns_group.setLayout(patterns_layout)
+
+        # Create a scroll area for patterns
+        patterns_scroll = QScrollArea()
+        patterns_scroll.setWidgetResizable(True)
+        patterns_scroll.setMinimumHeight(400)  # Make it taller
+        
+        patterns_widget = QWidget()
+        patterns_widget_layout = QVBoxLayout()
+        patterns_widget.setLayout(patterns_widget_layout)
+
+        # Add common patterns with descriptions
+        common_patterns = [
+            ("*.tar.gz export-ignore", "Exclude source archives from releases"),
+            ("*.pkg.tar.zst export-ignore", "Exclude package archives from releases"),
+            ("pkg/ export-ignore", "Exclude package build directory"),
+            ("src/ export-ignore", "Exclude source build directory"),
+            ("dist/ export-ignore", "Exclude distribution directory"),
+            ("build/ export-ignore", "Exclude build artifacts"),
+            (".venv/ export-ignore", "Exclude virtual environment"),
+            ("__pycache__/ export-ignore", "Exclude Python cache files"),
+            ("*.pyc export-ignore", "Exclude compiled Python files"),
+            (".vscode/ export-ignore", "Exclude VS Code settings"),
+            (".idea/ export-ignore", "Exclude IntelliJ settings"),
+            ("*.swp export-ignore", "Exclude Vim swap files"),
+            ("*.swo export-ignore", "Exclude Vim swap files"),
+            ("*~ export-ignore", "Exclude backup files"),
+            ("node_modules/ export-ignore", "Exclude Node.js modules"),
+            (".env export-ignore", "Exclude environment files"),
+            (".DS_Store export-ignore", "Exclude macOS system files")
+        ]
+
+        for pattern, description in common_patterns:
+            pattern_button = QPushButton(f"{pattern} ({description})")
+            pattern_button.setStyleSheet("""
+                QPushButton {
+                    text-align: left;
+                    padding: 5px;
+                    background-color: #f0f0f0;
+                    border: 1px solid #ddd;
+                    border-radius: 3px;
+                    min-height: 30px;
+                }
+                QPushButton:hover {
+                    background-color: #e0e0e0;
+                }
+            """)
+            pattern_button.clicked.connect(lambda checked, p=pattern: self.add_gitattribute(p))
+            patterns_widget_layout.addWidget(pattern_button)
+
+        patterns_widget_layout.addStretch()
+        patterns_scroll.setWidget(patterns_widget)
+        patterns_layout.addWidget(patterns_scroll)
+
+        # Git tips section
+        tips_group = QGroupBox("Git Tips")
+        tips_layout = QVBoxLayout()
+        tips_group.setLayout(tips_layout)
+
+        tips_text = QTextEdit()
+        tips_text.setReadOnly(True)
+        tips_text.setHtml("""
+            <h3>Git Best Practices</h3>
+            <ul>
+                <li><b>Use .gitattributes:</b> Control how Git handles files during export and merge operations</li>
+                <li><b>Exclude build artifacts:</b> Keep your repository clean by excluding compiled files and dependencies</li>
+                <li><b>Regular maintenance:</b> Use git gc and git prune to maintain repository health</li>
+                <li><b>Clean working directory:</b> Regularly check git status and handle untracked files</li>
+                <li><b>Meaningful commits:</b> Write clear commit messages and keep changes focused</li>
+            </ul>
+            <h3>.gitattributes Tips</h3>
+            <ul>
+                <li><b>export-ignore:</b> Exclude files/directories from archive exports</li>
+                <li><b>text=auto:</b> Handle line endings automatically</li>
+                <li><b>binary:</b> Mark files as binary to prevent line ending conversion</li>
+                <li><b>merge=ours:</b> Always keep our version during merges</li>
+            </ul>
+        """)
+        tips_layout.addWidget(tips_text)
+        patterns_layout.addWidget(tips_group)
+
+        git_tabs.addTab(patterns_tab, "Patterns & Tips")
+
+        # Untracked Files tab
+        untracked_tab = QWidget()
+        untracked_layout = QVBoxLayout()
+        untracked_tab.setLayout(untracked_layout)
+
+        refresh_button = QPushButton("Refresh Untracked Files")
+        refresh_button.clicked.connect(self.refresh_untracked_files)
+        untracked_layout.addWidget(refresh_button)
+
+        self.untracked_list = QListWidget()
+        untracked_layout.addWidget(self.untracked_list)
+
+        git_tabs.addTab(untracked_tab, "Untracked Files")
+
+        layout.addWidget(git_tabs)
+
+        # Status section
+        status_group = QGroupBox("Status")
+        status_layout = QVBoxLayout()
+        status_group.setLayout(status_layout)
+        status_layout.addWidget(self.git_config_status)
+        layout.addWidget(status_group)
+
+        return tab
+
+    def refresh_untracked_files(self):
+        """Refresh the list of untracked files in the repository."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a Git repository first")
+            return
+
+        try:
+            repo_path = Path(self.git_repo_path.text())
+            if not (repo_path / '.git').exists():
+                QMessageBox.warning(self, "Error", "Selected directory is not a Git repository")
+                return
+
+            # Run git status to get untracked files
+            process = subprocess.run(
+                ['git', 'ls-files', '--others', '--exclude-standard'],
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+
+            self.untracked_list.clear()
+            if process.stdout:
+                untracked_files = process.stdout.strip().split('\n')
+                self.untracked_list.addItems(untracked_files)
+                self.git_config_status.setText(f"Found {len(untracked_files)} untracked files")
+            else:
+                self.untracked_list.addItem("No untracked files found")
+                self.git_config_status.setText("No untracked files in repository")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to get untracked files: {str(e)}")
+            self.git_config_status.setText("Error getting untracked files")
+
+    def add_gitattribute(self, pattern: str):
+        """Add a pattern to .gitattributes file."""
+        if not self.git_repo_path_edit.text():
+            QMessageBox.warning(self, "Error", "Please select a Git repository first")
+            return
+
+        repo_path = Path(self.git_repo_path_edit.text())
+        gitattributes_path = repo_path / '.gitattributes'
+
+        try:
+            # Create .gitattributes if it doesn't exist
+            if not gitattributes_path.exists():
+                gitattributes_path.touch()
+
+            # Read existing patterns
+            existing_patterns = set()
+            if gitattributes_path.exists():
+                with open(gitattributes_path, 'r') as f:
+                    existing_patterns = set(line.strip() for line in f.readlines())
+
+            # Add new pattern if it doesn't exist
+            if pattern not in existing_patterns:
+                with open(gitattributes_path, 'a') as f:
+                    if existing_patterns:  # Add newline if file is not empty
+                        f.write('\n')
+                    f.write(pattern + '\n')
+                QMessageBox.information(self, "Success", f"Added pattern to .gitattributes: {pattern}")
+            else:
+                QMessageBox.information(self, "Info", f"Pattern already exists in .gitattributes: {pattern}")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to update .gitattributes: {str(e)}")
+
+    def browse_git_repo(self):
+        """Browse for a Git repository."""
+        path = QFileDialog.getExistingDirectory(self, "Select Git Repository")
+        if path:
+            repo_path = Path(path)
+            if not (repo_path / '.git').exists():
+                QMessageBox.warning(self, "Error", "Selected directory is not a Git repository")
+                return
+            
+            self.git_repo_path_edit.setText(str(repo_path))
+            self.init_git_config_manager(repo_path)
+
+    def init_git_config_manager(self, repo_path: Path):
+        """Initialize the Git configuration manager for the selected repository."""
+        try:
+            # Clear existing manager
+            if hasattr(self, 'git_config_manager') and self.git_config_manager:
+                self.git_config_container.layout().removeWidget(self.git_config_manager)
+                self.git_config_manager.deleteLater()
+                self.git_config_manager = None
+
+            # Create new manager
+            self.git_config_manager = GitConfigManager(repo_path)
+            self.git_config_container.layout().addWidget(self.git_config_manager)
+            self.git_config_container.show()
+            
+            # Update status
+            self.git_config_status.setText(f"Managing Git configuration for: {repo_path}")
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to initialize Git config manager: {str(e)}")
+            self.git_config_status.setText("Error initializing Git config manager")
 
 def main():
     app = QApplication(sys.argv)
