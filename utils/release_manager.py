@@ -461,6 +461,11 @@ class ReleaseThread(QThread):
             # Read the development PKGBUILD
             with pkgbuild_src.open() as f:
                 content = f.read()
+
+            # Extract the helper functions before modifying the content
+            helper_functions = ""
+            if "# Get version from PKGBUILD" in content:
+                helper_functions = content[content.find("# Get version from PKGBUILD"):]
             
             # Modify for AUR (use GitHub source instead of local files)
             content = re.sub(
@@ -469,12 +474,20 @@ class ReleaseThread(QThread):
                 content,
                 flags=re.MULTILINE | re.DOTALL
             )
-            
+
             # Update cd command if needed
             if 'cd "$srcdir"' in content:
                 content = content.replace('cd "$srcdir"', 'cd "$srcdir/$pkgname-$pkgver"')
             elif "cd $srcdir" in content:
                 content = content.replace("cd $srcdir", 'cd "$srcdir/$pkgname-$pkgver"')
+            
+            # Remove any existing helper functions from the content
+            if "# Get version from PKGBUILD" in content:
+                content = content[:content.find("# Get version from PKGBUILD")]
+            
+            # Append the helper functions back
+            if helper_functions:
+                content = content.rstrip() + "\n\n" + helper_functions
             
             # Write updated PKGBUILD
             with pkgbuild_dest.open('w') as f:
