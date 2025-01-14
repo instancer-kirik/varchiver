@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varchiver"
-version = "0.2.4"
+version = "0.3.0"
 description = "Advanced Archive Management Tool"
 authors = [{name = "instancer-kirik", email = "kirik@instance.select"}]
 license = {text = "Proprietary"}
@@ -25,3 +25,6 @@ dev = [
 
 [project.scripts]
 varchiver = "varchiver.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["varchiver"]

@@ -3,8 +3,9 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                             QGroupBox, QCheckBox, QDialog, QGridLayout, QFrame,
                             QInputDialog, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QSlider,
                             QTreeWidget, QTreeWidgetItem, QHeaderView, QApplication, QStyle, QDialogButtonBox,
-                            QProgressDialog, QTreeView, QTabWidget)
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent
+                            QProgressDialog, QTreeView, QTabWidget,  QMenu)
+from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent, QSettings
+from PyQt6.QtGui import QAction
 from typing import Dict, List, Optional, Set, Tuple, Any
 import os
 import subprocess
@@ -22,6 +23,7 @@ from ..utils.archive_utils import get_archive_type, is_rar_available
 from ..sevenz import SevenZipHandler
 from ..utils.git_utils import backup_git_configs, restore_git_configs, GitConfigHandler
 from ..utils.theme_manager import ThemeManager
+from ..utils.release_manager import ReleaseManager
 from .file_preview_dialog import FilePreviewDialog
 from .collision_dialog import CollisionDialog
 from datetime import datetime
@@ -40,6 +42,7 @@ class MainWidget(QWidget):
         self.password = None  # Current archive password
         self.skip_checkboxes = {}  # Skip pattern checkboxes
         self.extraction_queue = []  # Queue for pending extractions
+        self.release_manager = None  # Release manager instance
         self.setWindowTitle('Varchiver')
         
         # Check RAR availability
@@ -61,15 +64,15 @@ class MainWidget(QWidget):
         donation_layout = QHBoxLayout()
         donation_widget.setLayout(donation_layout)
         
-        eth_label = QLabel("Free the source! $Instancer or ETH:")
-        eth_label.setStyleSheet("font-weight: bold;")
-        donation_layout.addWidget(eth_label)
+        sol_label = QLabel("Free the source! $Instancer or SOL:")
+        sol_label.setStyleSheet("font-weight: bold;")
+        donation_layout.addWidget(sol_label)
         
-        eth_address = "0xaF462Cef9E8913a9Cb7B6f0bA0DDf5d733Eae57a"
-        eth_input = QLineEdit(eth_address)
-        eth_input.setReadOnly(True)
-        eth_input.setMinimumWidth(400)
-        eth_input.setStyleSheet("""
+        sol_address = "4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq"
+        sol_input = QLineEdit(sol_address)
+        sol_input.setReadOnly(True)
+        sol_input.setMinimumWidth(400)
+        sol_input.setStyleSheet("""
             QLineEdit {
                 background-color: transparent;
                 border: 1px solid #BDBDBD;
@@ -77,10 +80,10 @@ class MainWidget(QWidget):
                 padding: 4px;
             }
         """)
-        donation_layout.addWidget(eth_input)
+        donation_layout.addWidget(sol_input)
         
         copy_button = QPushButton("Copy")
-        copy_button.clicked.connect(lambda: self._copy_to_clipboard(eth_address))
+        copy_button.clicked.connect(lambda: self._copy_to_clipboard(sol_address))
         donation_layout.addWidget(copy_button)
         
         donation_layout.addStretch()
@@ -102,7 +105,7 @@ class MainWidget(QWidget):
         mode_layout = QVBoxLayout()
         self.mode_group.setLayout(mode_layout)
         
-        # Add theme toggle next to mode selector
+        # Add theme toggle and release manager next to mode selector
         mode_header = QHBoxLayout()
         self.mode_combo = QComboBox()
         self.mode_combo.addItems([
@@ -122,6 +125,11 @@ class MainWidget(QWidget):
         self.theme_button.clicked.connect(self.toggle_theme)
         mode_header.addWidget(self.theme_button)
         
+        # Release Manager button
+        self.release_button = QPushButton("Release Manager")
+        self.release_button.clicked.connect(self.show_release_manager)
+        mode_header.addWidget(self.release_button)
+        
         mode_layout.addLayout(mode_header)
         layout.addWidget(self.mode_group)
 
@@ -136,7 +144,7 @@ class MainWidget(QWidget):
                 color: #666666;
                 padding: 10px;
                 font-size: 12px;
-                background-color: #f0f0f0;
+                background-color: #AACCCC;
                 border-radius: 4px;
             }
         """)
@@ -2034,6 +2042,34 @@ class MainWidget(QWidget):
         self.files_found_label.setText("")
         self.clear_error()
         self.hide_archive_ui()
+
+    def show_release_manager(self):
+        """Show the release manager dialog"""
+        settings = QSettings("Varchiver", "ReleaseManager")
+        
+        # If in Dev Tools mode and git repo is selected, use that path
+        if self.mode_combo.currentText() == 'Dev Tools':
+            # Set project path from Git repo if available
+            if self.git_repo_path.text():
+                settings.setValue("project_path", self.git_repo_path.text())
+                settings.setValue("project_type", "Python")  # Default for now
+                settings.setValue("use_git", "Yes")
+                settings.setValue("git_branch", "master")
+            
+            # Set AUR path from Git output if available
+            if self.git_output_path.text():
+                settings.setValue("use_aur", "Yes")
+                settings.setValue("aur_path", self.git_output_path.text())
+        
+        # Create or show release manager
+        if not self.release_manager:
+            self.release_manager = ReleaseManager()
+        
+        self.release_manager.show()
+        
+        # Force configuration dialog to show if paths aren't set
+        if not settings.value("project_path") or (settings.value("use_aur") == "Yes" and not settings.value("aur_path")):
+            self.release_manager.show_config2()
 
 def main():
     app = QApplication(sys.argv)
