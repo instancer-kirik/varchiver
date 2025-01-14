@@ -14,10 +14,7 @@ depends=(
     'rar'
 )
 makedepends=(
-    'python-build'
-    'python-installer'
-    'python-wheel'
-    'python-pip'
+    'uv'
     'python-pyinstaller'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
@@ -25,7 +22,9 @@ sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
 
 build() {
     cd "$pkgname-$pkgver"
-    uv activate
+    # Create virtual environment using uv directly
+    uv venv .venv
+    source .venv/bin/activate
     # Install pyinstaller first
     uv pip install pyinstaller
     # Install the package
@@ -38,6 +37,8 @@ build() {
         --hidden-import varchiver \
         --collect-submodules varchiver \
         varchiver/bootstrap.py
+    # Deactivate virtual environment
+    deactivate
 }
 
 package() {
