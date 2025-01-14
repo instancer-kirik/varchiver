@@ -27,9 +27,9 @@ build() {
     source .venv/bin/activate
     # Install dependencies including PyInstaller
     uv pip install pyinstaller
-    uv pip install --system --no-deps .
+    uv pip install .
     # Run pyinstaller with the virtual environment's Python
-    .venv/bin/python -m pyinstaller --clean \
+    python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
