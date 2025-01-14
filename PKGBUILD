@@ -18,11 +18,11 @@ makedepends=(
     'python-wheel'
     'python-pip'
 )
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+source=()
+sha256sums=()
 
 build() {
-    cd "$pkgname-$pkgver"
+    cd ..
     # Create and activate virtual environment
     python -m venv .venv
     source .venv/bin/activate
@@ -32,11 +32,11 @@ build() {
     uv pip install pyinstaller
     
     # Build executable
-    python -m PyInstaller --clean --onefile --name varchiver varchiver/bootstrap.py
+    python -m PyInstaller --clean --onefile --name varchiver bootstrap.py
 }
 
 package() {
-    cd "$pkgname-$pkgver"
+    cd ..
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     

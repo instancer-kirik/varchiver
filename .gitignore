@@ -23,3 +23,6 @@ wheels/
 release/
 varchiver-bin
 *.spec
+pkg/
+*.tar.gz
+*.tar.zst
