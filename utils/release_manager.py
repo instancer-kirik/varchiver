@@ -125,32 +125,66 @@ class ReleaseThread(QThread):
     def _build_packages(self):
         self.progress.emit("Building packages...")
         
+        # First check if PKGBUILD exists
+        pkgbuild_path = self.project_dir / "PKGBUILD"
+        if not pkgbuild_path.exists():
+            raise Exception("PKGBUILD not found in project directory")
+            
         # Install dependencies first
         self.output.emit("Installing dependencies...")
-        deps = subprocess.run(["makepkg", "-s", "--noconfirm"], 
-                            cwd=self.project_dir, 
-                            capture_output=True, 
-                            text=True)
-        self.output.emit(deps.stdout)
+        self.output.emit("Running: makepkg -s --noconfirm")
+        
+        # Run makepkg with syncdeps
+        deps = subprocess.run(
+            ["makepkg", "-s", "--noconfirm"], 
+            cwd=self.project_dir, 
+            capture_output=True, 
+            text=True,
+            env={**os.environ, "PKGBUILD": str(pkgbuild_path)}
+        )
+        
+        # Show output regardless of success/failure
+        if deps.stdout:
+            self.output.emit("\nOutput:")
+            self.output.emit(deps.stdout)
         if deps.stderr:
+            self.output.emit("\nErrors:")
             self.output.emit(deps.stderr)
         
         if deps.returncode != 0:
-            raise Exception("Failed to install dependencies")
+            # Try to get more detailed error information
+            self.output.emit("\nChecking package dependencies...")
+            check = subprocess.run(
+                ["makepkg", "--printsrcinfo"], 
+                cwd=self.project_dir, 
+                capture_output=True, 
+                text=True
+            )
+            if check.stdout:
+                self.output.emit("\nPackage information:")
+                self.output.emit(check.stdout)
+            raise Exception("Failed to install dependencies. Check the output above for details.")
         
         # Then build the package
         self.output.emit("\nBuilding package...")
-        result = subprocess.run(["makepkg", "-f"], 
-                              cwd=self.project_dir, 
-                              capture_output=True, 
-                              text=True)
+        self.output.emit("Running: makepkg -f")
+        result = subprocess.run(
+            ["makepkg", "-f"], 
+            cwd=self.project_dir, 
+            capture_output=True, 
+            text=True
+        )
         
-        self.output.emit(result.stdout)
+        # Show output regardless of success/failure
+        if result.stdout:
+            self.output.emit("\nOutput:")
+            self.output.emit(result.stdout)
         if result.stderr:
+            self.output.emit("\nErrors:")
             self.output.emit(result.stderr)
         
         if result.returncode != 0:
-            raise Exception("Build failed")
+            raise Exception("Build failed. Check the output above for details.")
             
         self.progress.emit("Build completed successfully")
 
@@ -542,7 +576,7 @@ class ReleaseManager(QWidget):
         self.output_text.append(text)
         # Scroll to bottom
         cursor = self.output_text.textCursor()
-        cursor.movePosition(cursor.End)
+        cursor.movePosition(cursor.MoveOperation.End)
         self.output_text.setTextCursor(cursor)
 
     def show_config2(self):
