@@ -290,6 +290,22 @@ class ReleaseThread(QThread):
         with pkgbuild_path.open('w') as f:
             f.write(content)
             
+        # Create GitHub release using gh cli
+        self.output.emit("Creating GitHub release...")
+        release_result = subprocess.run(
+            ["gh", "release", "create", f"v{self.version}",
+             "--title", f"Release v{self.version}",
+             "--notes", f"Release v{self.version}",
+             str(archive_path)  # Add the archive as an asset
+            ],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if release_result.returncode != 0:
+            self.output.emit(f"GitHub release creation failed:\n{release_result.stderr}")
+            raise Exception("Failed to create GitHub release")
+            
         self.output.emit("GitHub release created successfully")
 
     def _update_aur(self):
