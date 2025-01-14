@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varchiver"
-version = "0.4.3"
+version = "0.4.2"
 description = "Advanced Archive Management Tool"
 authors = [{name = "instancer-kirik", email = "kirik@instance.select"}]
 license = {text = "Proprietary"}
