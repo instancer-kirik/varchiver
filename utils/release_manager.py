@@ -130,49 +130,26 @@ class ReleaseThread(QThread):
         if not pkgbuild_path.exists():
             raise Exception("PKGBUILD not found in project directory")
             
-        # Install dependencies first
-        self.output.emit("Installing dependencies...")
-        self.output.emit("Running: makepkg -s --noconfirm --skipchecksums")
+        # Clean up previous build
+        self.output.emit("Cleaning up previous build...")
+        cleanup = subprocess.run(
+            ["rm", "-rf", "pkg/", "src/", "*.pkg.tar.zst"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
         
-        # Run makepkg with syncdeps and skip checksums
-        deps = subprocess.run(
-            ["makepkg", "-s", "--noconfirm", "--skipchecksums"], 
+        # Install dependencies and build package
+        self.output.emit("Installing dependencies and building package...")
+        self.output.emit("Running: makepkg -sf --noconfirm --skipchecksums")
+        
+        # Run makepkg with syncdeps and force
+        result = subprocess.run(
+            ["makepkg", "-sf", "--noconfirm", "--skipchecksums"], 
             cwd=self.project_dir, 
             capture_output=True, 
             text=True,
             env={**os.environ, "PKGBUILD": str(pkgbuild_path)}
-        )
-        
-        # Show output regardless of success/failure
-        if deps.stdout:
-            self.output.emit("\nOutput:")
-            self.output.emit(deps.stdout)
-        if deps.stderr:
-            self.output.emit("\nErrors:")
-            self.output.emit(deps.stderr)
-        
-        if deps.returncode != 0:
-            # Try to get more detailed error information
-            self.output.emit("\nChecking package dependencies...")
-            check = subprocess.run(
-                ["makepkg", "--printsrcinfo"], 
-                cwd=self.project_dir, 
-                capture_output=True, 
-                text=True
-            )
-            if check.stdout:
-                self.output.emit("\nPackage information:")
-                self.output.emit(check.stdout)
-            raise Exception("Failed to install dependencies. Check the output above for details.")
-        
-        # Then build the package
-        self.output.emit("\nBuilding package...")
-        self.output.emit("Running: makepkg -f --skipchecksums")
-        result = subprocess.run(
-            ["makepkg", "-f", "--skipchecksums"], 
-            cwd=self.project_dir, 
-            capture_output=True, 
-            text=True
         )
         
         # Show output regardless of success/failure
@@ -184,6 +161,17 @@ class ReleaseThread(QThread):
             self.output.emit(result.stderr)
         
         if result.returncode != 0:
+            # Try to get more detailed error information
+            self.output.emit("\nChecking package dependencies...")
+            check = subprocess.run(
+                ["makepkg", "--printsrcinfo"], 
+                cwd=self.project_dir, 
+                capture_output=True, 
+                text=True
+            )
+            if check.stdout:
+                self.output.emit("\nPackage information:")
+                self.output.emit(check.stdout)
             raise Exception("Build failed. Check the output above for details.")
             
         self.progress.emit("Build completed successfully")
