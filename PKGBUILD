@@ -1,66 +1,52 @@
-# Maintainer: kirik
+# Maintainer: Kirill Korolyov <kirill.korolyov@hotmail.com>
 pkgname=varchiver
 pkgver=0.3.6
 pkgrel=1
-pkgdesc="Advanced Archive Management Tool with modern UI"
-arch=('any')
-url="https://github.com/instancer-kirik/varchiver"
-license=('custom:proprietary')
+pkgdesc="A simple archive manager for Linux"
+arch=('x86_64')
+url="https://github.com/kirill-korolyov/varchiver"
+license=('GPL3')
 depends=(
     'python'
     'python-pyqt6'
-    'python-psutil'
-    'p7zip'
-    'rar'
+    'python-pyqt6-webengine'
+    'python-uv'
+    'python-pyinstaller'
 )
 makedepends=(
-    'uv'
+    'python-build'
+    'python-installer'
+    'python-wheel'
     'python-pip'
 )
-# Build from parent directory
 source=()
 sha256sums=()
 
 build() {
     cd ..
-    # Create and activate virtual environment with pip
+    # Create and activate virtual environment
     python -m venv .venv
-    export VIRTUAL_ENV="$PWD/.venv"
-    export PATH="$VIRTUAL_ENV/bin:$PATH"
-    unset PYTHONHOME
+    source .venv/bin/activate
     
     # Install dependencies
-    python -m pip install uv
-    uv pip install pyinstaller
     uv pip install .
     
-    # Run pyinstaller
-    python -m pyinstaller --clean \
-        --onefile \
-        --name varchiver \
-        --hidden-import PyQt6 \
-        --hidden-import rarfile \
-        --hidden-import varchiver \
-        --collect-submodules varchiver \
-        varchiver/bootstrap.py
+    # Build executable
+    python varchiver/bootstrap.py --release
 }
 
 package() {
     cd ..
-    # Install the binary
-    install -Dm755 "dist/varchiver" "$pkgdir/usr/bin/varchiver"
+    # Install executable
+    install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     
-    # Install desktop file
-    install -Dm644 "varchiver.desktop" \
-        "$pkgdir/usr/share/applications/$pkgname.desktop"
-
-    # Install icon
-    install -Dm644 "varchiver.svg" \
-        "$pkgdir/usr/share/icons/hicolor/scalable/apps/$pkgname.svg"
-
-    # Install license
-    install -Dm644 "LICENSE" \
-        "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    # Install desktop file and icon
+    install -Dm644 varchiver.desktop "$pkgdir/usr/share/applications/varchiver.desktop"
+    install -Dm644 varchiver.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
+    
+    # Install license and readme
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
 
 # Get version from PKGBUILD

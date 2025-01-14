@@ -68,10 +68,13 @@ def main():
         app.processEvents()
 
         # Import main widget (this is where the delay happens)
-        from varchiver.widgets.main_widget import MainWidget
+        if "--release" in sys.argv:
+            from varchiver.utils.release_manager import ReleaseManager
+            widget = ReleaseManager()
+        else:
+            from varchiver.widgets.main_widget import MainWidget
+            widget = MainWidget()
         
-        # Create main widget
-        widget = MainWidget()
         widget.setWindowIcon(icon)
         
         # Show main window and close splash after a short delay
