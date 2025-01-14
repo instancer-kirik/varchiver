@@ -216,7 +216,7 @@ class ReleaseThread(QThread):
         # Create and push tag
         self.output.emit("Creating and pushing tag...")
         tag_result = subprocess.run(
-            ["git", "tag", f"v{self.version}"],
+            ["git", "tag", "-f", f"v{self.version}"],  # Force update tag if exists
             cwd=self.project_dir,
             capture_output=True,
             text=True
@@ -228,7 +228,7 @@ class ReleaseThread(QThread):
         # Push changes and tag
         self.output.emit("Pushing changes and tag...")
         push_result = subprocess.run(
-            ["git", "push", "origin", self.git_branch],
+            ["git", "push", "-f", "origin", self.git_branch],  # Force push changes
             cwd=self.project_dir,
             capture_output=True,
             text=True
@@ -238,7 +238,7 @@ class ReleaseThread(QThread):
             raise Exception("Failed to push changes")
             
         push_tag_result = subprocess.run(
-            ["git", "push", "origin", f"v{self.version}"],
+            ["git", "push", "-f", "origin", f"v{self.version}"],  # Force push tag
             cwd=self.project_dir,
             capture_output=True,
             text=True
@@ -246,6 +246,49 @@ class ReleaseThread(QThread):
         if push_tag_result.returncode != 0:
             self.output.emit(f"Git tag push failed:\n{push_tag_result.stderr}")
             raise Exception("Failed to push tag")
+            
+        # Create source archive for AUR
+        self.output.emit("Creating source archive...")
+        archive_name = f"{self.project_dir.name}-{self.version}"
+        archive_path = self.project_dir / f"{archive_name}.tar.gz"
+        
+        # Create archive excluding .git and other unnecessary files
+        archive_result = subprocess.run(
+            ["git", "archive", "--format=tar.gz", "--prefix", f"{archive_name}/",
+             "-o", str(archive_path), f"v{self.version}"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if archive_result.returncode != 0:
+            self.output.emit(f"Archive creation failed:\n{archive_result.stderr}")
+            raise Exception("Failed to create source archive")
+            
+        # Calculate SHA256 hash
+        sha256_result = subprocess.run(
+            ["sha256sum", str(archive_path)],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if sha256_result.returncode != 0:
+            self.output.emit(f"SHA256 calculation failed:\n{sha256_result.stderr}")
+            raise Exception("Failed to calculate SHA256 hash")
+            
+        # Update PKGBUILD with hash
+        pkgbuild_path = self.project_dir / "PKGBUILD"
+        with pkgbuild_path.open('r') as f:
+            content = f.read()
+            
+        sha256 = sha256_result.stdout.split()[0]
+        content = re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            content
+        )
+        
+        with pkgbuild_path.open('w') as f:
+            f.write(content)
             
         self.output.emit("GitHub release created successfully")
 
