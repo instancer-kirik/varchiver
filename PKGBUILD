@@ -15,7 +15,6 @@ depends=(
 )
 makedepends=(
     'uv'
-    'python-pyinstaller'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('b91cab8d31cfb9f4166f89fb8e87bd758c633965f8245f49ffbc9e319ca8a372')
@@ -25,11 +24,11 @@ build() {
     # Create virtual environment and install dependencies
     uv venv .venv
     source .venv/bin/activate
-    # Install dependencies
-    uv pip install --system pyinstaller
+    # Install dependencies including PyInstaller
+    uv pip install pyinstaller
     uv pip install --system --no-deps .
     # Run pyinstaller with the virtual environment's Python
-    python -m pyinstaller --clean \
+    .venv/bin/python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
