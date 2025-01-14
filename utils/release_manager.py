@@ -257,6 +257,9 @@ class ReleaseThread(QThread):
         
         if not self.aur_dir.exists():
             subprocess.run(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
+            
+            # Set up master branch for AUR
+            subprocess.run(["git", "checkout", "-b", "new_master"], cwd=self.aur_dir)
         
         # Copy PKGBUILD and update for AUR
         pkgbuild_src = self.project_dir / "PKGBUILD"
@@ -302,12 +305,14 @@ class ReleaseThread(QThread):
         commands = [
             ["git", "add", "PKGBUILD", ".SRCINFO"],
             ["git", "commit", "-m", f"Update to version {self.version}"],
-            ["git", "push"]
+            ["git", "push", "origin", "HEAD:new_master"]  # Explicitly push to master branch
         ]
         
         for cmd in commands:
             result = subprocess.run(cmd, cwd=self.aur_dir, capture_output=True, text=True)
             if result.returncode != 0:
+                self.output.emit(f"Command failed: {' '.join(cmd)}")
+                self.output.emit(f"Error: {result.stderr}")
                 raise Exception(f"AUR update failed: {result.stderr}")
                 
         self.progress.emit("AUR package updated successfully")
