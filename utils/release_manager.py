@@ -301,11 +301,49 @@ class ReleaseThread(QThread):
         if not self.aur_dir.exists():
             subprocess.run(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
             
-            # Set up master branch for AUR
-            subprocess.run(["git", "checkout", "master"], cwd=self.aur_dir)
-        else:
-            # Make sure we're on master branch
-            subprocess.run(["git", "checkout", "master"], cwd=self.aur_dir)
+        # Make sure we're on master branch
+        self.output.emit("Switching to master branch...")
+        
+        # Fetch latest changes
+        fetch_result = subprocess.run(
+            ["git", "fetch", "origin", "master"],
+            cwd=self.aur_dir,
+            capture_output=True,
+            text=True
+        )
+        if fetch_result.returncode != 0:
+            self.output.emit(f"Failed to fetch master: {fetch_result.stderr}")
+            raise Exception("Failed to fetch master branch")
+            
+        # Reset to origin/master
+        reset_result = subprocess.run(
+            ["git", "reset", "--hard", "origin/master"],
+            cwd=self.aur_dir,
+            capture_output=True,
+            text=True
+        )
+        if reset_result.returncode != 0:
+            self.output.emit(f"Failed to reset to master: {reset_result.stderr}")
+            raise Exception("Failed to reset to master branch")
+            
+        # Checkout master
+        checkout_result = subprocess.run(
+            ["git", "checkout", "master"],
+            cwd=self.aur_dir,
+            capture_output=True,
+            text=True
+        )
+        if checkout_result.returncode != 0:
+            # If checkout fails, try to create master branch
+            create_result = subprocess.run(
+                ["git", "checkout", "-b", "master", "origin/master"],
+                cwd=self.aur_dir,
+                capture_output=True,
+                text=True
+            )
+            if create_result.returncode != 0:
+                self.output.emit(f"Failed to create master branch: {create_result.stderr}")
+                raise Exception("Failed to switch to master branch")
         
         # Copy PKGBUILD and update for AUR
         pkgbuild_src = self.project_dir / "PKGBUILD"
@@ -363,7 +401,7 @@ class ReleaseThread(QThread):
         commands = [
             ["git", "add", "PKGBUILD", ".SRCINFO"],
             ["git", "commit", "-m", f"Update to version {self.version}"],
-            ["git", "push", "origin", "HEAD:master"]  # Push to master branch
+            ["git", "push", "origin", "master"]  # Push directly to master
         ]
         
         for cmd in commands:
