@@ -178,17 +178,76 @@ class ReleaseThread(QThread):
 
     def _create_github_release(self):
         self.progress.emit("Creating GitHub release...")
-        commands = [
-            ["git", "add", "."],
-            ["git", "commit", "-m", f"Release v{self.version}"],
-            ["git", "tag", f"v{self.version}"],
-            ["git", "push", "origin", self.git_branch, f"v{self.version}"]
-        ]
         
-        for cmd in commands:
-            result = subprocess.run(cmd, cwd=self.project_dir, capture_output=True, text=True)
-            if result.returncode != 0:
-                raise Exception(f"Git command failed: {result.stderr}")
+        # Check if there are any changes to commit
+        status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        
+        if not status.stdout.strip():
+            self.output.emit("No changes to commit")
+            return
+            
+        # Add and commit changes
+        self.output.emit("Adding and committing changes...")
+        add_result = subprocess.run(
+            ["git", "add", "."],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if add_result.returncode != 0:
+            self.output.emit(f"Git add failed:\n{add_result.stderr}")
+            raise Exception("Failed to add files to git")
+            
+        commit_result = subprocess.run(
+            ["git", "commit", "-m", f"Release v{self.version}"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if commit_result.returncode != 0:
+            self.output.emit(f"Git commit failed:\n{commit_result.stderr}")
+            raise Exception("Failed to commit changes")
+            
+        # Create and push tag
+        self.output.emit("Creating and pushing tag...")
+        tag_result = subprocess.run(
+            ["git", "tag", f"v{self.version}"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if tag_result.returncode != 0:
+            self.output.emit(f"Git tag failed:\n{tag_result.stderr}")
+            raise Exception("Failed to create tag")
+            
+        # Push changes and tag
+        self.output.emit("Pushing changes and tag...")
+        push_result = subprocess.run(
+            ["git", "push", "origin", self.git_branch],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if push_result.returncode != 0:
+            self.output.emit(f"Git push failed:\n{push_result.stderr}")
+            raise Exception("Failed to push changes")
+            
+        push_tag_result = subprocess.run(
+            ["git", "push", "origin", f"v{self.version}"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True
+        )
+        if push_tag_result.returncode != 0:
+            self.output.emit(f"Git tag push failed:\n{push_tag_result.stderr}")
+            raise Exception("Failed to push tag")
+            
+        self.output.emit("GitHub release created successfully")
 
     def _update_aur(self):
         if not self.use_aur:
