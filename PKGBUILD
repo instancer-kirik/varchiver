@@ -1,10 +1,10 @@
-# Maintainer: Kirill Korolyov <kirill.korolyov@hotmail.com>
+# Maintainer: instancer-kirik
 pkgname=varchiver
 pkgver=0.3.6
 pkgrel=1
 pkgdesc="A simple archive manager for Linux"
 arch=('x86_64')
-url="https://github.com/kirill-korolyov/varchiver"
+url="https://github.com/instancer-kirik/varchiver"
 license=('GPL3')
 depends=(
     'python'
