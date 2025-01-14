@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varchiver"
-version = "0.3.5"
+version = "0.3.6"
 description = "Advanced Archive Management Tool"
 authors = [{name = "instancer-kirik", email = "kirik@instance.select"}]
 license = {text = "Proprietary"}
@@ -15,6 +15,7 @@ dependencies = [
     "rarfile>=4.2.0",
     "pyqt6-sip>=13.8.0",
     "psutil>=6.1.0",
+    "pyinstaller>=6.11.1",
 ]
 
 [project.optional-dependencies]
