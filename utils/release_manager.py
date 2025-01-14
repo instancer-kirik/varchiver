@@ -325,55 +325,6 @@ class ReleaseThread(QThread):
             if not archive_path.exists() or archive_path.stat().st_size == 0:
                 raise Exception("Failed to create source archive or archive is empty")
             
-            # Calculate and update SHA256
-            sha256_result = self._run_command(["sha256sum", str(archive_path)])
-            sha256 = sha256_result.stdout.split()[0]
-            
-            # Update PKGBUILD with proper multiline handling
-            pkgbuild_path = self.project_dir / "PKGBUILD"
-            with pkgbuild_path.open('r') as f:
-                content = f.read()
-            
-            # Extract the helper functions before modifying the content
-            helper_functions = ""
-            if "# Get version from PKGBUILD" in content:
-                helper_functions = content[content.find("# Get version from PKGBUILD"):]
-            
-            # Update version - only match the actual version line, not the function
-            content = re.sub(
-                r'^pkgver=[0-9][0-9a-zA-Z.-]*$',
-                f'pkgver={self.version}',
-                content,
-                flags=re.MULTILINE
-            )
-            
-            # Update source array
-            content = re.sub(
-                r'source=\([^)]*\)',
-                'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                content,
-                flags=re.MULTILINE | re.DOTALL
-            )
-            
-            # Handle both single and multiline sha256sums formats
-            content = re.sub(
-                r'sha256sums=\([^)]*\)',
-                f'sha256sums=("{sha256}")',
-                content,
-                flags=re.MULTILINE | re.DOTALL
-            )
-            
-            # Remove any existing helper functions from the content
-            if "# Get version from PKGBUILD" in content:
-                content = content[:content.find("# Get version from PKGBUILD")]
-            
-            # Append the helper functions back
-            if helper_functions:
-                content = content.rstrip() + "\n\n" + helper_functions
-            
-            with pkgbuild_path.open('w') as f:
-                f.write(content)
-            
             # Create GitHub release
             self.output.emit("Creating GitHub release...")
             
@@ -416,6 +367,59 @@ class ReleaseThread(QThread):
                 self.output.emit("Running: " + " ".join(upload_args))
                 upload_result = self._run_command(upload_args)
                 self.output.emit(f"Upload output: {upload_result.stdout}")
+
+                # Calculate SHA256 of the GitHub release file
+                self.output.emit("Calculating SHA256 of GitHub release file...")
+                sha256_result = self._run_command([
+                    "bash", "-c",
+                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
+                ])
+                sha256 = sha256_result.stdout.split()[0]
+
+                # Update PKGBUILD with proper multiline handling
+                pkgbuild_path = self.project_dir / "PKGBUILD"
+                with pkgbuild_path.open('r') as f:
+                    content = f.read()
+
+                # Extract the helper functions before modifying the content
+                helper_functions = ""
+                if "# Get version from PKGBUILD" in content:
+                    helper_functions = content[content.find("# Get version from PKGBUILD"):]
+
+                # Update version - only match the actual version line, not the function
+                content = re.sub(
+                    r'^pkgver=[0-9][0-9a-zA-Z.-]*$',
+                    f'pkgver={self.version}',
+                    content,
+                    flags=re.MULTILINE
+                )
+
+                # Update source array
+                content = re.sub(
+                    r'source=\([^)]*\)',
+                    'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                    content,
+                    flags=re.MULTILINE | re.DOTALL
+                )
+
+                # Handle both single and multiline sha256sums formats
+                content = re.sub(
+                    r'sha256sums=\([^)]*\)',
+                    f'sha256sums=("{sha256}")',
+                    content,
+                    flags=re.MULTILINE | re.DOTALL
+                )
+
+                # Remove any existing helper functions from the content
+                if "# Get version from PKGBUILD" in content:
+                    content = content[:content.find("# Get version from PKGBUILD")]
+
+                # Append the helper functions back
+                if helper_functions:
+                    content = content.rstrip() + "\n\n" + helper_functions
+
+                with pkgbuild_path.open('w') as f:
+                    f.write(content)
                 
                 # Upload package if it exists
                 if pkg_file:
@@ -494,7 +498,13 @@ class ReleaseThread(QThread):
                 )
             
             # Update SHA256 sum
-            sha256 = self._get_source_sha256()
+            self.output.emit("Calculating SHA256 of GitHub release file...")
+            sha256_result = self._run_command([
+                "bash", "-c",
+                f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
+            ])
+            sha256 = sha256_result.stdout.split()[0]
+            
             pkgbuild_content = re.sub(
                 r'sha256sums=\([^)]*\)',
                 f'sha256sums=("{sha256}")',
@@ -539,17 +549,6 @@ class ReleaseThread(QThread):
         except Exception as e:
             self.output.emit(f"Error updating AUR package: {e}")
             raise
-
-    def _get_source_sha256(self):
-        """Get SHA256 sum of the source archive"""
-        archive_name = f"{self.project_dir.name}-{self.version}"
-        archive_path = self.project_dir / f"{archive_name}.tar.gz"
-        
-        if not archive_path.exists():
-            raise Exception(f"Source archive not found: {archive_path}")
-            
-        result = self._run_command(["sha256sum", str(archive_path)])
-        return result.stdout.split()[0]
 
     def _update_file_version(self, file_path, pattern, replacement):
         content = file_path.read_text()
