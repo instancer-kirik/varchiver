@@ -22,13 +22,17 @@ sha256sums=()
 
 build() {
     cd ..
-    # Create virtual environment and install dependencies
+    # Create and activate virtual environment
     uv venv .venv
-    source .venv/bin/activate
-    # Install dependencies including PyInstaller
+    export VIRTUAL_ENV="$PWD/.venv"
+    export PATH="$VIRTUAL_ENV/bin:$PATH"
+    unset PYTHONHOME
+    
+    # Install dependencies
     uv pip install pyinstaller
     uv pip install .
-    # Run pyinstaller with the virtual environment's Python
+    
+    # Run pyinstaller
     python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
@@ -37,7 +41,6 @@ build() {
         --hidden-import varchiver \
         --collect-submodules varchiver \
         varchiver/bootstrap.py
-    deactivate
 }
 
 package() {
