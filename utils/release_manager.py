@@ -133,10 +133,12 @@ class ReleaseThread(QThread):
             if not build_script.exists():
                 raise Exception("build.sh not found")
             
-        result = subprocess.run(["bash", str(build_script)], 
+            result = subprocess.run(["bash", str(build_script)], 
                               cwd=self.project_dir, 
                               capture_output=True, 
                               text=True)
+            
+        
         
         if result.returncode != 0:
             raise Exception(f"Build failed: {result.stderr}")
