@@ -334,11 +334,17 @@ class ReleaseThread(QThread):
             with pkgbuild_path.open('r') as f:
                 content = f.read()
             
-            # Update version
+            # Extract the helper functions before modifying the content
+            helper_functions = ""
+            if "# Get version from PKGBUILD" in content:
+                helper_functions = content[content.find("# Get version from PKGBUILD"):]
+            
+            # Update version - only match the actual version line, not the function
             content = re.sub(
-                r'pkgver=.*',
+                r'^pkgver=[0-9][0-9a-zA-Z.-]*$',
                 f'pkgver={self.version}',
-                content
+                content,
+                flags=re.MULTILINE
             )
             
             # Update source array
@@ -356,6 +362,14 @@ class ReleaseThread(QThread):
                 content,
                 flags=re.MULTILINE | re.DOTALL
             )
+            
+            # Remove any existing helper functions from the content
+            if "# Get version from PKGBUILD" in content:
+                content = content[:content.find("# Get version from PKGBUILD")]
+            
+            # Append the helper functions back
+            if helper_functions:
+                content = content.rstrip() + "\n\n" + helper_functions
             
             with pkgbuild_path.open('w') as f:
                 f.write(content)
@@ -454,44 +468,44 @@ class ReleaseThread(QThread):
                 # If checkout fails, create master branch
                 self._run_command(["git", "checkout", "-b", "master", "origin/master"], cwd=self.aur_dir)
             
-            # Copy PKGBUILD and update for AUR
+            # Read the project's PKGBUILD
             pkgbuild_src = self.project_dir / "PKGBUILD"
-            pkgbuild_dest = self.aur_dir / "PKGBUILD"
+            if not pkgbuild_src.exists():
+                raise Exception("PKGBUILD not found in project directory")
             
-            # Read the development PKGBUILD
-            with pkgbuild_src.open() as f:
-                content = f.read()
-
-            # Extract the helper functions before modifying the content
-            helper_functions = ""
-            if "# Get version from PKGBUILD" in content:
-                helper_functions = content[content.find("# Get version from PKGBUILD"):]
+            with pkgbuild_src.open('r') as f:
+                pkgbuild_content = f.read()
             
-            # Modify for AUR (use GitHub source instead of local files)
-            content = re.sub(
-                r'source=\([^)]*\)',
-                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                content,
+            # Update version and source hash
+            pkgbuild_content = re.sub(
+                r'^pkgver=.*$',
+                f'pkgver={self.version}',
+                pkgbuild_content,
+                flags=re.MULTILINE
+            )
+            
+            # Update source array if needed
+            if 'source=(' not in pkgbuild_content:
+                pkgbuild_content = re.sub(
+                    r'source=.*$',
+                    'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                    pkgbuild_content,
+                    flags=re.MULTILINE
+                )
+            
+            # Update SHA256 sum
+            sha256 = self._get_source_sha256()
+            pkgbuild_content = re.sub(
+                r'sha256sums=\([^)]*\)',
+                f'sha256sums=("{sha256}")',
+                pkgbuild_content,
                 flags=re.MULTILINE | re.DOTALL
             )
-
-            # Update cd command if needed
-            if 'cd "$srcdir"' in content:
-                content = content.replace('cd "$srcdir"', 'cd "$srcdir/$pkgname-$pkgver"')
-            elif "cd $srcdir" in content:
-                content = content.replace("cd $srcdir", 'cd "$srcdir/$pkgname-$pkgver"')
-            
-            # Remove any existing helper functions from the content
-            if "# Get version from PKGBUILD" in content:
-                content = content[:content.find("# Get version from PKGBUILD")]
-            
-            # Append the helper functions back
-            if helper_functions:
-                content = content.rstrip() + "\n\n" + helper_functions
             
             # Write updated PKGBUILD
+            pkgbuild_dest = self.aur_dir / "PKGBUILD"
             with pkgbuild_dest.open('w') as f:
-                f.write(content)
+                f.write(pkgbuild_content)
                 
             # Generate and update .SRCINFO
             self.progress.emit("Generating .SRCINFO...")
@@ -525,6 +539,17 @@ class ReleaseThread(QThread):
         except Exception as e:
             self.output.emit(f"Error updating AUR package: {e}")
             raise
+
+    def _get_source_sha256(self):
+        """Get SHA256 sum of the source archive"""
+        archive_name = f"{self.project_dir.name}-{self.version}"
+        archive_path = self.project_dir / f"{archive_name}.tar.gz"
+        
+        if not archive_path.exists():
+            raise Exception(f"Source archive not found: {archive_path}")
+            
+        result = self._run_command(["sha256sum", str(archive_path)])
+        return result.stdout.split()[0]
 
     def _update_file_version(self, file_path, pattern, replacement):
         content = file_path.read_text()
