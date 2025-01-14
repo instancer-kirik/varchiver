@@ -31,6 +31,7 @@ class ReleaseThread(QThread):
         self.use_aur = self.settings.value("use_aur") == "Yes"
         self.aur_dir = Path(self.settings.value("aur_path")).resolve() if self.use_aur else None
         self.build_command = self.settings.value("build_command")
+        self.url = "https://github.com/instancer-kirik/varchiver"  # Add GitHub URL
 
     def _check_git_status(self):
         """Check if git repository is clean"""
@@ -292,13 +293,26 @@ class ReleaseThread(QThread):
             
         # Create GitHub release using gh cli
         self.output.emit("Creating GitHub release...")
+        
+        # Find the built package
+        pkg_file = next(self.project_dir.glob(f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"), None)
+        if not pkg_file:
+            self.output.emit("Warning: Could not find built package")
+            
+        # Create release with both source archive and package
+        release_args = [
+            "gh", "release", "create", f"v{self.version}",
+            "--title", f"Release v{self.version}",
+            "--notes", f"Release v{self.version}",
+            "--target", self.git_branch,
+            str(archive_path)  # Source archive
+        ]
+        
+        if pkg_file:
+            release_args.append(str(pkg_file))  # Built package
+            
         release_result = subprocess.run(
-            ["gh", "release", "create", f"v{self.version}",
-             "--title", f"Release v{self.version}",
-             "--notes", f"Release v{self.version}",
-             "--target", self.git_branch,
-             str(archive_path)  # Add the archive as an asset
-            ],
+            release_args,
             cwd=self.project_dir,
             capture_output=True,
             text=True
@@ -318,7 +332,7 @@ class ReleaseThread(QThread):
             self.output.emit(f"Failed to verify release:\n{verify_result.stderr}")
             raise Exception("Failed to verify GitHub release")
             
-        # Verify the asset was uploaded
+        # Verify the source archive was uploaded
         self.output.emit("Verifying source archive upload...")
         archive_url = f"{self.url}/releases/download/v{self.version}/{archive_name}.tar.gz"
         verify_archive = subprocess.run(
