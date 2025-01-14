@@ -123,13 +123,25 @@ class ReleaseThread(QThread):
 
     def _build_packages(self):
         self.progress.emit("Building packages...")
-        if not self.build_command:
-            raise Exception("Build command not configured")
+        
+        # Run the build script
+        if self.build_command:
+            cmd_parts = self.build_command.split()
+            result = subprocess.run(cmd_parts, cwd=self.project_dir, capture_output=True, text=True)
+        else:
+            build_script = self.project_dir / "build.sh"
+            if not build_script.exists():
+                raise Exception("build.sh not found")
             
-        cmd_parts = self.build_command.split()
-        result = subprocess.run(cmd_parts, cwd=self.project_dir, capture_output=True, text=True)
+        result = subprocess.run(["bash", str(build_script)], 
+                              cwd=self.project_dir, 
+                              capture_output=True, 
+                              text=True)
+        
         if result.returncode != 0:
             raise Exception(f"Build failed: {result.stderr}")
+            
+        self.progress.emit("Build completed successfully")
 
     def _create_github_release(self):
         self.progress.emit("Creating GitHub release...")

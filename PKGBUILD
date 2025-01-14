@@ -29,7 +29,7 @@ build() {
     uv pip install --system pyinstaller
     uv pip install --system --no-deps .
     # Run pyinstaller with the virtual environment's Python
-    .venv/bin/python -m pyinstaller --clean \
+    python -m pyinstaller --clean \
         --onefile \
         --name varchiver \
         --hidden-import PyQt6 \
