@@ -78,8 +78,10 @@ class ReleaseThread(QThread):
                 # Commit version changes
                 self._commit_version_changes()
 
+            # Always build packages before creating release
             if 'create_release' in self.tasks:
-                self._create_github_release()
+                self._build_packages()  # Build first
+                self._create_github_release()  # Then create release with built packages
 
             if 'update_aur' in self.tasks:
                 if not self.use_aur:
@@ -638,12 +640,12 @@ class ReleaseManager(QWidget):
 
         self.task_combo = QComboBox()
         self.task_combo.addItems([
-            "Full Release (Update Version + Create Release + Update AUR)",
+            "Full Release (Update Version + Build + Create Release + Update AUR)",
             "Update Version Only",
-            "Create Release Only",
+            "Build and Create Release",
             "Update AUR Only",
-            "Update Version + Create Release",
-            "Create Release + Update AUR"
+            "Update Version + Build + Create Release",
+            "Build + Create Release + Update AUR"
         ])
         task_layout.addWidget(self.task_combo)
         layout.addWidget(task_group)

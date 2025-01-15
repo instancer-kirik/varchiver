@@ -54,7 +54,7 @@ class MainWidget(QWidget):
         self.git_repo_path = QLineEdit()
         self.git_output_path = QLineEdit()
         self.git_status_label = QLabel("Select repository to begin")
-        self.git_config_status = QLabel(" ")
+        self.git_config_status = QLabel("Select a Git repository to begin")
         self.git_error_text = QTextEdit()
         self.git_progress_bar = QProgressBar()
         
