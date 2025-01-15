@@ -30,6 +30,11 @@ class ReleaseThread(QThread):
         self.use_aur = use_aur
         self.aur_dir = aur_dir
         
+        # Set up logging
+        self.log_dir = project_dir / "logs"
+        self.log_dir.mkdir(exist_ok=True)
+        self.log_file = self.log_dir / f"release_{version}_{int(time.time())}.log"
+        
         # Git configuration
         self.git_branch = "master"  # Default to master branch
         self.url = None  # Will be set from git remote
@@ -62,14 +67,29 @@ class ReleaseThread(QThread):
             self.url = None
 
     def output_message(self, message: str):
-        """Helper method to emit output signal and update widget"""
-        # Only update the widget, don't emit signal (to avoid double output)
+        """Helper method to emit output signal and update widget and log file"""
+        # Update widget
         if self.output_widget:
             self.output_widget.append(message)
+            # Ensure the new text is visible
+            cursor = self.output_widget.textCursor()
+            cursor.movePosition(cursor.MoveOperation.End)
+            self.output_widget.setTextCursor(cursor)
+        
+        # Write to log file
+        try:
+            with open(self.log_file, 'a') as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+        except Exception as e:
+            print(f"Error writing to log file: {e}")
 
     def run(self):
         """Execute the release process."""
         try:
+            self.progress.emit("Starting release process...")
+            self.output_message(f"Starting release process for version {self.version}")
+            self.output_message(f"Log file: {self.log_file}")
+
             if not self.url:
                 raise Exception("Git remote URL not found. Please configure a remote repository first.")
 
@@ -83,13 +103,15 @@ class ReleaseThread(QThread):
                 raise Exception("Uncommitted changes found. Please commit or stash them before creating a release.")
 
             if 'update_version' in self.tasks:
+                self.progress.emit("Updating version files...")
                 self._update_version_files()
-                # Commit version changes
                 self._commit_version_changes()
 
             # Always build packages before creating release
             if 'create_release' in self.tasks:
+                self.progress.emit("Building packages...")
                 self._build_packages()  # Build first
+                self.progress.emit("Creating GitHub release...")
                 self._create_github_release()  # Then create release with built packages
 
             if 'update_aur' in self.tasks:
@@ -97,8 +119,10 @@ class ReleaseThread(QThread):
                     raise Exception("AUR update requested but AUR support is not enabled")
                 if not self.aur_dir:
                     raise Exception("AUR update requested but AUR directory is not set")
+                self.progress.emit("Updating AUR package...")
                 self._update_aur()
 
+            self.progress.emit("Release process completed!")
             self.output_message("Release process completed successfully!")
             self.finished.emit(True)
 
@@ -888,11 +912,11 @@ class ReleaseManager(QWidget):
     def update_progress(self, message: str):
         """Update progress message in the output"""
         self.release_output.append(message)
-        # Show progress bar during build
-        if "Building package" in message:
+        # Show progress bar during long operations
+        if any(x in message for x in ["Building package", "Creating GitHub release", "Updating AUR package"]):
             self.progress_bar.setRange(0, 0)  # Indeterminate progress
             self.progress_bar.show()
-        elif "Build completed" in message:
+        elif "completed" in message.lower():
             self.progress_bar.hide()
         # Ensure the new text is visible
         cursor = self.release_output.textCursor()
