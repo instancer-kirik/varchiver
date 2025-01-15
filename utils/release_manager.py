@@ -106,53 +106,38 @@ class ReleaseThread(QThread):
             raise
 
     def run(self):
-        """Execute the release process."""
+        """Run the release process"""
         try:
-            self.progress.emit("Starting release process...")
             self.output_message(f"Starting release process for version {self.version}")
             self.output_message(f"Log file: {self.log_file}")
-
-            if not self.url:
-                raise Exception("Git remote URL not found. Please configure a remote repository first.")
-
-            # Check Git status before proceeding
-            status_output = self._check_git_status()
-            if status_output:
-                # There are uncommitted changes (excluding untracked files)
-                self.output_message("\nWarning: You have uncommitted changes:")
-                self.output_message(status_output)
-                self.output_message("\nPlease commit or stash your changes before proceeding.")
-                raise Exception("Uncommitted changes found. Please commit or stash them before creating a release.")
-
+            
+            # Check Git status first
+            self._check_git_status()
+            
+            # Update version files if needed
             if 'update_version' in self.tasks:
-                self.progress.emit("Updating version files...")
                 self._update_version_files()
                 self._commit_version_changes()
-
+            
             # Always build packages before creating release
+            self._build_packages()
+            
+            # Create GitHub release if requested
             if 'create_release' in self.tasks:
-                self.progress.emit("Building packages...")
-                self._build_packages()  # Build first
-                self.progress.emit("Creating GitHub release...")
-                self._create_github_release()  # Then create release with built packages
-
-            if 'update_aur' in self.tasks:
-                if not self.use_aur:
-                    raise Exception("AUR update requested but AUR support is not enabled")
-                if not self.aur_dir:
-                    raise Exception("AUR update requested but AUR directory is not set")
-                self.progress.emit("Updating AUR package...")
+                self._check_github_authentication()
+                self._create_github_release()
+                
+            # Update AUR if requested
+            if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
                 self._update_aur()
-
-            self.progress.emit("Release process completed!")
+            
             self.output_message("Release process completed successfully!")
             self.finished.emit(True)
-
+            
         except Exception as e:
             self.error.emit(str(e))
-            self.output_message(f"Error during release process: {str(e)}")
             self.finished.emit(False)
-
+            
     def _commit_version_changes(self):
         """Commit version number changes."""
         try:
@@ -403,180 +388,50 @@ class ReleaseThread(QThread):
             raise
 
     def _create_github_release(self):
-        """Create a GitHub release with improved error handling and verification"""
-        self.progress.emit("Creating GitHub release...")
+        """Create a GitHub release"""
+        self.output_message("\nCreating GitHub release...")
         
+        # Verify GitHub CLI authentication
+        self._check_github_authentication()
+        
+        # Get system architecture
+        arch = self._run_command(['uname', '-m']).stdout.strip()
+        
+        # Check for uncommitted changes
+        result = self._run_command(['git', 'status', '--porcelain'])
+        if result.stdout.strip():
+            self.output_message("Committing changes before release...")
+            self._run_command(['git', 'add', '.'])
+            self._run_command(['git', 'commit', '-m', f'Release version {self.version}'])
+        
+        # Create and push tag
+        tag = f'v{self.version}'
         try:
-            # Check GitHub authentication
-            self._check_github_authentication()
-            
-            # Get system architecture
-            arch_result = self._run_command(["uname", "-m"])
-            arch = arch_result.stdout.strip()
-            
-            # Check for changes
-            status_result = self._run_command(["git", "status", "--porcelain"])
-            if not status_result.stdout.strip():
-                self.output_message("No changes to commit")
-                return
-            
-            # Add and commit changes
-            self.output_message("Adding and committing changes...")
-            self._run_command(["git", "add", "."])
-            self._run_command(["git", "commit", "-m", f"Release v{self.version}"])
-            
-            # Create and push tag
-            self.output_message("Creating and pushing tag...")
-            tag_result = self._run_command(["git", "tag", "-a", f"v{self.version}", "-m", f"Release v{self.version}"])
-            self.output_message(f"Tag creation output: {tag_result.stdout}")
-            push_tag_result = self._run_command(["git", "push", "origin", f"v{self.version}"])
-            self.output_message(f"Tag push output: {push_tag_result.stdout}")
-            
-            # Wait a moment for GitHub to process the tag
-            time.sleep(5)
-            
-            # Create source archive in dist directory
-            self.output_message("Creating source archive...")
-            dist_dir = self.project_dir / "dist"
-            dist_dir.mkdir(exist_ok=True)
-            
-            archive_name = f"{self.project_dir.name}-{self.version}"
-            archive_path = dist_dir / f"{archive_name}.tar.gz"
-            
-            # Create archive with explicit prefix and all files from the current tag
-            self._run_command([
-                "git", "archive",
-                "--format=tar.gz",
-                "--prefix", f"{archive_name}/",
-                "-o", str(archive_path),
-                "--verbose",
-                f"v{self.version}"
-            ])
-            
-            # Verify the archive was created and has content
-            if not archive_path.exists() or archive_path.stat().st_size == 0:
-                raise Exception("Failed to create source archive or archive is empty")
-            
-            # Create GitHub release
-            self.output_message("Creating GitHub release...")
-            
-            # Find built package in dist directory
-            pkg_glob = f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"
-            pkg_file = next(dist_dir.glob(pkg_glob), None)
-            
-            # Delete existing release if it exists
-            self._run_command(
-                ["gh", "release", "delete", f"v{self.version}", "--yes"],
-                check=False
-            )
-            
-            # Create new release with source archive
-            release_args = [
-                "gh", "release", "create",
-                f"v{self.version}",
-                "--title", f"Release v{self.version}",
-                "--notes", f"Release v{self.version}",
-                "--target", self.git_branch,
-                "--verify-tag"  # Ensure the tag exists before creating release
-            ]
-            
-            try:
-                # First create the release
-                self.output_message("Running: " + " ".join(release_args))
-                release_result = self._run_command(release_args)
-                self.output_message(f"Release creation output: {release_result.stdout}")
-                
-                # Then upload the assets separately
-                self.output_message("Uploading release assets...")
-                
-                # Upload source archive
-                upload_args = [
-                    "gh", "release", "upload",
-                    f"v{self.version}",
-                    str(archive_path),
-                    "--clobber"  # Overwrite existing asset if needed
-                ]
-                self.output_message("Running: " + " ".join(upload_args))
-                upload_result = self._run_command(upload_args)
-                self.output_message(f"Upload output: {upload_result.stdout}")
-
-                # Calculate SHA256 of the GitHub release file
-                self.output_message("Calculating SHA256 of GitHub release file...")
-                sha256_result = self._run_command([
-                    "bash", "-c",
-                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
-                ])
-                sha256 = sha256_result.stdout.split()[0]
-
-                # Update PKGBUILD with proper multiline handling
-                pkgbuild_path = self.project_dir / "PKGBUILD"
-                with pkgbuild_path.open('r') as f:
-                    content = f.read()
-
-                # Extract the helper functions before modifying the content
-                helper_functions = ""
-                if "# Get version from PKGBUILD" in content:
-                    helper_functions = content[content.find("# Get version from PKGBUILD"):]
-
-                # Update version - only match the actual version line, not the function
-                content = re.sub(
-                    r'^pkgver=[0-9][0-9a-zA-Z.-]*$',
-                    f'pkgver={self.version}',
-                    content,
-                    flags=re.MULTILINE
-                )
-
-                # Update source array
-                content = re.sub(
-                    r'source=\([^)]*\)',
-                    'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                    content,
-                    flags=re.MULTILINE | re.DOTALL
-                )
-
-                # Handle both single and multiline sha256sums formats
-                content = re.sub(
-                    r'sha256sums=\([^)]*\)',
-                    f'sha256sums=("{sha256}")',
-                    content,
-                    flags=re.MULTILINE | re.DOTALL
-                )
-
-                # Remove any existing helper functions from the content
-                if "# Get version from PKGBUILD" in content:
-                    content = content[:content.find("# Get version from PKGBUILD")]
-
-                # Append the helper functions back
-                if helper_functions:
-                    content = content.rstrip() + "\n\n" + helper_functions
-
-                with pkgbuild_path.open('w') as f:
-                    f.write(content)
-                
-                # Upload package if it exists
-                if pkg_file:
-                    pkg_upload_args = [
-                        "gh", "release", "upload",
-                        f"v{self.version}",
-                        str(pkg_file),
-                        "--clobber"
-                    ]
-                    self.output_message("Running: " + " ".join(pkg_upload_args))
-                    pkg_upload_result = self._run_command(pkg_upload_args)
-                    self.output_message(f"Package upload output: {pkg_upload_result.stdout}")
-                
-                # Verify release assets with retries
-                if not self._verify_release_assets(self.version):
-                    raise Exception("Failed to verify release assets after maximum retries")
-                
-                self.output_message("GitHub release created and verified successfully")
-                
-            except Exception as e:
-                self.output_message(f"Error creating GitHub release: {e}")
-                raise
+            self._run_command(['git', 'tag', '-a', tag, '-m', f'Release {tag}'])
+            self._run_command(['git', 'push', 'origin', tag])
         except Exception as e:
-            self.output_message(f"Error in GitHub release process: {e}")
-            raise
+            if 'already exists' not in str(e):
+                raise
+                
+        # Create GitHub release
+        release_notes = f"Release {tag}\n\nPackage files:\n"
+        
+        # Add built package files to release notes
+        dist_dir = self.project_dir / 'dist'
+        if dist_dir.exists():
+            for file in dist_dir.glob('*'):
+                if file.is_file():
+                    release_notes += f"- {file.name}\n"
+        
+        # Create the release using gh cli
+        self._run_command([
+            'gh', 'release', 'create', tag,
+            '--title', f'Release {tag}',
+            '--notes', release_notes,
+            *[str(f) for f in dist_dir.glob('*') if f.is_file()]
+        ])
+        
+        self.output_message(f"GitHub release {tag} created successfully")
 
     def _update_aur(self):
         """Update AUR package with proper .SRCINFO handling"""
