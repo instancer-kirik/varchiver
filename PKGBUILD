@@ -18,25 +18,67 @@ makedepends=(
     'python-wheel'
     'python-pip'
 )
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("45033d677c6c6a90915b64bec4700eb6855dfb64a2af1b9bd1dac2013dd1e9eb")
+
+# For AUR releases, use the GitHub source
+if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
+    source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+    sha256sums=('SKIP')  # Will be updated by release manager
+else
+    source=()
+    sha256sums=()
+fi
 
 build() {
-    cd "$srcdir/$pkgname-$pkgver"
+    # Use source directory for AUR builds, project root for local builds
+    if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
+        cd "$srcdir/$pkgname-$pkgver"
+    else
+        cd "$startdir"
+    fi
+    
+    # Clean up any existing virtual environment
+    rm -rf .venv
+    
     # Create and activate virtual environment
     python -m venv .venv
     source .venv/bin/activate
     
-    # Install dependencies including PyInstaller
-    uv pip install .
-    uv pip install pyinstaller
+    # Install dependencies and build
+    if [ -f "pyproject.toml" ]; then
+        # Use pip/uv if pyproject.toml exists
+        if command -v uv &> /dev/null; then
+            uv pip install .
+            uv pip install pyinstaller
+        else
+            pip install .
+            pip install pyinstaller
+        fi
+    elif [ -f "setup.py" ]; then
+        # Use setup.py if it exists
+        pip install .
+        pip install pyinstaller
+    elif [ -f "requirements.txt" ]; then
+        # Fall back to requirements.txt
+        pip install -r requirements.txt
+        pip install .
+        pip install pyinstaller
+    fi
     
     # Build executable
     python -m PyInstaller --clean --onefile --name varchiver bootstrap.py
+    
+    # Deactivate virtual environment
+    deactivate
 }
 
 package() {
-    cd "$srcdir/$pkgname-$pkgver"
+    # Use source directory for AUR builds, project root for local builds
+    if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
+        cd "$srcdir/$pkgname-$pkgver"
+    else
+        cd "$startdir"
+    fi
+    
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     
@@ -56,6 +98,6 @@ get_version() {
 
 # Force rebuild during release
 force_rebuild() {
-    rm -rf pkg/ src/ *.pkg.tar.zst
-    makepkg -f --noconfirm --skipchecksums
+    rm -rf pkg/ dist/ *.pkg.tar.zst
+    VARCHIVER_LOCAL_BUILD=1 makepkg -f --noconfirm --skipchecksums
 }
