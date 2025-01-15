@@ -146,7 +146,7 @@ class ReleaseThread(QThread):
 
     def _build_packages(self):
         """Build packages in a dedicated dist directory"""
-        self.progress.emit("Building packages...")
+        self.output_message("Starting package build process...")
         
         # First check if PKGBUILD exists
         pkgbuild_path = self.project_dir / "PKGBUILD"
@@ -158,7 +158,7 @@ class ReleaseThread(QThread):
         dist_dir.mkdir(exist_ok=True)
             
         # Clean up previous build
-        self.output_message("Cleaning up previous build...")
+        self.output_message("Cleaning up previous build artifacts...")
         for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
             for f in dist_dir.glob(pattern):
                 f.unlink()
@@ -171,8 +171,8 @@ class ReleaseThread(QThread):
                 shutil.rmtree(build_dir)
         
         # Install dependencies and build package
-        self.output_message("Installing dependencies and building package...")
-        self.output_message("Running: makepkg -sf --noconfirm --skipchecksums")
+        self.output_message("Starting makepkg process...")
+        self.progress.emit("Building package...")
         
         # Run makepkg with syncdeps and force
         result = subprocess.run(
@@ -185,10 +185,10 @@ class ReleaseThread(QThread):
         
         # Show output regardless of success/failure
         if result.stdout:
-            self.output_message("\nOutput:")
+            self.output_message("\nBuild output:")
             self.output_message(result.stdout)
         if result.stderr:
-            self.output_message("\nErrors:")
+            self.output_message("\nBuild errors:")
             self.output_message(result.stderr)
         
         if result.returncode != 0:
@@ -206,10 +206,12 @@ class ReleaseThread(QThread):
             raise Exception("Build failed. Check the output above for details.")
             
         # Move built packages to dist directory
+        self.output_message("Moving built packages to dist directory...")
         for pkg_file in self.project_dir.glob("*.pkg.tar.zst"):
             pkg_file.rename(dist_dir / pkg_file.name)
             
-        self.progress.emit("Build completed successfully")
+        self.output_message("Build completed successfully")
+        self.progress.emit("Build completed")
 
     def _run_command(self, cmd, cwd=None, timeout=60, env=None, check=True):
         """Helper function to run commands with consistent error handling and timeouts"""
@@ -601,12 +603,12 @@ class ReleaseManager(QWidget):
     def init_ui(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
-
+        
         # Version input
         version_group = QGroupBox("Release Version")
         version_layout = QHBoxLayout()
         version_group.setLayout(version_layout)
-
+        
         self.version_input = QLineEdit()
         settings = QSettings("Varchiver", "ReleaseManager")
         
@@ -632,7 +634,13 @@ class ReleaseManager(QWidget):
         self.version_input.setPlaceholderText("Enter version number (e.g., 0.4.1)")
         version_layout.addWidget(self.version_input)
         layout.addWidget(version_group)
-
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.hide()
+        layout.addWidget(self.progress_bar)
+        
         # AUR Directory
         aur_group = QGroupBox("AUR Directory")
         aur_layout = QHBoxLayout()
@@ -676,7 +684,7 @@ class ReleaseManager(QWidget):
         self.release_output.setMinimumHeight(200)
         output_layout.addWidget(self.release_output)
         layout.addWidget(output_group)
-
+        
         # Start button
         self.release_start_button = QPushButton("Start Release")
         self.release_start_button.clicked.connect(self.start_release_process)
@@ -753,7 +761,7 @@ class ReleaseManager(QWidget):
         if not version:
             QMessageBox.warning(self, "Error", "Please enter a version number")
             return
-
+            
         # Check AUR directory if needed
         selected = self.task_combo.currentText()
         if "Update AUR" in selected and not self.aur_path.text():
@@ -766,7 +774,7 @@ class ReleaseManager(QWidget):
         if not project_path:
             QMessageBox.warning(self, "Error", "Project path not set")
             return
-
+            
         settings.setValue("last_version", version)
         settings.setValue("aur_path", self.aur_path.text())
 
@@ -807,6 +815,12 @@ class ReleaseManager(QWidget):
     def update_progress(self, message: str):
         """Update progress message in the output"""
         self.release_output.append(message)
+        # Show progress bar during build
+        if "Building package" in message:
+            self.progress_bar.setRange(0, 0)  # Indeterminate progress
+            self.progress_bar.show()
+        elif "Build completed" in message:
+            self.progress_bar.hide()
         # Ensure the new text is visible
         cursor = self.release_output.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)

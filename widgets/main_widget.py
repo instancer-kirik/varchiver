@@ -1647,7 +1647,7 @@ class MainWidget(QWidget):
         else:
             # Show archive UI
             self.show_archive_ui()
-
+            
     def add_git_remote(self):
         """Add or update Git remote"""
         if not self.git_repo_path.text():
