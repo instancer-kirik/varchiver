@@ -73,6 +73,15 @@ class ReleaseThread(QThread):
             if not self.url:
                 raise Exception("Git remote URL not found. Please configure a remote repository first.")
 
+            # Check Git status before proceeding
+            status_result = self._run_command(["git", "status", "--porcelain"])
+            if status_result.stdout.strip():
+                # There are uncommitted changes
+                self.output_message("\nWarning: You have uncommitted changes:")
+                self.output_message(status_result.stdout)
+                self.output_message("\nPlease commit or stash your changes before proceeding.")
+                raise Exception("Uncommitted changes found. Please commit or stash them before creating a release.")
+
             if 'update_version' in self.tasks:
                 self._update_version_files()
                 # Commit version changes
@@ -775,6 +784,58 @@ class ReleaseManager(QWidget):
             QMessageBox.warning(self, "Error", "Project path not set")
             return
             
+        # Check Git status before proceeding
+        try:
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=project_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                reply = QMessageBox.question(
+                    self,
+                    "Uncommitted Changes",
+                    "There are uncommitted changes in your repository. Would you like to:\n\n"
+                    "Yes = Commit all changes before release\n"
+                    "No = Cancel release process\n"
+                    "Save = Stash changes and proceed",
+                    QMessageBox.StandardButton.Yes |
+                    QMessageBox.StandardButton.No |
+                    QMessageBox.StandardButton.Save
+                )
+                
+                if reply == QMessageBox.StandardButton.No:
+                    return
+                elif reply == QMessageBox.StandardButton.Save:
+                    # Stash changes
+                    subprocess.run(
+                        ["git", "stash", "save", "Pre-release stash"],
+                        cwd=project_path,
+                        check=True
+                    )
+                    self.release_output.append("Changes stashed successfully")
+                elif reply == QMessageBox.StandardButton.Yes:
+                    # Commit changes
+                    subprocess.run(
+                        ["git", "add", "."],
+                        cwd=project_path,
+                        check=True
+                    )
+                    subprocess.run(
+                        ["git", "commit", "-m", "Pre-release commit"],
+                        cwd=project_path,
+                        check=True
+                    )
+                    self.release_output.append("Changes committed successfully")
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Git operation failed: {e.stderr}")
+            return
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to check Git status: {str(e)}")
+            return
+            
         settings.setValue("last_version", version)
         settings.setValue("aur_path", self.aur_path.text())
 
@@ -791,21 +852,28 @@ class ReleaseManager(QWidget):
         self.release_start_button.setEnabled(False)
         self.release_output.clear()
         
-        self.release_thread = ReleaseThread(
-            project_dir=Path(project_path),
-            version=version,
-            tasks=selected_tasks,
-            output_widget=self.release_output,
-            use_aur="Update AUR" in selected,
-            aur_dir=Path(self.aur_path.text()) if "Update AUR" in selected else None
-        )
-        
-        self.release_thread.progress.connect(self.update_progress)
-        self.release_thread.error.connect(self.show_error)
-        self.release_thread.output.connect(self.update_output)
-        self.release_thread.finished.connect(self.on_release_complete)
-        
-        self.release_thread.start()
+        try:
+            self.release_thread = ReleaseThread(
+                project_dir=Path(project_path),
+                version=version,
+                tasks=selected_tasks,
+                output_widget=self.release_output,
+                use_aur="Update AUR" in selected,
+                aur_dir=Path(self.aur_path.text()) if "Update AUR" in selected else None
+            )
+            
+            self.release_thread.progress.connect(self.update_progress)
+            self.release_thread.error.connect(self.show_error)
+            self.release_thread.output.connect(self.update_output)
+            self.release_thread.finished.connect(self.on_release_complete)
+            
+            self.release_thread.start()
+            
+        except Exception as e:
+            self.release_start_button.setEnabled(True)
+            QMessageBox.critical(self, "Error", f"Failed to start release process: {str(e)}")
+            self.release_output.append(f"Error: {str(e)}")
+            return
 
     def on_release_complete(self):
         """Handle completion of release process"""
