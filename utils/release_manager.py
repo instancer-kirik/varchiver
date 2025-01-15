@@ -469,22 +469,27 @@ class ReleaseThread(QThread):
         arch = self._run_command(['uname', '-m']).stdout.strip()
         
         # Check for uncommitted changes
+        self.progress.emit("Checking git status...")
         result = self._run_command(['git', 'status', '--porcelain'])
         if result.stdout.strip():
             self.output_message("Committing changes before release...")
+            self.progress.emit("Committing changes...")
             self._run_command(['git', 'add', '.'])
             self._run_command(['git', 'commit', '-m', f'Release version {self.version}'])
         
         # Create and push tag
         tag = f'v{self.version}'
         try:
+            self.progress.emit("Creating git tag...")
             self._run_command(['git', 'tag', '-a', tag, '-m', f'Release {tag}'])
+            self.progress.emit("Pushing git tag...")
             self._run_command(['git', 'push', 'origin', tag])
         except Exception as e:
             if 'already exists' not in str(e):
                 raise
                 
         # Create GitHub release
+        self.progress.emit("Creating GitHub release...")
         release_notes = f"Release {tag}\n\nPackage files:\n"
         
         # Add built package files to release notes
@@ -513,10 +518,11 @@ class ReleaseThread(QThread):
         
         # Clone AUR repo if it doesn't exist
         if not self.aur_dir.exists():
+            self.progress.emit("Cloning AUR repository...")
             self._run_command(["git", "clone", "ssh://aur@aur.archlinux.org/varchiver.git", str(self.aur_dir)])
             
         # Make sure we're on master branch
-        self.output_message("Switching to master branch...")
+        self.progress.emit("Updating AUR repository...")
         
         try:
             # Fetch and reset to latest master
@@ -556,7 +562,7 @@ class ReleaseThread(QThread):
                 )
             
             # Update SHA256 sum
-            self.output_message("Calculating SHA256 of GitHub release file...")
+            self.progress.emit("Calculating SHA256 of GitHub release file...")
             sha256_result = self._run_command([
                 "bash", "-c",
                 f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
@@ -606,7 +612,9 @@ class ReleaseThread(QThread):
             
         except Exception as e:
             self.output_message(f"Error updating AUR package: {e}")
-            raise
+            # Don't raise the exception - let the process continue
+            # This allows the release to complete even if AUR update fails
+            return
 
     def _update_file_version(self, file_path, pattern, replacement):
         content = file_path.read_text()
