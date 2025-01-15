@@ -83,6 +83,28 @@ class ReleaseThread(QThread):
         except Exception as e:
             print(f"Error writing to log file: {e}")
 
+    def _check_git_status(self, cwd=None):
+        """Check Git status, ignoring logs directory and other release artifacts"""
+        try:
+            # First check if logs directory is ignored
+            gitignore_path = self.project_dir / ".gitignore"
+            if not gitignore_path.exists() or "logs/" not in gitignore_path.read_text():
+                self.output_message("Adding logs directory to .gitignore...")
+                with open(gitignore_path, 'a') as f:
+                    f.write("\n# Release logs\nlogs/\n")
+                self._run_command(["git", "add", ".gitignore"])
+                self._run_command(["git", "commit", "-m", "Add logs directory to .gitignore"])
+
+            # Check status excluding logs directory
+            status_result = self._run_command(
+                ["git", "status", "--porcelain", "--untracked-files=no"],
+                cwd=cwd or self.project_dir
+            )
+            return status_result.stdout.strip()
+        except Exception as e:
+            self.output_message(f"Error checking Git status: {e}")
+            raise
+
     def run(self):
         """Execute the release process."""
         try:
@@ -94,11 +116,11 @@ class ReleaseThread(QThread):
                 raise Exception("Git remote URL not found. Please configure a remote repository first.")
 
             # Check Git status before proceeding
-            status_result = self._run_command(["git", "status", "--porcelain"])
-            if status_result.stdout.strip():
-                # There are uncommitted changes
+            status_output = self._check_git_status()
+            if status_output:
+                # There are uncommitted changes (excluding untracked files)
                 self.output_message("\nWarning: You have uncommitted changes:")
-                self.output_message(status_result.stdout)
+                self.output_message(status_output)
                 self.output_message("\nPlease commit or stash your changes before proceeding.")
                 raise Exception("Uncommitted changes found. Please commit or stash them before creating a release.")
 
