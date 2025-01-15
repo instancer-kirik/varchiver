@@ -18,23 +18,11 @@ makedepends=(
     'python-wheel'
     'python-pip'
 )
-
-# For AUR releases, use the GitHub source
-if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
-    source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-    sha256sums=('SKIP')  # Will be updated by release manager
-else
-    source=()
-    sha256sums=()
-fi
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Will be updated by release manager
 
 build() {
-    # Use source directory for AUR builds, project root for local builds
-    if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
-        cd "$srcdir/$pkgname-$pkgver"
-    else
-        cd "$startdir"
-    fi
+    cd "$srcdir/$pkgname-$pkgver"
     
     # Clean up any existing virtual environment
     rm -rf .venv
@@ -72,12 +60,7 @@ build() {
 }
 
 package() {
-    # Use source directory for AUR builds, project root for local builds
-    if [ -z "$VARCHIVER_LOCAL_BUILD" ]; then
-        cd "$srcdir/$pkgname-$pkgver"
-    else
-        cd "$startdir"
-    fi
+    cd "$srcdir/$pkgname-$pkgver"
     
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
@@ -99,5 +82,5 @@ get_version() {
 # Force rebuild during release
 force_rebuild() {
     rm -rf pkg/ dist/ *.pkg.tar.zst
-    VARCHIVER_LOCAL_BUILD=1 makepkg -f --noconfirm --skipchecksums
+    makepkg -f --noconfirm
 }
