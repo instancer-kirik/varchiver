@@ -9,6 +9,7 @@ import shutil
 import json
 import configparser
 from pathlib import Path
+from .project_constants import SENSITIVE_PATTERNS
 
 class GitSecurityError(Exception):
     """Raised for Git security-related issues."""
@@ -18,27 +19,7 @@ class GitConfigHandler:
     FINGERPRINT_VERSION = 1
     FINGERPRINT_SALT_FILE = '.git_fingerprint_salt'
     GIT_CONFIG_BACKUP_DIR = '.git_config_backup'
-    SENSITIVE_PATTERNS = {
-        '.env',
-        '*.env',
-        '.env.*',
-        'env/',
-        '.env.local',
-        '.env.*.local',
-        '*.pem',
-        '*.key',
-        'id_rsa',
-        'id_dsa',
-        '*.pfx',
-        '*.p12',
-        '*.keystore',
-        'secrets.*',
-        '*password*',
-        '*secret*',
-        '*credential*',
-        '.aws/',
-        '.ssh/',
-    }
+    SENSITIVE_PATTERNS = SENSITIVE_PATTERNS
     
     def __init__(self, project_path: str):
         self.project_path = project_path

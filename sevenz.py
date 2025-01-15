@@ -7,6 +7,7 @@ import fnmatch
 from pathlib import Path
 from PyQt6.QtWidgets import QInputDialog, QLineEdit
 import sys
+from .utils.pattern_utils import should_skip_file
 
 class SevenZipHandler:
     """Handler for 7z archives using 7z command-line tool"""
@@ -501,26 +502,7 @@ class SevenZipHandler:
 
     def _should_skip(self, filepath):
         """Check if file should be skipped based on patterns"""
-        if not self.skip_patterns:
-            return False
-            
-        for pattern in self.skip_patterns:
-            if pattern.startswith('**/'):
-                # Match anywhere in path
-                if fnmatch.fnmatch(filepath, pattern[3:]):
-                    return True
-            elif pattern.endswith('/**'):
-                # Match directory and all contents
-                dir_pattern = pattern[:-3]
-                path_parts = Path(filepath).parts
-                for i in range(len(path_parts)):
-                    if fnmatch.fnmatch(str(Path(*path_parts[:i+1])), dir_pattern):
-                        return True
-            else:
-                # Match from start of path
-                if fnmatch.fnmatch(filepath, pattern):
-                    return True
-        return False
+        return should_skip_file(filepath, self.skip_patterns)
 
 class FileInfo:
     """Simple file info class to match zipfile/rarfile interface"""

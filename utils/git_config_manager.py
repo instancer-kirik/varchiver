@@ -5,189 +5,245 @@ import subprocess
 from typing import List, Dict, Optional
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLabel, QTextEdit, QGroupBox, QCheckBox, QMessageBox,
-                            QComboBox, QFormLayout)
+                            QComboBox, QFormLayout, QScrollArea, QDialog, QDialogButtonBox,
+                            QSizePolicy)
 from PyQt6.QtCore import Qt, pyqtSignal
+
+from PyQt6.QtGui import QFont
+from .project_constants import GIT_EXPORT_PATTERNS
 
 class GitConfigManager(QWidget):
     """User-friendly interface for managing Git configurations."""
     
     config_changed = pyqtSignal()  # Signal emitted when configuration changes
 
-    # Common patterns for .gitattributes
-    COMMON_PATTERNS = {
-        'archives': {
-            'description': 'Archive files (exclude from releases)',
-            'patterns': ['*.tar.gz', '*.zip', '*.rar', '*.7z', '*.pkg.tar.zst']
-        },
-        'build_artifacts': {
-            'description': 'Build artifacts and temporary files',
-            'patterns': ['build/', 'dist/', '*.pyc', '__pycache__/', '.venv/', 'node_modules/']
-        },
-        'ide_files': {
-            'description': 'IDE and editor files',
-            'patterns': ['.vscode/', '.idea/', '*.swp', '*.swo', '*~']
-        },
-        'test_files': {
-            'description': 'Test files and directories',
-            'patterns': ['tests/', 'test/', '*.test.*', '*.spec.*']
-        }
-    }
-
-    # Git tips for better repository management
-    GIT_TIPS = """
-# Git Best Practices and Tips
-
-## .gitattributes Tips
-- Use `export-ignore` to exclude files from archives/releases
-- Use `text=auto` for automatic line ending conversion
-- Use `binary` for binary files to prevent line ending conversion
-- Use `diff=python` for better Python diffs
-
-## General Git Tips
-- Keep releases clean by excluding build artifacts
-- Use meaningful commit messages
-- Tag releases with version numbers
-- Use branches for features and fixes
-- Keep sensitive data out of the repository
-
-## Common Patterns
-- `*.tar.gz export-ignore` - Exclude archives from releases
-- `*.pyc export-ignore` - Exclude Python bytecode
-- `tests/ export-ignore` - Exclude test directories
-- `docs/ export-ignore` - Exclude documentation (if not needed in releases)
-"""
-
-    def __init__(self, repo_path: Path):
-        super().__init__()
+    def __init__(self, repo_path: str, parent=None):
+        """Initialize the Git config manager."""
+        super().__init__(parent)
         self.repo_path = repo_path
-        self.gitattributes_path = repo_path / '.gitattributes'
-        self.setup_ui()
-        self.load_current_config()
+        self.pattern_checkboxes = {}
+        self.init_ui()
+        self.apply_styles()
 
-    def setup_ui(self):
-        """Set up the user interface."""
+    def init_ui(self):
+        """Initialize the Git config manager UI"""
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # Pattern selection section
-        patterns_group = QGroupBox("Common Patterns")
-        patterns_layout = QVBoxLayout()
-        patterns_group.setLayout(patterns_layout)
+        # Description label
+        desc_label = QLabel("Configure Git export-ignore patterns for your project. These patterns determine which files are excluded from release archives.")
+        desc_label.setWordWrap(True)
+        layout.addWidget(desc_label)
 
-        self.pattern_checkboxes = {}
-        for key, info in self.COMMON_PATTERNS.items():
-            checkbox = QCheckBox(info['description'])
-            checkbox.stateChanged.connect(self.on_pattern_changed)
-            self.pattern_checkboxes[key] = checkbox
-            patterns_layout.addWidget(checkbox)
+        # Create scroll area for patterns
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        layout.addWidget(scroll)
 
-        layout.addWidget(patterns_group)
+        # Container for pattern groups
+        pattern_container = QWidget()
+        pattern_layout = QVBoxLayout(pattern_container)
 
-        # Custom patterns section
-        custom_group = QGroupBox("Custom Patterns")
-        custom_layout = QVBoxLayout()
-        custom_group.setLayout(custom_layout)
+        # Group patterns by category
+        current_category = None
+        group_box = None
+        group_layout = None
 
-        self.custom_patterns = QTextEdit()
-        self.custom_patterns.setPlaceholderText("Enter custom patterns (one per line)\nExample: *.log export-ignore")
-        custom_layout.addWidget(self.custom_patterns)
+        for pattern_tuple in GIT_EXPORT_PATTERNS:
+            pattern, description = pattern_tuple[:2]
+            default_checked = True if len(pattern_tuple) <= 2 else pattern_tuple[2]
 
-        layout.addWidget(custom_group)
+            # Check for category in description (denoted by #)
+            if pattern.startswith('#'):
+                current_category = pattern.lstrip('# ')
+                group_box = QGroupBox(current_category)
+                group_layout = QVBoxLayout()
+                group_box.setLayout(group_layout)
+                pattern_layout.addWidget(group_box)
+                continue
 
-        # Tips section
-        tips_group = QGroupBox("Git Tips")
-        tips_layout = QVBoxLayout()
-        tips_group.setLayout(tips_layout)
+            if group_layout is None:
+                # Create default group if none exists
+                group_box = QGroupBox("General")
+                group_layout = QVBoxLayout()
+                group_box.setLayout(group_layout)
+                pattern_layout.addWidget(group_box)
 
-        tips_text = QTextEdit()
-        tips_text.setMarkdown(self.GIT_TIPS)
-        tips_text.setReadOnly(True)
-        tips_layout.addWidget(tips_text)
+            # Create pattern widget
+            pattern_widget = QWidget()
+            pattern_widget_layout = QVBoxLayout()
+            pattern_widget.setLayout(pattern_widget_layout)
 
-        layout.addWidget(tips_group)
+            # Add checkbox with pattern
+            checkbox = QCheckBox(pattern)
+            checkbox.setChecked(default_checked)
+            self.pattern_checkboxes[pattern] = checkbox
+            pattern_widget_layout.addWidget(checkbox)
 
-        # Action buttons
-        button_layout = QHBoxLayout()
+            # Add description label
+            desc_label = QLabel(description)
+            desc_label.setWordWrap(True)
+            desc_label.setStyleSheet("color: palette(text); font-size: 9pt; margin-left: 20px;")
+            pattern_widget_layout.addWidget(desc_label)
+
+            group_layout.addWidget(pattern_widget)
+
+        scroll.setWidget(pattern_container)
+
+        # Buttons container
+        buttons_container = QWidget()
+        buttons_layout = QHBoxLayout()
+        buttons_container.setLayout(buttons_layout)
+
+        # Preview button
+        preview_btn = QPushButton("Preview Selected")
+        preview_btn.clicked.connect(self.preview_selected_patterns)
+        buttons_layout.addWidget(preview_btn)
+
+        # Save button
+        save_btn = QPushButton("Save Selected")
+        save_btn.clicked.connect(self.save_selected_patterns)
+        buttons_layout.addWidget(save_btn)
+
+        layout.addWidget(buttons_container)
+
+    def preview_selected_patterns(self):
+        """Show preview of selected patterns"""
+        preview_text = "#Generated by Varchiver GitConfigManager\n* text=auto\n"
         
-        save_button = QPushButton("Save Configuration")
-        save_button.clicked.connect(self.save_configuration)
-        button_layout.addWidget(save_button)
+        # Get existing patterns
+        gitattributes_path = Path(self.repo_path) / ".gitattributes"
+        existing_patterns = set()
+        if gitattributes_path.exists():
+            existing_patterns = set(gitattributes_path.read_text().splitlines())
+
+        # Add selected patterns by category
+        current_category = None
+        selected_patterns = []
         
-        preview_button = QPushButton("Preview Changes")
-        preview_button.clicked.connect(self.preview_changes)
-        button_layout.addWidget(preview_button)
+        for pattern_tuple in GIT_EXPORT_PATTERNS:
+            pattern, description = pattern_tuple[:2]
+            
+            # Handle category headers
+            if description is None:
+                if selected_patterns:  # Add newline between categories if we have patterns
+                    selected_patterns.append("")
+                selected_patterns.append(pattern)
+                continue
+                
+            # Skip unselected patterns
+            if not self.pattern_checkboxes[pattern].isChecked():
+                continue
+                
+            # Add pattern with status
+            if pattern in existing_patterns:
+                selected_patterns.append(f"{pattern}  # already in .gitattributes")
+            else:
+                selected_patterns.append(pattern)
 
-        layout.addLayout(button_layout)
+        if selected_patterns:
+            preview_text += "\n" + "\n".join(selected_patterns)
+        else:
+            preview_text += "\n# No patterns selected"
 
-    def load_current_config(self):
-        """Load current .gitattributes configuration."""
+        # Show preview dialog
+        preview_dialog = QDialog(self)
+        preview_dialog.setWindowTitle("Preview Selected Patterns")
+        preview_dialog.setMinimumWidth(600)
+        preview_dialog.setMinimumHeight(400)
+
+        dialog_layout = QVBoxLayout()
+        preview_dialog.setLayout(dialog_layout)
+
+        preview_edit = QTextEdit()
+        preview_edit.setReadOnly(True)
+        preview_edit.setFont(QFont("Monospace"))
+        preview_edit.setText(preview_text)
+        dialog_layout.addWidget(preview_edit)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        button_box.accepted.connect(preview_dialog.accept)
+        dialog_layout.addWidget(button_box)
+
+        preview_dialog.exec()
+
+    def save_selected_patterns(self):
+        """Save selected patterns to .gitattributes"""
         try:
-            if self.gitattributes_path.exists():
-                content = self.gitattributes_path.read_text()
+            gitattributes_path = Path(self.repo_path) / ".gitattributes"
+            
+            # Get existing patterns
+            existing_patterns = set()
+            if gitattributes_path.exists():
+                existing_patterns = set(line.strip() for line in gitattributes_path.read_text().splitlines()
+                                     if line.strip() and not line.strip().startswith('#'))
+
+            # Build new content with categories
+            new_content = ["# Git export-ignore patterns"]
+            current_category = None
+            
+            for pattern_tuple in GIT_EXPORT_PATTERNS:
+                pattern, description = pattern_tuple[:2]
                 
-                # Check common patterns
-                for key, info in self.COMMON_PATTERNS.items():
-                    patterns_found = all(
-                        any(line.strip().startswith(pattern) for line in content.splitlines())
-                        for pattern in info['patterns']
-                    )
-                    self.pattern_checkboxes[key].setChecked(patterns_found)
-                
-                # Load custom patterns
-                custom_patterns = []
-                for line in content.splitlines():
-                    if not any(
-                        pattern in line 
-                        for patterns in self.COMMON_PATTERNS.values() 
-                        for pattern in patterns['patterns']
-                    ):
-                        custom_patterns.append(line)
-                
-                self.custom_patterns.setPlainText('\n'.join(custom_patterns))
+                # Handle category headers
+                if description is None:
+                    if new_content[-1] != "":  # Add newline before category if needed
+                        new_content.append("")
+                    new_content.append(pattern)
+                    continue
+                    
+                # Add selected patterns
+                if self.pattern_checkboxes[pattern].isChecked():
+                    new_content.append(pattern)
+
+            # Write to file
+            gitattributes_path.write_text("\n".join(new_content) + "\n")
+
+            QMessageBox.information(self, "Success", "Patterns saved to .gitattributes")
+
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load configuration: {e}")
+            QMessageBox.warning(self, "Error", f"Failed to save patterns: {str(e)}")
 
-    def generate_config_content(self) -> str:
-        """Generate .gitattributes content based on current settings."""
-        lines = ["# Generated by Varchiver Git Config Manager"]
-        
-        # Add selected common patterns
-        for key, checkbox in self.pattern_checkboxes.items():
-            if checkbox.isChecked():
-                lines.append(f"\n# {self.COMMON_PATTERNS[key]['description']}")
-                for pattern in self.COMMON_PATTERNS[key]['patterns']:
-                    lines.append(f"{pattern} export-ignore")
-        
-        # Add custom patterns
-        custom = self.custom_patterns.toPlainText().strip()
-        if custom:
-            lines.append("\n# Custom patterns")
-            lines.extend(custom.splitlines())
-        
-        return '\n'.join(lines)
-
-    def preview_changes(self):
-        """Show a preview of the changes to be made."""
-        preview = QMessageBox(self)
-        preview.setWindowTitle("Configuration Preview")
-        preview.setText("New .gitattributes configuration:")
-        preview.setDetailedText(self.generate_config_content())
-        preview.exec()
-
-    def save_configuration(self):
-        """Save the configuration to .gitattributes."""
-        try:
-            content = self.generate_config_content()
-            self.gitattributes_path.write_text(content)
-            self.config_changed.emit()
-            QMessageBox.information(self, "Success", "Git configuration saved successfully!")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save configuration: {e}")
-
-    def on_pattern_changed(self):
-        """Handle pattern checkbox state changes."""
-        # This method can be extended to provide real-time feedback or validation
-        pass
+    def apply_styles(self):
+        """Apply dark mode compatible styles"""
+        self.setStyleSheet("""
+            QGroupBox {
+                background-color: transparent;
+                border: 1px solid palette(mid);
+                border-radius: 4px;
+                margin-top: 8px;
+                padding-top: 8px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 3px;
+            }
+            QCheckBox {
+                color: palette(text);
+            }
+            QCheckBox:hover {
+                color: palette(highlight);
+            }
+            QPushButton {
+                background-color: palette(button);
+                border: 1px solid palette(mid);
+                border-radius: 4px;
+                padding: 6px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: palette(light);
+            }
+            QPushButton:pressed {
+                background-color: palette(dark);
+            }
+            QScrollArea {
+                border: 1px solid palette(mid);
+                border-radius: 4px;
+            }
+        """)
 
 def setup_git_config(repo_path: Path) -> None:
     """Helper function to set up initial Git configuration."""

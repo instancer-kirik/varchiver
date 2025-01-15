@@ -8,6 +8,7 @@ from pathlib import Path
 from ..utils.constants import DEFAULT_SKIP_PATTERNS
 from ..utils.archive_utils import get_archive_type
 from ..sevenz import SevenZipHandler
+from ..utils.pattern_utils import should_skip_file
 
 class ArchiveThread(QThread):
     progress = pyqtSignal(int)
@@ -162,17 +163,7 @@ class ArchiveThread(QThread):
 
     def _should_skip(self, filepath):
         """Check if file should be skipped based on patterns"""
-        for pattern in self.skip_patterns:
-            if fnmatch.fnmatch(filepath.lower(), pattern.lower()):
-                return True
-            # Handle directory patterns
-            if pattern.endswith('/**'):
-                dir_pattern = pattern[:-3]
-                path_parts = Path(filepath).parts
-                for i in range(len(path_parts)):
-                    if fnmatch.fnmatch(str(Path(*path_parts[:i+1])), dir_pattern):
-                        return True
-        return False
+        return should_skip_file(filepath, self.skip_patterns)
 
     def _handle_collision(self, file_path, archive_path, archive):
         """Handle file collision based on strategy"""
