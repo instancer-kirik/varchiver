@@ -18,8 +18,8 @@ makedepends=(
     'python-wheel'
     'python-pip'
 )
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('SKIP')  # Will be updated by release manager
+source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=("473b57227d7b73cc226b3d033361762e1a9f7c5fea7de1c333e160bfee772d95")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
