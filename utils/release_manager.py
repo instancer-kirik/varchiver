@@ -873,58 +873,6 @@ class ReleaseManager(QWidget):
             QMessageBox.warning(self, "Error", "Project path not set")
             return
             
-        # Check Git status before proceeding
-        try:
-            result = subprocess.run(
-                ["git", "status", "--porcelain"],
-                cwd=project_path,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            if result.stdout.strip():
-                reply = QMessageBox.question(
-                    self,
-                    "Uncommitted Changes",
-                    "There are uncommitted changes in your repository. Would you like to:\n\n"
-                    "Yes = Commit all changes before release\n"
-                    "No = Cancel release process\n"
-                    "Save = Stash changes and proceed",
-                    QMessageBox.StandardButton.Yes |
-                    QMessageBox.StandardButton.No |
-                    QMessageBox.StandardButton.Save
-                )
-                
-                if reply == QMessageBox.StandardButton.No:
-                    return
-                elif reply == QMessageBox.StandardButton.Save:
-                    # Stash changes
-                    subprocess.run(
-                        ["git", "stash", "save", "Pre-release stash"],
-                        cwd=project_path,
-                        check=True
-                    )
-                    self.release_output.append("Changes stashed successfully")
-                elif reply == QMessageBox.StandardButton.Yes:
-                    # Commit changes
-                    subprocess.run(
-                        ["git", "add", "."],
-                        cwd=project_path,
-                        check=True
-                    )
-                    subprocess.run(
-                        ["git", "commit", "-m", "Pre-release commit"],
-                        cwd=project_path,
-                        check=True
-                    )
-                    self.release_output.append("Changes committed successfully")
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Git operation failed: {e.stderr}")
-            return
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to check Git status: {str(e)}")
-            return
-            
         settings.setValue("last_version", version)
         settings.setValue("aur_path", self.aur_path.text())
 
