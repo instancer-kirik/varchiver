@@ -285,24 +285,62 @@ class ReleaseThread(QThread):
                 env=merged_env,
                 check=check
             )
+            
+            # Handle command output
             if result.stdout:
-                self.output_message(f"Command output: {result.stdout}")
+                # For git commands, check if output is informational
+                if cmd[0] == "git":
+                    # These are normal git operation messages, not errors
+                    if any(x in result.stdout for x in [
+                        "->", "branch", "origin", "Switched to", "up to date",
+                        "file changed", "insertion", "deletion",
+                        "create mode", "rename", "Already on"
+                    ]):
+                        self.output_message(result.stdout)
+                    else:
+                        self.output_message(f"Command output: {result.stdout}")
+                else:
+                    self.output_message(f"Command output: {result.stdout}")
+            
+            # Handle command stderr
             if result.stderr:
-                self.output_message(f"Command error: {result.stderr}")
+                # For git commands, check if stderr is informational
+                if cmd[0] == "git":
+                    # These are normal git operation messages that come through stderr
+                    if any(x in result.stderr for x in [
+                        "remote:", "origin/master", "->", "FETCH_HEAD",
+                        "Everything up-to-date", "master -> master"
+                    ]):
+                        self.output_message(result.stderr)
+                    else:
+                        self.output_message(f"Warning: {result.stderr}")
+                else:
+                    self.output_message(f"Warning: {result.stderr}")
+            
             return result
+            
         except subprocess.TimeoutExpired:
-            self.output_message(f"Command timed out after {timeout} seconds: {' '.join(cmd)}")
+            self.output_message(f"Error: Command timed out after {timeout} seconds: {' '.join(cmd)}")
             raise
         except subprocess.CalledProcessError as e:
-            self.output_message(f"Command failed with exit code {e.returncode}:")
-            self.output_message(f"Command: {' '.join(cmd)}")
-            if e.stdout:
-                self.output_message(f"Output:\n{e.stdout}")
-            if e.stderr:
-                self.output_message(f"Error:\n{e.stderr}")
+            # Check if this is actually an error or just git information
+            if cmd[0] == "git" and e.stderr and any(x in e.stderr for x in [
+                "remote:", "origin/master", "->", "FETCH_HEAD",
+                "Everything up-to-date", "master -> master"
+            ]):
+                self.output_message(e.stderr)
+                if not check:  # If we're not checking return code, continue
+                    return e
+            else:
+                self.output_message(f"Error: Command failed with exit code {e.returncode}:")
+                self.output_message(f"Command: {' '.join(cmd)}")
+                if e.stdout:
+                    self.output_message(f"Output: {e.stdout}")
+                if e.stderr:
+                    self.output_message(f"Error: {e.stderr}")
             raise
         except Exception as e:
-            self.output_message(f"Unexpected error running command: {e}")
+            self.output_message(f"Error: Unexpected error running command: {e}")
             raise
 
     def _verify_release_assets(self, version, max_retries=20, retry_delay=15):
