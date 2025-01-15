@@ -9,7 +9,7 @@ import os
 import re
 from pathlib import Path
 import time
-from typing import List
+from typing import List, Optional
 from .project_constants import PROJECT_CONFIGS
 
 print("Imports completed in release_manager module")
@@ -20,17 +20,46 @@ class ReleaseThread(QThread):
     output = pyqtSignal(str)
     finished = pyqtSignal(bool)
 
-    def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit):
+    def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
+                 use_aur: bool = False, aur_dir: Optional[Path] = None):
         super().__init__()
         self.project_dir = project_dir
         self.version = version
         self.tasks = tasks
         self.output_widget = output_widget
+        self.use_aur = use_aur
+        self.aur_dir = aur_dir
+        
+        # Git configuration
+        self.git_branch = "master"  # Default to master branch
+        self.url = None  # Will be set from git remote
+        
+        # Version file patterns
         self.version_files = ['pyproject.toml', 'PKGBUILD']
         self.version_patterns = {
             'pyproject.toml': r'version\s*=\s*"[^"]*"',
             'PKGBUILD': r'^pkgver=[0-9][0-9a-zA-Z.-]*$'
         }
+        
+        # Initialize Git URL from remote
+        try:
+            result = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=self.project_dir,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            remote_url = result.stdout.strip()
+            # Convert SSH URL to HTTPS URL if needed
+            if remote_url.startswith("git@github.com:"):
+                remote_url = remote_url.replace("git@github.com:", "https://github.com/")
+            if remote_url.endswith(".git"):
+                remote_url = remote_url[:-4]
+            self.url = remote_url
+        except Exception as e:
+            self.output_message(f"Warning: Failed to get Git remote URL: {e}")
+            self.url = None
 
     def output_message(self, message: str):
         """Helper method to emit output signal and update widget"""
@@ -41,6 +70,9 @@ class ReleaseThread(QThread):
     def run(self):
         """Execute the release process."""
         try:
+            if not self.url:
+                raise Exception("Git remote URL not found. Please configure a remote repository first.")
+
             if 'update_version' in self.tasks:
                 self._update_version_files()
                 # Commit version changes
@@ -50,12 +82,19 @@ class ReleaseThread(QThread):
                 self._create_github_release()
 
             if 'update_aur' in self.tasks:
+                if not self.use_aur:
+                    raise Exception("AUR update requested but AUR support is not enabled")
+                if not self.aur_dir:
+                    raise Exception("AUR update requested but AUR directory is not set")
                 self._update_aur()
 
             self.output_message("Release process completed successfully!")
+            self.finished.emit(True)
 
         except Exception as e:
+            self.error.emit(str(e))
             self.output_message(f"Error during release process: {str(e)}")
+            self.finished.emit(False)
 
     def _commit_version_changes(self):
         """Commit version number changes."""
@@ -705,6 +744,11 @@ class ReleaseManager(QWidget):
 
         # Save settings
         settings = QSettings("Varchiver", "ReleaseManager")
+        project_path = settings.value("project_path")
+        if not project_path:
+            QMessageBox.warning(self, "Error", "Project path not set")
+            return
+
         settings.setValue("last_version", version)
         settings.setValue("aur_path", self.aur_path.text())
 
@@ -722,15 +766,43 @@ class ReleaseManager(QWidget):
         self.release_output.clear()
         
         self.release_thread = ReleaseThread(
-            project_dir=Path(settings.value("project_path")),
+            project_dir=Path(project_path),
             version=version,
             tasks=selected_tasks,
-            output_widget=self.release_output
+            output_widget=self.release_output,
+            use_aur="Update AUR" in selected,
+            aur_dir=Path(self.aur_path.text()) if "Update AUR" in selected else None
         )
+        
+        self.release_thread.progress.connect(self.update_progress)
+        self.release_thread.error.connect(self.show_error)
+        self.release_thread.output.connect(self.update_output)
         self.release_thread.finished.connect(self.on_release_complete)
+        
         self.release_thread.start()
 
     def on_release_complete(self):
         """Handle completion of release process"""
         self.release_start_button.setEnabled(True)
         self.release_output.append("\nRelease process completed")
+
+    def update_progress(self, message: str):
+        """Update progress message in the output"""
+        self.release_output.append(message)
+        # Ensure the new text is visible
+        cursor = self.release_output.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.release_output.setTextCursor(cursor)
+
+    def show_error(self, message: str):
+        """Show error message"""
+        QMessageBox.critical(self, "Error", message)
+        self.release_start_button.setEnabled(True)
+
+    def update_output(self, text: str):
+        """Update output text"""
+        self.release_output.append(text)
+        # Ensure the new text is visible
+        cursor = self.release_output.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.release_output.setTextCursor(cursor)
