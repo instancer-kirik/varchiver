@@ -964,16 +964,38 @@ class ReleaseManager(QWidget):
             self.release_output.append(f"Error: {str(e)}")
             return
 
-    def on_release_complete(self):
+    def on_release_complete(self, success: bool):
         """Handle completion of release process"""
         self.release_start_button.setEnabled(True)
-        self.release_output.append("\nRelease process completed")
+        self.progress_bar.hide()
+        
+        if success:
+            QMessageBox.information(
+                self,
+                "Release Complete",
+                "Release process completed successfully!\n\n"
+                "All selected tasks have been completed."
+            )
+        else:
+            # Error message will have already been shown by show_error
+            pass
+            
+        # Ensure the output is scrolled to the end
+        cursor = self.release_output.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.release_output.setTextCursor(cursor)
+
+    def show_error(self, message: str):
+        """Show error message"""
+        self.progress_bar.hide()
+        QMessageBox.critical(self, "Error", message)
+        self.release_start_button.setEnabled(True)
 
     def update_progress(self, message: str):
         """Update progress message in the output"""
         self.release_output.append(message)
         # Show progress bar during long operations
-        if any(x in message for x in ["Building package", "Creating GitHub release", "Updating AUR package"]):
+        if any(x in message.lower() for x in ["building package", "creating github release", "updating aur package"]):
             self.progress_bar.setRange(0, 0)  # Indeterminate progress
             self.progress_bar.show()
         elif "completed" in message.lower():
@@ -982,11 +1004,6 @@ class ReleaseManager(QWidget):
         cursor = self.release_output.textCursor()
         cursor.movePosition(cursor.MoveOperation.End)
         self.release_output.setTextCursor(cursor)
-
-    def show_error(self, message: str):
-        """Show error message"""
-        QMessageBox.critical(self, "Error", message)
-        self.release_start_button.setEnabled(True)
 
     def update_output(self, text: str):
         """Update output text"""
