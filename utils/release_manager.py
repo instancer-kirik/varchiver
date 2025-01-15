@@ -145,6 +145,7 @@ class ReleaseThread(QThread):
                         self._update_file_version(file_path, regex_pattern, pattern.replace("*", self.version))
 
     def _build_packages(self):
+        """Build packages in a dedicated dist directory"""
         self.progress.emit("Building packages...")
         
         # First check if PKGBUILD exists
@@ -152,14 +153,22 @@ class ReleaseThread(QThread):
         if not pkgbuild_path.exists():
             raise Exception("PKGBUILD not found in project directory")
             
+        # Create dist directory if it doesn't exist
+        dist_dir = self.project_dir / "dist"
+        dist_dir.mkdir(exist_ok=True)
+            
         # Clean up previous build
         self.output_message("Cleaning up previous build...")
-        cleanup = subprocess.run(
-            ["rm", "-rf", "pkg/", "src/", "*.pkg.tar.zst"],
-            cwd=self.project_dir,
-            capture_output=True,
-            text=True
-        )
+        for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
+            for f in dist_dir.glob(pattern):
+                f.unlink()
+        
+        # Clean build directories
+        for d in ["pkg", "src"]:
+            build_dir = self.project_dir / d
+            if build_dir.exists():
+                import shutil
+                shutil.rmtree(build_dir)
         
         # Install dependencies and build package
         self.output_message("Installing dependencies and building package...")
@@ -195,6 +204,10 @@ class ReleaseThread(QThread):
                 self.output_message("\nPackage information:")
                 self.output_message(check.stdout)
             raise Exception("Build failed. Check the output above for details.")
+            
+        # Move built packages to dist directory
+        for pkg_file in self.project_dir.glob("*.pkg.tar.zst"):
+            pkg_file.rename(dist_dir / pkg_file.name)
             
         self.progress.emit("Build completed successfully")
 
@@ -327,10 +340,13 @@ class ReleaseThread(QThread):
             # Wait a moment for GitHub to process the tag
             time.sleep(5)
             
-            # Create source archive
+            # Create source archive in dist directory
             self.output_message("Creating source archive...")
+            dist_dir = self.project_dir / "dist"
+            dist_dir.mkdir(exist_ok=True)
+            
             archive_name = f"{self.project_dir.name}-{self.version}"
-            archive_path = self.project_dir / f"{archive_name}.tar.gz"
+            archive_path = dist_dir / f"{archive_name}.tar.gz"
             
             # Create archive with explicit prefix and all files from the current tag
             self._run_command([
@@ -349,9 +365,9 @@ class ReleaseThread(QThread):
             # Create GitHub release
             self.output_message("Creating GitHub release...")
             
-            # Find built package
+            # Find built package in dist directory
             pkg_glob = f"{self.project_dir.name}-{self.version}-*-{arch}.pkg.tar.zst"
-            pkg_file = next(self.project_dir.glob(pkg_glob), None)
+            pkg_file = next(dist_dir.glob(pkg_glob), None)
             
             # Delete existing release if it exists
             self._run_command(
