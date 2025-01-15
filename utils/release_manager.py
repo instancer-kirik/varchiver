@@ -63,7 +63,7 @@ class ReleaseThread(QThread):
 
     def output_message(self, message: str):
         """Helper method to emit output signal and update widget"""
-        self.output.emit(message)
+        # Only update the widget, don't emit signal (to avoid double output)
         if self.output_widget:
             self.output_widget.append(message)
 
@@ -644,11 +644,22 @@ class ReleaseManager(QWidget):
         version_layout.addWidget(self.version_input)
         layout.addWidget(version_group)
         
-        # Progress bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
-        self.progress_bar.hide()
-        layout.addWidget(self.progress_bar)
+        # Task selection
+        task_group = QGroupBox("Release Task")
+        task_layout = QVBoxLayout()
+        task_group.setLayout(task_layout)
+
+        self.task_combo = QComboBox()
+        self.task_combo.addItems([
+            "Full Release (Update Version + Build + Create Release + Update AUR)",
+            "Update Version Only",
+            "Build and Create Release",
+            "Update AUR Only",
+            "Update Version + Build + Create Release",
+            "Build + Create Release + Update AUR"
+        ])
+        task_layout.addWidget(self.task_combo)
+        layout.addWidget(task_group)
         
         # AUR Directory
         aur_group = QGroupBox("AUR Directory")
@@ -666,22 +677,21 @@ class ReleaseManager(QWidget):
         aur_layout.addWidget(aur_browse)
         layout.addWidget(aur_group)
 
-        # Task selection
-        task_group = QGroupBox("Release Task")
-        task_layout = QVBoxLayout()
-        task_group.setLayout(task_layout)
-
-        self.task_combo = QComboBox()
-        self.task_combo.addItems([
-            "Full Release (Update Version + Build + Create Release + Update AUR)",
-            "Update Version Only",
-            "Build and Create Release",
-            "Update AUR Only",
-            "Update Version + Build + Create Release",
-            "Build + Create Release + Update AUR"
-        ])
-        task_layout.addWidget(self.task_combo)
-        layout.addWidget(task_group)
+        # Start button and progress bar in horizontal layout
+        controls_layout = QHBoxLayout()
+        
+        # Start button
+        self.release_start_button = QPushButton("Start Release")
+        self.release_start_button.clicked.connect(self.start_release_process)
+        controls_layout.addWidget(self.release_start_button)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.hide()
+        controls_layout.addWidget(self.progress_bar)
+        
+        layout.addLayout(controls_layout)
 
         # Output area
         output_group = QGroupBox("Release Output")
@@ -690,14 +700,9 @@ class ReleaseManager(QWidget):
 
         self.release_output = QTextEdit()
         self.release_output.setReadOnly(True)
-        self.release_output.setMinimumHeight(200)
+        self.release_output.setMaximumHeight(150)  # Limit height
         output_layout.addWidget(self.release_output)
         layout.addWidget(output_group)
-        
-        # Start button
-        self.release_start_button = QPushButton("Start Release")
-        self.release_start_button.clicked.connect(self.start_release_process)
-        layout.addWidget(self.release_start_button)
 
         # Apply dark mode compatible styles
         self.apply_styles()
