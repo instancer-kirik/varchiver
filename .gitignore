@@ -26,3 +26,6 @@ varchiver-bin
 pkg/
 *.tar.gz
 *.tar.zst
+
+# Release logs
+logs/
