@@ -19,7 +19,7 @@ makedepends=(
     'python-pip'
 )
 source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("8b40acf19d8721367505a18db50ac9f3961b07a021f526ff69622f587dc72f02")  # Will be updated by release manager
+sha256sums=("a470d4c0342caa126408956a9139567ecbb7c37b91b0bad8c6e335e80b7920f0")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"

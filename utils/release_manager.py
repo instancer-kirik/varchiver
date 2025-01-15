@@ -197,30 +197,93 @@ class ReleaseThread(QThread):
         dist_dir = self.project_dir / "dist"
         dist_dir.mkdir(exist_ok=True)
             
-        # Clean up previous build
+        # Clean up previous build artifacts
         self.output_message("Cleaning up previous build artifacts...")
-        for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
-            for f in dist_dir.glob(pattern):
-                f.unlink()
+        self.output_message("commented out tar.gz/pkg.tar.zst removal")
         
-        # Clean build directories
-        for d in ["pkg", "src"]:
+        # Clean build directories and artifacts
+        for d in ["pkg", "src", "dist"]:
             build_dir = self.project_dir / d
             if build_dir.exists():
                 import shutil
                 shutil.rmtree(build_dir)
         
-        # Install dependencies and build package
+        # # Clean up any stray artifacts
+        # for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
+        #     for f in self.project_dir.glob(pattern):
+        #         try:
+        #             f.unlink()
+        #         except Exception as e:
+        #             self.output_message(f"Warning: Could not delete {f}: {e}")
+        
+        # Update PKGBUILD version first
+        with pkgbuild_path.open('r') as f:
+            content = f.read()
+        
+        # Update version
+        content = re.sub(
+            r'^pkgver=.*$',
+            f'pkgver={self.version}',
+            content,
+            flags=re.MULTILINE
+        )
+        
+        with pkgbuild_path.open('w') as f:
+            f.write(content)
+        
+        # Create source archive for the release
+        self.output_message("Creating source archive...")
+        archive_name = f"{self.project_dir.name}-{self.version}"
+        archive_path = self.project_dir / f"{archive_name}.tar.gz"
+        
+        # Create archive excluding build artifacts and temp files
+        self._run_command([
+            "git", "archive",
+            "--format=tar.gz",
+            "--prefix", f"{archive_name}/",
+            "-o", str(archive_path),
+            "HEAD"
+        ])
+        
+        # Calculate SHA256 of the archive
+        sha256_result = self._run_command([
+            "sha256sum",
+            str(archive_path)
+        ])
+        sha256 = sha256_result.stdout.split()[0]
+        
+        # Update PKGBUILD source and hash
+        with pkgbuild_path.open('r') as f:
+            content = f.read()
+        
+        # Update source and sha256sums
+        content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("{self.project_dir.name}-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+            content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        content = re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        
+        with pkgbuild_path.open('w') as f:
+            f.write(content)
+        
+        # Now build the package
         self.output_message("Starting makepkg process...")
         self.progress.emit("Building package...")
         
-        # Run makepkg with syncdeps and force
+        # Run makepkg with force flag to ensure clean build
         result = subprocess.run(
-            ["makepkg", "-sf", "--noconfirm", "--skipchecksums"], 
+            ["makepkg", "-sf", "--noconfirm"], 
             cwd=self.project_dir, 
             capture_output=True, 
             text=True,
-            env={**os.environ, "PKGBUILD": str(pkgbuild_path)}
+            env=os.environ
         )
         
         # Show output regardless of success/failure
@@ -245,10 +308,18 @@ class ReleaseThread(QThread):
                 self.output_message(check.stdout)
             raise Exception("Build failed. Check the output above for details.")
             
+        # Create dist directory if it doesn't exist (might have been cleaned)
+        dist_dir.mkdir(exist_ok=True)
+        
         # Move built packages to dist directory
         self.output_message("Moving built packages to dist directory...")
         for pkg_file in self.project_dir.glob("*.pkg.tar.zst"):
-            pkg_file.rename(dist_dir / pkg_file.name)
+            if pkg_file.parent != dist_dir:
+                pkg_file.rename(dist_dir / pkg_file.name)
+        
+        # Move source archive to dist directory
+        if archive_path.exists():
+            archive_path.rename(dist_dir / archive_path.name)
             
         self.output_message("Build completed successfully")
         self.progress.emit("Build completed")

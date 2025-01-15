@@ -29,3 +29,11 @@ pkg/
 
 # Release logs
 logs/
+
+# Build directories
+src/
+pkg/
+
+# Build artifacts
+*.tar.gz
+*.pkg.tar.zst
