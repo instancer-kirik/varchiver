@@ -18,7 +18,6 @@ print("Imports completed in release_manager module")
 class ReleaseThread(QThread):
     # Define signals
     progress = pyqtSignal(str)
-    output = pyqtSignal(str)
     error = pyqtSignal(str)
     finished = pyqtSignal(bool)
     dialog_signal = pyqtSignal(str, str, list)  # title, message, options
@@ -82,15 +81,18 @@ class ReleaseThread(QThread):
     def output_message(self, message: str):
         """Thread-safe message output"""
         try:
+            # Emit progress signal for progress bar
+            self.progress.emit(message)
+            
             # Update widget through signal if needed
             if self.output_widget:
                 QMetaObject.invokeMethod(self.output_widget, "append", 
                                        Qt.ConnectionType.QueuedConnection,
                                        Q_ARG(str, message))
-                # Scroll to bottom
-                QMetaObject.invokeMethod(self.output_widget, "moveCursor",
+                # Scroll to bottom - fixed method call
+                QMetaObject.invokeMethod(self.output_widget, "verticalScrollBar().setValue",
                                        Qt.ConnectionType.QueuedConnection,
-                                       Q_ARG(QTextCursor.MoveOperation, QTextCursor.MoveOperation.End))
+                                       Q_ARG(int, self.output_widget.verticalScrollBar().maximum()))
             
             # Write to log file
             if self.log_file:
@@ -375,9 +377,10 @@ class ReleaseThread(QThread):
             pkgbuild_content = f.read()
             
         # Update source and sha256sums
-        pkgbuild_content = pkgbuild_content.replace(
-            'sha256sums=("SKIP")',
-            f'sha256sums=("{sha256}")'
+        pkgbuild_content = re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            pkgbuild_content
         )
         
         with open(pkgbuild_path, 'w') as f:
@@ -389,6 +392,17 @@ class ReleaseThread(QThread):
             env = os.environ.copy()
             env["PKGDEST"] = str(dist_dir)
             
+            # Copy resources before building
+            src_resources = self.project_dir / "varchiver" / "resources"
+            if src_resources.exists():
+                dst_resources = self.project_dir / "src" / f"{self.project_dir.name}-{self.version}" / "varchiver" / "resources"
+                dst_resources.parent.mkdir(parents=True, exist_ok=True)
+                import shutil
+                if dst_resources.exists():
+                    shutil.rmtree(dst_resources)
+                shutil.copytree(src_resources, dst_resources)
+                self.output_message("Copied resources directory")
+            
             result = self._run_command(
                 ["makepkg", "-f"],
                 env=env,
@@ -399,7 +413,7 @@ class ReleaseThread(QThread):
             self.output_message(result.stdout)
             
             if result.stderr.strip():
-                self.output_message("\nBuild errors:")
+                self.output_message("\nBuild warnings:")
                 self.output_message(result.stderr)
                 
         except subprocess.TimeoutExpired:
