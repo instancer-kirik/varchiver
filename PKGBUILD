@@ -22,7 +22,7 @@ makedepends=(
     'python-installer'
     'python-wheel'
     'python-pip'
-    'python-pyinstaller'
+    'python-installer'
 )
 optdepends=(
     'python-rarfile: for RAR archive support'
