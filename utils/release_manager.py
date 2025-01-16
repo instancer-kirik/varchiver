@@ -130,17 +130,27 @@ class ReleaseThread(QThread):
                     "3. Cancel release process",
                     ["Commit", "Stash", "Cancel"]
                 )
-                # Don't proceed until dialog is handled
-                self.wait_for_dialog = True
-                while self.wait_for_dialog:
-                    QThread.msleep(100)  # Wait for dialog response
-                    QApplication.processEvents()  # Keep UI responsive
-                
-                # If cancelled, return
-                if getattr(self, 'dialog_cancelled', False):
-                    return
+                return
             
-            self.continue_release()
+            # Update version files if needed
+            if 'update_version' in self.tasks:
+                self._update_version_files()
+                self._commit_version_changes()
+            
+            # Build packages
+            self._build_packages()
+            
+            # Create GitHub release if requested
+            if 'create_release' in self.tasks:
+                self._check_github_authentication()
+                self._create_github_release()
+                
+            # Update AUR if requested
+            if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
+                self._update_aur()
+            
+            self.output_message("Release process completed successfully!")
+            self.finished.emit(True)
             
         except Exception as e:
             self.error.emit(str(e))
@@ -221,7 +231,6 @@ class ReleaseThread(QThread):
             
         # Clean up previous build artifacts
         self.output_message("Cleaning up previous build artifacts...")
-        self.output_message("commented out tar.gz/pkg.tar.zst removal")
         
         # Clean build directories and artifacts
         for d in ["pkg", "src", "dist"]:
@@ -233,124 +242,67 @@ class ReleaseThread(QThread):
                     self.output_message(f"Cleaned up {d} directory")
                 except Exception as e:
                     self.output_message(f"Warning: Could not clean {d} directory: {e}")
-                    # Continue with other directories even if one fails
                     continue
         
-        # # Clean up any stray artifacts
-        # for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
-        #     for f in self.project_dir.glob(pattern):
-        #         try:
-        #             f.unlink()
-        #         except Exception as e:
-        #             self.output_message(f"Warning: Could not delete {f}: {e}")
-        
-        # Update PKGBUILD version first
-        with pkgbuild_path.open('r') as f:
-            content = f.read()
-        
-        # Update version
-        content = re.sub(
-            r'^pkgver=.*$',
-            f'pkgver={self.version}',
-            content,
-            flags=re.MULTILINE
-        )
-        
-        with pkgbuild_path.open('w') as f:
-            f.write(content)
-        
-        # Create source archive for the release
+        # Create source archive
         self.output_message("Creating source archive...")
-        archive_name = f"{self.project_dir.name}-{self.version}"
-        archive_path = self.project_dir / f"{archive_name}.tar.gz"
+        archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
+        archive_path = self.project_dir / archive_name
         
-        # Create archive excluding build artifacts and temp files
+        # Create source archive using git archive
         self._run_command([
             "git", "archive",
             "--format=tar.gz",
-            "--prefix", f"{archive_name}/",
+            f"--prefix={self.project_dir.name}-{self.version}/",
             "-o", str(archive_path),
             "HEAD"
         ])
         
-        # Calculate SHA256 of the archive
-        sha256_result = self._run_command([
-            "sha256sum",
-            str(archive_path)
-        ])
+        # Calculate SHA256 sum
+        sha256_result = self._run_command(["sha256sum", str(archive_path)])
         sha256 = sha256_result.stdout.split()[0]
         
-        # Update PKGBUILD source and hash
-        with pkgbuild_path.open('r') as f:
-            content = f.read()
-        
+        # Update PKGBUILD with new source and checksum
+        with open(pkgbuild_path, 'r') as f:
+            pkgbuild_content = f.read()
+            
         # Update source and sha256sums
-        content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("{self.project_dir.name}-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-            content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        content = re.sub(
-            r'sha256sums=\([^)]*\)',
-            f'sha256sums=("{sha256}")',
-            content,
-            flags=re.MULTILINE | re.DOTALL
+        pkgbuild_content = pkgbuild_content.replace(
+            'sha256sums=("SKIP")',
+            f'sha256sums=("{sha256}")'
         )
         
-        with pkgbuild_path.open('w') as f:
-            f.write(content)
-        
-        # Now build the package
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+            
+        # Build package
         self.output_message("Starting makepkg process...")
-        self.progress.emit("Building package...")
-        
-        # Run makepkg with force flag to ensure clean build
-        result = subprocess.run(
-            ["makepkg", "-sf", "--noconfirm"], 
-            cwd=self.project_dir, 
-            capture_output=True, 
-            text=True,
-            env=os.environ
-        )
-        
-        # Show output regardless of success/failure
-        if result.stdout:
+        try:
+            env = os.environ.copy()
+            env["PKGDEST"] = str(dist_dir)
+            
+            result = self._run_command(
+                ["makepkg", "-f"],
+                env=env,
+                timeout=300  # 5 minutes timeout
+            )
+            
             self.output_message("\nBuild output:")
             self.output_message(result.stdout)
-        if result.stderr:
-            self.output_message("\nBuild errors:")
-            self.output_message(result.stderr)
-        
-        if result.returncode != 0:
-            # Try to get more detailed error information
-            self.output_message("\nChecking package dependencies...")
-            check = subprocess.run(
-                ["makepkg", "--printsrcinfo"], 
-                cwd=self.project_dir, 
-                capture_output=True, 
-                text=True
-            )
-            if check.stdout:
-                self.output_message("\nPackage information:")
-                self.output_message(check.stdout)
-            raise Exception("Build failed. Check the output above for details.")
             
-        # Create dist directory if it doesn't exist (might have been cleaned)
-        dist_dir.mkdir(exist_ok=True)
-        
-        # Move built packages to dist directory
-        self.output_message("Moving built packages to dist directory...")
-        for pkg_file in self.project_dir.glob("*.pkg.tar.zst"):
-            if pkg_file.parent != dist_dir:
-                pkg_file.rename(dist_dir / pkg_file.name)
-        
-        # Move source archive to dist directory
-        if archive_path.exists():
-            archive_path.rename(dist_dir / archive_path.name)
+            if result.stderr.strip():
+                self.output_message("\nBuild errors:")
+                self.output_message(result.stderr)
+                
+        except subprocess.TimeoutExpired:
+            raise Exception("Build process timed out")
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Build failed with error code {e.returncode}")
             
-        self.output_message("Build completed successfully")
-        self.progress.emit("Build completed")
+        # Verify build artifacts
+        package_file = next(dist_dir.glob("*.pkg.tar.zst"), None)
+        if not package_file:
+            raise Exception("No package file found after build")
 
     def _run_command(self, cmd, cwd=None, timeout=60, env=None, check=True):
         """Helper function to run commands with consistent error handling and timeouts"""
