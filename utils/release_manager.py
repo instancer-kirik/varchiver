@@ -21,7 +21,7 @@ class ReleaseThread(QThread):
     error = pyqtSignal(str)
     finished = pyqtSignal(bool)
     dialog_signal = pyqtSignal(str, str, list)  # title, message, options
-    
+    output = pyqtSignal(str)
     def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
                  use_aur: bool = False, aur_dir: Optional[Path] = None):
         super().__init__()
