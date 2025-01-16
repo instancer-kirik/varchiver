@@ -22,18 +22,13 @@ makedepends=(
     'python-installer'
     'python-wheel'
     'python-pip'
+    'python-pyinstaller'
 )
 optdepends=(
     'python-rarfile: for RAR archive support'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')  # Will be updated by release manager
-
-prepare() {
-    cd "$srcdir/$pkgname-$pkgver"
-    # Install PyInstaller in the build environment
-    python -m pip install --user pyinstaller
-}
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
@@ -49,7 +44,7 @@ build() {
     pip install -e .
     
     # Build executable with explicit module includes
-    python -m PyInstaller --clean --onefile --name varchiver \
+    pyinstaller --clean --onefile --name varchiver \
         --hidden-import varchiver \
         --hidden-import varchiver.utils \
         --hidden-import varchiver.threads \
