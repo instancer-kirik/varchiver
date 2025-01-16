@@ -15,32 +15,39 @@ from .project_constants import PROJECT_CONFIGS
 print("Imports completed in release_manager module")
 
 class ReleaseThread(QThread):
-    progress = pyqtSignal(str)
+    # Define signals
     error = pyqtSignal(str)
-    output = pyqtSignal(str)
     finished = pyqtSignal(bool)
     dialog_signal = pyqtSignal(str, str, list)  # title, message, options
-
+    
     def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
                  use_aur: bool = False, aur_dir: Optional[Path] = None):
         super().__init__()
+        # Initialize basic attributes
         self.project_dir = project_dir
         self.version = version
         self.tasks = tasks
         self.output_widget = output_widget
         self.use_aur = use_aur
         self.aur_dir = aur_dir
+        
+        # Dialog control
         self.wait_for_dialog = False
         self.dialog_response = None
+        self.stashed = False
         
         # Set up logging
-        self.log_dir = project_dir / "logs"
-        self.log_dir.mkdir(exist_ok=True)
-        self.log_file = self.log_dir / f"release_{version}_{int(time.time())}.log"
+        try:
+            self.log_dir = project_dir / "logs"
+            self.log_dir.mkdir(exist_ok=True)
+            self.log_file = self.log_dir / f"release_{version}_{int(time.time())}.log"
+        except Exception as e:
+            print(f"Failed to set up logging: {e}")
+            self.log_file = None
         
         # Git configuration
-        self.git_branch = "master"  # Default to master branch
-        self.url = None  # Will be set from git remote
+        self.git_branch = "master"
+        self.url = self._get_git_url()
         
         # Version file patterns
         self.version_files = ['pyproject.toml', 'PKGBUILD']
@@ -48,8 +55,9 @@ class ReleaseThread(QThread):
             'pyproject.toml': r'version\s*=\s*"[^"]*"',
             'PKGBUILD': r'^pkgver=[0-9][0-9a-zA-Z.-]*$'
         }
-        
-        # Initialize Git URL from remote
+
+    def _get_git_url(self) -> Optional[str]:
+        """Safely get git remote URL"""
         try:
             result = subprocess.run(
                 ["git", "remote", "get-url", "origin"],
@@ -59,32 +67,177 @@ class ReleaseThread(QThread):
                 check=True
             )
             remote_url = result.stdout.strip()
-            # Convert SSH URL to HTTPS URL if needed
             if remote_url.startswith("git@github.com:"):
                 remote_url = remote_url.replace("git@github.com:", "https://github.com/")
             if remote_url.endswith(".git"):
                 remote_url = remote_url[:-4]
-            self.url = remote_url
+            return remote_url
         except Exception as e:
             self.output_message(f"Warning: Failed to get Git remote URL: {e}")
-            self.url = None
+            return None
 
     def output_message(self, message: str):
-        """Helper method to emit output signal and update widget and log file"""
-        # Update widget
-        if self.output_widget:
-            self.output_widget.append(message)
-            # Ensure the new text is visible
-            cursor = self.output_widget.textCursor()
-            cursor.movePosition(cursor.MoveOperation.End)
-            self.output_widget.setTextCursor(cursor)
-        
-        # Write to log file
+        """Thread-safe message output"""
         try:
-            with open(self.log_file, 'a') as f:
-                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+            # Update widget through signal if needed
+            if self.output_widget:
+                QMetaObject.invokeMethod(self.output_widget, "append", 
+                                       Qt.ConnectionType.QueuedConnection,
+                                       Q_ARG(str, message))
+                # Scroll to bottom
+                QMetaObject.invokeMethod(self.output_widget, "moveCursor",
+                                       Qt.ConnectionType.QueuedConnection,
+                                       Q_ARG(QTextCursor.MoveOperation, QTextCursor.MoveOperation.End))
+            
+            # Write to log file
+            if self.log_file:
+                with open(self.log_file, 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
         except Exception as e:
-            print(f"Error writing to log file: {e}")
+            print(f"Error in output_message: {e}")
+
+    def handle_dialog_response(self, response):
+        """Handle dialog response in a thread-safe way"""
+        self.dialog_response = response
+        self.wait_for_dialog = False
+
+    def run(self):
+        """Main release process with improved error handling"""
+        try:
+            self.output_message(f"Starting release process for version {self.version}")
+            
+            # Check Git status first
+            if not self._handle_git_status():
+                return  # Git status handling failed or was cancelled
+            
+            try:
+                # Update version files if needed
+                if 'update_version' in self.tasks:
+                    self._update_version_files()
+                    self._commit_version_changes()
+                
+                # Build packages
+                self._build_packages()
+                
+                # Create GitHub release if requested
+                if 'create_release' in self.tasks:
+                    self._check_github_authentication()
+                    self._create_github_release()
+                    
+                # Update AUR if requested
+                if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
+                    self._update_aur()
+                
+                self.output_message("Release process completed successfully!")
+                self.finished.emit(True)
+                
+            except Exception as e:
+                self.output_message(f"Error during release process: {str(e)}")
+                self.error.emit(str(e))
+                self.finished.emit(False)
+                
+        finally:
+            # Always try to restore stashed changes
+            if self.stashed:
+                try:
+                    self._run_command(["git", "stash", "pop"])
+                    self.output_message("Restored stashed changes")
+                except Exception as e:
+                    self.output_message(f"Warning: Failed to restore stashed changes: {e}")
+
+    def _handle_git_status(self) -> bool:
+        """Handle git status check and dialog interaction"""
+        try:
+            git_status = self._check_git_status()
+            if not git_status:
+                return True  # No changes, proceed
+                
+            self.output_message("\nWARNING: There are uncommitted changes:")
+            self.output_message(git_status)
+            
+            # Show dialog and wait for response
+            self.wait_for_dialog = True
+            self.dialog_signal.emit(
+                "Uncommitted Changes",
+                "There are uncommitted changes. Choose an action:\n\n" +
+                "1. Commit all changes\n" +
+                "2. Stash changes (will restore after)\n" +
+                "3. Cancel release",
+                ["Commit", "Stash", "Cancel"]
+            )
+            
+            # Wait for response with timeout
+            start_time = time.time()
+            while self.wait_for_dialog:
+                if time.time() - start_time > 60:  # 1 minute timeout
+                    self.output_message("Dialog timed out")
+                    return False
+                self.msleep(100)
+                QApplication.processEvents()
+            
+            # Handle response
+            if self.dialog_response == "Cancel":
+                self.output_message("Release cancelled by user")
+                self.finished.emit(False)
+                return False
+            
+            try:
+                if self.dialog_response == "Commit":
+                    self._run_command(["git", "add", "-u"])
+                    self._run_command(["git", "commit", "-m", "Pre-release changes"])
+                elif self.dialog_response == "Stash":
+                    self._run_command(["git", "stash", "save", "Pre-release stash"])
+                    self.stashed = True
+                return True
+            except Exception as e:
+                self.output_message(f"Failed to handle git changes: {e}")
+                return False
+                
+        except Exception as e:
+            self.output_message(f"Error checking git status: {e}")
+            return False
+
+    def _run_command(self, cmd, cwd=None, timeout=60, env=None, check=True):
+        """Enhanced command runner with better error handling"""
+        try:
+            merged_env = os.environ.copy()
+            if env:
+                merged_env.update(env)
+            
+            self.output_message(f"Running: {' '.join(cmd)}")
+            
+            # Run command with timeout
+            result = subprocess.run(
+                cmd,
+                cwd=cwd or self.project_dir,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=merged_env,
+                check=check
+            )
+            
+            # Process output
+            if result.stdout.strip():
+                self.output_message(f"Output: {result.stdout.strip()}")
+            if result.stderr.strip():
+                self.output_message(f"Warnings: {result.stderr.strip()}")
+                
+            return result
+            
+        except subprocess.TimeoutExpired:
+            self.output_message(f"Command timed out after {timeout}s: {' '.join(cmd)}")
+            raise
+        except subprocess.CalledProcessError as e:
+            self.output_message(f"Command failed with code {e.returncode}: {' '.join(cmd)}")
+            if e.stdout:
+                self.output_message(f"Output: {e.stdout}")
+            if e.stderr:
+                self.output_message(f"Error: {e.stderr}")
+            raise
+        except Exception as e:
+            self.output_message(f"Failed to run command: {e}")
+            raise
 
     def _check_git_status(self, cwd=None):
         """Check Git status, ignoring logs directory and other release artifacts"""
@@ -107,88 +260,6 @@ class ReleaseThread(QThread):
         except Exception as e:
             self.output_message(f"Error checking Git status: {e}")
             raise
-
-    def handle_dialog_response(self, response):
-        """Handle response from dialog"""
-        self.dialog_response = response
-        self.wait_for_dialog = False
-        
-    def run(self):
-        """Run the release process"""
-        try:
-            self.output_message(f"Starting release process for version {self.version}")
-            self.output_message(f"Log file: {self.log_file}")
-            
-            # Check Git status first
-            git_status = self._check_git_status()
-            if git_status:
-                self.output_message("\nWARNING: There are uncommitted changes:")
-                self.output_message(git_status)
-                self.output_message("\nPlease commit or stash your changes before proceeding.")
-                
-                # Emit signal for dialog and wait for response
-                self.wait_for_dialog = True
-                self.dialog_signal.emit(
-                    "Uncommitted Changes",
-                    "There are uncommitted changes in your repository. Would you like to:\n\n" +
-                    "1. Commit all changes with message 'Pre-release changes'\n" +
-                    "2. Stash changes and restore after release\n" +
-                    "3. Cancel release process",
-                    ["Commit", "Stash", "Cancel"]
-                )
-                
-                # Wait for dialog response
-                while self.wait_for_dialog:
-                    self.msleep(100)  # Sleep to prevent CPU spin
-                    QApplication.processEvents()  # Keep UI responsive
-                    
-                # Handle dialog response
-                if self.dialog_response == "Cancel":
-                    self.output_message("Release process cancelled by user")
-                    self.finished.emit(False)
-                    return
-                elif self.dialog_response == "Commit":
-                    self._run_command(["git", "add", "-u"])
-                    self._run_command(["git", "commit", "-m", "Pre-release changes"])
-                elif self.dialog_response == "Stash":
-                    self._run_command(["git", "stash", "save", "Pre-release stash"])
-                    # Store that we need to pop the stash later
-                    self.stashed = True
-            
-            # Update version files if needed
-            if 'update_version' in self.tasks:
-                self._update_version_files()
-                self._commit_version_changes()
-            
-            # Build packages
-            self._build_packages()
-            
-            # Create GitHub release if requested
-            if 'create_release' in self.tasks:
-                self._check_github_authentication()
-                self._create_github_release()
-                
-            # Update AUR if requested
-            if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
-                self._update_aur()
-            
-            # Restore stashed changes if needed
-            if getattr(self, 'stashed', False):
-                self._run_command(["git", "stash", "pop"])
-                
-            self.output_message("Release process completed successfully!")
-            self.finished.emit(True)
-            
-        except Exception as e:
-            # Restore stashed changes even on error
-            if getattr(self, 'stashed', False):
-                try:
-                    self._run_command(["git", "stash", "pop"])
-                except:
-                    self.output_message("Warning: Failed to restore stashed changes")
-                    
-            self.error.emit(str(e))
-            self.finished.emit(False)
 
     def _commit_version_changes(self):
         """Commit version number changes."""
@@ -337,81 +408,6 @@ class ReleaseThread(QThread):
         package_file = next(dist_dir.glob("*.pkg.tar.zst"), None)
         if not package_file:
             raise Exception("No package file found after build")
-
-    def _run_command(self, cmd, cwd=None, timeout=60, env=None, check=True):
-        """Helper function to run commands with consistent error handling and timeouts"""
-        try:
-            merged_env = os.environ.copy()
-            if env:
-                merged_env.update(env)
-            
-            self.output_message(f"Running: {' '.join(cmd)}")
-            result = subprocess.run(
-                cmd,
-                cwd=cwd or self.project_dir,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                env=merged_env,
-                check=check
-            )
-            
-            # Handle command output
-            if result.stdout:
-                # For git commands, check if output is informational
-                if cmd[0] == "git":
-                    # These are normal git operation messages, not errors
-                    if any(x in result.stdout for x in [
-                        "->", "branch", "origin", "Switched to", "up to date",
-                        "file changed", "insertion", "deletion",
-                        "create mode", "rename", "Already on"
-                    ]):
-                        self.output_message(result.stdout)
-                    else:
-                        self.output_message(f"Command output: {result.stdout}")
-                else:
-                    self.output_message(f"Command output: {result.stdout}")
-            
-            # Handle command stderr
-            if result.stderr:
-                # For git commands, check if stderr is informational
-                if cmd[0] == "git":
-                    # These are normal git operation messages that come through stderr
-                    if any(x in result.stderr for x in [
-                        "remote:", "origin/master", "->", "FETCH_HEAD",
-                        "Everything up-to-date", "master -> master"
-                    ]):
-                        self.output_message(result.stderr)
-                    else:
-                        self.output_message(f"Warning: {result.stderr}")
-                else:
-                    self.output_message(f"Warning: {result.stderr}")
-            
-            return result
-            
-        except subprocess.TimeoutExpired:
-            self.output_message(f"Error: Command timed out after {timeout} seconds: {' '.join(cmd)}")
-            raise
-        except subprocess.CalledProcessError as e:
-            # Check if this is actually an error or just git information
-            if cmd[0] == "git" and e.stderr and any(x in e.stderr for x in [
-                "remote:", "origin/master", "->", "FETCH_HEAD",
-                "Everything up-to-date", "master -> master"
-            ]):
-                self.output_message(e.stderr)
-                if not check:  # If we're not checking return code, continue
-                    return e
-            else:
-                self.output_message(f"Error: Command failed with exit code {e.returncode}:")
-                self.output_message(f"Command: {' '.join(cmd)}")
-                if e.stdout:
-                    self.output_message(f"Output: {e.stdout}")
-                if e.stderr:
-                    self.output_message(f"Error: {e.stderr}")
-            raise
-        except Exception as e:
-            self.output_message(f"Error: Unexpected error running command: {e}")
-            raise
 
     def _verify_release_assets(self, version, max_retries=20, retry_delay=15):
         """Verify release assets with retries"""
