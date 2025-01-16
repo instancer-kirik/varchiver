@@ -31,7 +31,7 @@ class ReleaseThread(QThread):
         self.use_aur = use_aur
         self.aur_dir = aur_dir
         self.wait_for_dialog = False
-        self.dialog_cancelled = False
+        self.dialog_response = None
         
         # Set up logging
         self.log_dir = project_dir / "logs"
@@ -108,6 +108,11 @@ class ReleaseThread(QThread):
             self.output_message(f"Error checking Git status: {e}")
             raise
 
+    def handle_dialog_response(self, response):
+        """Handle response from dialog"""
+        self.dialog_response = response
+        self.wait_for_dialog = False
+        
     def run(self):
         """Run the release process"""
         try:
@@ -122,6 +127,7 @@ class ReleaseThread(QThread):
                 self.output_message("\nPlease commit or stash your changes before proceeding.")
                 
                 # Emit signal for dialog and wait for response
+                self.wait_for_dialog = True
                 self.dialog_signal.emit(
                     "Uncommitted Changes",
                     "There are uncommitted changes in your repository. Would you like to:\n\n" +
@@ -130,7 +136,24 @@ class ReleaseThread(QThread):
                     "3. Cancel release process",
                     ["Commit", "Stash", "Cancel"]
                 )
-                return
+                
+                # Wait for dialog response
+                while self.wait_for_dialog:
+                    self.msleep(100)  # Sleep to prevent CPU spin
+                    QApplication.processEvents()  # Keep UI responsive
+                    
+                # Handle dialog response
+                if self.dialog_response == "Cancel":
+                    self.output_message("Release process cancelled by user")
+                    self.finished.emit(False)
+                    return
+                elif self.dialog_response == "Commit":
+                    self._run_command(["git", "add", "-u"])
+                    self._run_command(["git", "commit", "-m", "Pre-release changes"])
+                elif self.dialog_response == "Stash":
+                    self._run_command(["git", "stash", "save", "Pre-release stash"])
+                    # Store that we need to pop the stash later
+                    self.stashed = True
             
             # Update version files if needed
             if 'update_version' in self.tasks:
@@ -149,13 +172,24 @@ class ReleaseThread(QThread):
             if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
                 self._update_aur()
             
+            # Restore stashed changes if needed
+            if getattr(self, 'stashed', False):
+                self._run_command(["git", "stash", "pop"])
+                
             self.output_message("Release process completed successfully!")
             self.finished.emit(True)
             
         except Exception as e:
+            # Restore stashed changes even on error
+            if getattr(self, 'stashed', False):
+                try:
+                    self._run_command(["git", "stash", "pop"])
+                except:
+                    self.output_message("Warning: Failed to restore stashed changes")
+                    
             self.error.emit(str(e))
             self.finished.emit(False)
-            
+
     def _commit_version_changes(self):
         """Commit version number changes."""
         try:
@@ -600,65 +634,6 @@ class ReleaseThread(QThread):
         content = file_path.read_text()
         updated = re.sub(pattern, replacement, content)
         file_path.write_text(updated)
-
-    def handle_dialog_response(self, response):
-        """Handle the response from the uncommitted changes dialog"""
-        try:
-            if response == "Commit":
-                self._run_command(["git", "add", "."])
-                self._run_command(["git", "commit", "-m", "Pre-release changes"])
-                self.output_message("Committed all changes")
-            elif response == "Stash":
-                self._run_command(["git", "stash", "save", "Pre-release stash"])
-                self.output_message("Stashed changes")
-                self.stashed = True  # Flag to restore stash after release
-            else:  # Cancel
-                self.output_message("Release process cancelled by user")
-                self.dialog_cancelled = True
-                self.finished.emit(False)
-            
-            self.wait_for_dialog = False  # Allow process to continue
-            
-        except Exception as e:
-            self.output_message(f"Error handling dialog response: {e}")
-            self.error.emit(f"Failed to handle changes: {str(e)}")
-            self.finished.emit(False)
-            self.wait_for_dialog = False
-            
-    def continue_release(self):
-        """Continue the release process after handling uncommitted changes"""
-        try:
-            # Update version files if needed
-            if 'update_version' in self.tasks:
-                self._update_version_files()
-                self._commit_version_changes()
-            
-            # Always build packages before creating release
-            self._build_packages()
-            
-            # Create GitHub release if requested
-            if 'create_release' in self.tasks:
-                self._check_github_authentication()
-                self._create_github_release()
-                
-            # Update AUR if requested
-            if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
-                self._update_aur()
-            
-            # Restore stashed changes if any
-            if getattr(self, 'stashed', False):
-                try:
-                    self._run_command(["git", "stash", "pop"])
-                    self.output_message("Restored stashed changes")
-                except Exception as e:
-                    self.output_message(f"Warning: Failed to restore stashed changes: {e}")
-            
-            self.output_message("Release process completed successfully!")
-            self.finished.emit(True)
-            
-        except Exception as e:
-            self.error.emit(str(e))
-            self.finished.emit(False)
 
 
 class ReleaseManager(QWidget):
