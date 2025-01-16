@@ -19,6 +19,7 @@ class ReleaseThread(QThread):
     error = pyqtSignal(str)
     output = pyqtSignal(str)
     finished = pyqtSignal(bool)
+    dialog_signal = pyqtSignal(str, str, list)  # title, message, options
 
     def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
                  use_aur: bool = False, aur_dir: Optional[Path] = None):
@@ -112,24 +113,63 @@ class ReleaseThread(QThread):
             self.output_message(f"Log file: {self.log_file}")
             
             # Check Git status first
-            self._check_git_status()
+            git_status = self._check_git_status()
+            if git_status:
+                self.output_message("\nWARNING: There are uncommitted changes:")
+                self.output_message(git_status)
+                self.output_message("\nPlease commit or stash your changes before proceeding.")
+                
+                # Emit signal for dialog
+                self.dialog_signal.emit(
+                    "Uncommitted Changes",
+                    "There are uncommitted changes in your repository. Would you like to:\n\n" +
+                    "1. Commit all changes with message 'Pre-release changes'\n" +
+                    "2. Stash changes and restore after release\n" +
+                    "3. Cancel release process",
+                    ["Commit", "Stash", "Cancel"]
+                )
+                return
             
             # Update version files if needed
             if 'update_version' in self.tasks:
                 self._update_version_files()
-                self._commit_version_changes()
+                try:
+                    self._commit_version_changes()
+                except Exception as e:
+                    self.output_message(f"Warning: Failed to commit version changes: {str(e)}")
+                    self.error.emit("Failed to commit version changes. Please check the logs.")
+                    self.finished.emit(False)
+                    return
             
             # Always build packages before creating release
-            self._build_packages()
+            try:
+                self._build_packages()
+            except Exception as e:
+                self.output_message(f"Error during package build: {str(e)}")
+                self.error.emit("Package build failed. Please check the logs.")
+                self.finished.emit(False)
+                return
             
             # Create GitHub release if requested
             if 'create_release' in self.tasks:
-                self._check_github_authentication()
-                self._create_github_release()
+                try:
+                    self._check_github_authentication()
+                    self._create_github_release()
+                except Exception as e:
+                    self.output_message(f"Error creating GitHub release: {str(e)}")
+                    self.error.emit("GitHub release failed. Please check the logs.")
+                    self.finished.emit(False)
+                    return
                 
             # Update AUR if requested
             if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
-                self._update_aur()
+                try:
+                    self._update_aur()
+                except Exception as e:
+                    self.output_message(f"Error updating AUR package: {str(e)}")
+                    self.error.emit("AUR update failed. Please check the logs.")
+                    self.finished.emit(False)
+                    return
             
             self.output_message("Release process completed successfully!")
             self.finished.emit(True)
@@ -147,7 +187,21 @@ class ReleaseThread(QThread):
                 self.output_message("Committing version changes...")
                 
                 # Add changed files
-                self._run_command(["git", "add"] + self.version_files)
+                if not isinstance(self.version_files, list):
+                    self.version_files = [str(f) for f in self.version_files]
+                
+                # Make sure all files exist before adding
+                files_to_add = []
+                for file_path in self.version_files:
+                    if (self.project_dir / file_path).exists():
+                        files_to_add.append(file_path)
+                    else:
+                        self.output_message(f"Warning: File not found: {file_path}")
+                
+                if not files_to_add:
+                    raise Exception("No version files found to commit")
+                
+                self._run_command(["git", "add"] + files_to_add)
                 
                 # Commit changes
                 commit_msg = f"Release v{self.version}"
@@ -159,7 +213,7 @@ class ReleaseThread(QThread):
 
         except Exception as e:
             self.output_message(f"Warning: Failed to commit version changes: {str(e)}")
-            # Continue with release process even if commit fails
+            raise
 
     def _update_version_files(self):
         self.progress.emit("Updating version in files...")
@@ -620,6 +674,67 @@ class ReleaseThread(QThread):
         content = file_path.read_text()
         updated = re.sub(pattern, replacement, content)
         file_path.write_text(updated)
+
+    def handle_dialog_response(self, response):
+        """Handle the response from the uncommitted changes dialog"""
+        if response == "Commit":
+            try:
+                self._run_command(["git", "add", "."])
+                self._run_command(["git", "commit", "-m", "Pre-release changes"])
+                self.output_message("Committed all changes")
+                self.continue_release()
+            except Exception as e:
+                self.output_message(f"Error committing changes: {e}")
+                self.error.emit("Failed to commit changes")
+                self.finished.emit(False)
+        elif response == "Stash":
+            try:
+                self._run_command(["git", "stash", "save", "Pre-release stash"])
+                self.output_message("Stashed changes")
+                self.stashed = True  # Flag to restore stash after release
+                self.continue_release()
+            except Exception as e:
+                self.output_message(f"Error stashing changes: {e}")
+                self.error.emit("Failed to stash changes")
+                self.finished.emit(False)
+        else:  # Cancel
+            self.output_message("Release process cancelled by user")
+            self.finished.emit(False)
+            
+    def continue_release(self):
+        """Continue the release process after handling uncommitted changes"""
+        try:
+            # Update version files if needed
+            if 'update_version' in self.tasks:
+                self._update_version_files()
+                self._commit_version_changes()
+            
+            # Always build packages before creating release
+            self._build_packages()
+            
+            # Create GitHub release if requested
+            if 'create_release' in self.tasks:
+                self._check_github_authentication()
+                self._create_github_release()
+                
+            # Update AUR if requested
+            if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
+                self._update_aur()
+            
+            # Restore stashed changes if any
+            if getattr(self, 'stashed', False):
+                try:
+                    self._run_command(["git", "stash", "pop"])
+                    self.output_message("Restored stashed changes")
+                except Exception as e:
+                    self.output_message(f"Warning: Failed to restore stashed changes: {e}")
+            
+            self.output_message("Release process completed successfully!")
+            self.finished.emit(True)
+            
+        except Exception as e:
+            self.error.emit(str(e))
+            self.finished.emit(False)
 
 
 class ReleaseManager(QWidget):

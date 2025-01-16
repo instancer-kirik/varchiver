@@ -13,7 +13,9 @@ depends=(
     'python-uv'
     'python-psutil'
     'git'  # Required for git operations
-    'github-cli'  # Required for GitHub releases (this is the package name for 'gh')
+    'github-cli'  # Required for GitHub releases
+    'ttf-dejavu'  # Required for icons/glyphs
+    'libnotify'   # Required for notifications
 )
 makedepends=(
     'python-build'
@@ -24,8 +26,8 @@ makedepends=(
 optdepends=(
     'python-rarfile: for RAR archive support'
 )
-source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("1ea6a74b9f527ee7ff1f4ed6c6c81ae22a1af768f168f058b860075efd52c1c7")  # Will be updated by release manager
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Will be updated by release manager
 
 prepare() {
     cd "$srcdir/$pkgname-$pkgver"

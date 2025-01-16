@@ -2482,6 +2482,44 @@ class MainWidget(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to get untracked files: {str(e)}")
 
+    def _setup_release_manager(self):
+        """Set up the release manager tab"""
+        self.release_thread = None
+        self.release_manager = ReleaseManager(self.project_dir)
+        self.release_manager.output.connect(self._handle_release_output)
+        self.release_manager.error.connect(self._handle_release_error)
+        self.release_manager.progress.connect(self._handle_release_progress)
+        self.release_manager.dialog_signal.connect(self._handle_release_dialog)
+        return self.release_manager
+        
+    def _handle_release_dialog(self, title, message, options):
+        """Handle dialog requests from the release thread"""
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(title)
+        dialog.setText(message)
+        dialog.setIcon(QMessageBox.Icon.Question)
+        
+        # Add buttons for each option
+        buttons = {}
+        for option in options:
+            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
+            buttons[button] = option
+            
+        dialog.setDefaultButton(dialog.addButton(QMessageBox.StandardButton.Cancel))
+        
+        # Show dialog and get response
+        dialog.exec()
+        clicked = dialog.clickedButton()
+        
+        if clicked in buttons:
+            response = buttons[clicked]
+            if self.release_thread:
+                self.release_thread.handle_dialog_response(response)
+        else:
+            # Cancel was clicked
+            if self.release_thread:
+                self.release_thread.handle_dialog_response("Cancel")
+
 def main():
     app = QApplication(sys.argv)
     widget = MainWidget()
