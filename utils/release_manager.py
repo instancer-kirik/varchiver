@@ -3,7 +3,8 @@ print("Loading release_manager module")
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLineEdit, QLabel, QComboBox, QProgressBar, QMessageBox, QDialog,
                             QFileDialog, QGroupBox, QFormLayout, QTextEdit, QApplication)
-from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot, QDir
+from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot, QDir, QMetaObject, Qt, Q_ARG
+from PyQt6.QtGui import QTextCursor
 import subprocess
 import os
 import re
@@ -16,6 +17,8 @@ print("Imports completed in release_manager module")
 
 class ReleaseThread(QThread):
     # Define signals
+    progress = pyqtSignal(str)
+    output = pyqtSignal(str)
     error = pyqtSignal(str)
     finished = pyqtSignal(bool)
     dialog_signal = pyqtSignal(str, str, list)  # title, message, options
