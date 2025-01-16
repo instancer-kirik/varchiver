@@ -27,8 +27,8 @@ makedepends=(
 optdepends=(
     'python-rarfile: for RAR archive support'
 )
-source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("008b04f30aa647aca570439e8f1a57f9b780824948ff710eff517a6e9b7c7b04")  # Will be updated by release manager
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
@@ -40,8 +40,8 @@ build() {
     python -m venv .venv
     source .venv/bin/activate
     
-    # Install in development mode
-    pip install -e .
+    # Install dependencies
+    pip install --no-cache-dir -e .
     
     # Build executable with explicit module includes
     pyinstaller --clean --onefile --name varchiver \
@@ -51,6 +51,7 @@ build() {
         --hidden-import varchiver.widgets \
         --add-data "varchiver/resources:varchiver/resources" \
         --add-data "varchiver/widgets:varchiver/widgets" \
+        --collect-all PyQt6 \
         bootstrap.py
     
     # Deactivate virtual environment
@@ -62,6 +63,7 @@ package() {
     
     # Create necessary directories
     install -dm755 "$pkgdir/usr/share/$pkgname"
+    install -dm755 "$pkgdir/usr/share/$pkgname/resources"
     
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
@@ -70,9 +72,16 @@ package() {
     install -Dm644 varchiver.desktop "$pkgdir/usr/share/applications/varchiver.desktop"
     install -Dm644 resources/icons/archive.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
     
+    # Install resources
+    cp -r resources/* "$pkgdir/usr/share/$pkgname/resources/"
+    
     # Install license and readme
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    
+    # Set correct permissions
+    chmod -R 755 "$pkgdir/usr/share/$pkgname"
+    find "$pkgdir/usr/share/$pkgname" -type f -exec chmod 644 {} \;
 }
 
 # Get version from PKGBUILD

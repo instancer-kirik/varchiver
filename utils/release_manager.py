@@ -2,8 +2,8 @@ print("Loading release_manager module")
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLineEdit, QLabel, QComboBox, QProgressBar, QMessageBox, QDialog,
-                            QFileDialog, QGroupBox, QFormLayout, QTextEdit)
-from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot
+                            QFileDialog, QGroupBox, QFormLayout, QTextEdit, QApplication)
+from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot, QDir
 import subprocess
 import os
 import re
