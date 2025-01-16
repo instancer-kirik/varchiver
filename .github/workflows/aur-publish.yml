@@ -1,0 +1,57 @@
+name: AUR publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  aur-publish:
+    runs-on: ubuntu-latest
+    container: 
+      image: archlinux:latest
+      options: --privileged
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git openssh
+      
+      - name: Setup SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          echo -e "Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur" > ~/.ssh/config
+          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts
+      
+      - name: Build and publish
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          # Configure git
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          # Build package
+          makepkg -s --noconfirm
+          
+          # Clone AUR repo
+          git clone ssh://aur@aur.archlinux.org/varchiver.git aur-repo
+          cd aur-repo
+          
+          # Update PKGBUILD and .SRCINFO
+          cp ../PKGBUILD .
+          makepkg --printsrcinfo > .SRCINFO
+          
+          # Commit and push
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to version ${VERSION#v}"
+          git push 

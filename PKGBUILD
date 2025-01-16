@@ -11,15 +11,20 @@ depends=(
     'python-pyqt6'
     'python-pyqt6-webengine'
     'python-uv'
+    'python-psutil'
+    'python-rarfile'
+    'git'  # Required for git operations
+    'gh'   # Required for GitHub releases
 )
 makedepends=(
     'python-build'
     'python-installer'
     'python-wheel'
     'python-pip'
+    'python-pyinstaller'
 )
-source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("5e7b932a4c104f55c04a1e383eefcbef1286745d6307063888006d146bf09b8f")  # Will be updated by release manager
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
@@ -31,29 +36,18 @@ build() {
     python -m venv .venv
     source .venv/bin/activate
     
-    # Install dependencies and build
-    if [ -f "pyproject.toml" ]; then
-        # Use pip/uv if pyproject.toml exists
-        if command -v uv &> /dev/null; then
-            uv pip install .
-            uv pip install pyinstaller
-        else
-            pip install .
-            pip install pyinstaller
-        fi
-    elif [ -f "setup.py" ]; then
-        # Use setup.py if it exists
-        pip install .
-        pip install pyinstaller
-    elif [ -f "requirements.txt" ]; then
-        # Fall back to requirements.txt
-        pip install -r requirements.txt
-        pip install .
-        pip install pyinstaller
-    fi
+    # Install in development mode
+    pip install -e .
     
-    # Build executable
-    python -m PyInstaller --clean --onefile --name varchiver bootstrap.py
+    # Build executable with explicit module includes
+    python -m PyInstaller --clean --onefile --name varchiver \
+        --hidden-import varchiver \
+        --hidden-import varchiver.utils \
+        --hidden-import varchiver.threads \
+        --hidden-import varchiver.widgets \
+        --add-data "varchiver/resources:varchiver/resources" \
+        --add-data "varchiver/widgets:varchiver/widgets" \
+        bootstrap.py
     
     # Deactivate virtual environment
     deactivate
@@ -62,12 +56,15 @@ build() {
 package() {
     cd "$srcdir/$pkgname-$pkgver"
     
+    # Create necessary directories
+    install -dm755 "$pkgdir/usr/share/$pkgname"
+    
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     
     # Install desktop file and icon
     install -Dm644 varchiver.desktop "$pkgdir/usr/share/applications/varchiver.desktop"
-    install -Dm644 varchiver.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
+    install -Dm644 resources/icons/archive.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
     
     # Install license and readme
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

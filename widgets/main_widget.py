@@ -1566,7 +1566,7 @@ class MainWidget(QWidget):
             sequester_tab.setLayout(sequester_layout)
 
             # Git config backup/restore section
-            backup_group = QGroupBox("Git Config Management")
+            backup_group = QGroupBox("Git Backup/Restore")
             backup_layout = QVBoxLayout()
             backup_group.setLayout(backup_layout)
 
