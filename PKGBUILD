@@ -1,6 +1,6 @@
 # Maintainer: instancer-kirik
 pkgname=varchiver
-pkgver=0.4.7
+pkgver=0.4.9
 pkgrel=1
 pkgdesc="A variable archiver and github/aur release manager (serialize your variables first)"
 arch=('x86_64')
@@ -12,19 +12,26 @@ depends=(
     'python-pyqt6-webengine'
     'python-uv'
     'python-psutil'
-    'python-rarfile'
     'git'  # Required for git operations
-    'gh'   # Required for GitHub releases
+    'github-cli'  # Required for GitHub releases (this is the package name for 'gh')
 )
 makedepends=(
     'python-build'
     'python-installer'
     'python-wheel'
     'python-pip'
-    'python-pyinstaller'
 )
-source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('SKIP')  # Will be updated by release manager
+optdepends=(
+    'python-rarfile: for RAR archive support'
+)
+source=("varchiver-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=("1ea6a74b9f527ee7ff1f4ed6c6c81ae22a1af768f168f058b860075efd52c1c7")  # Will be updated by release manager
+
+prepare() {
+    cd "$srcdir/$pkgname-$pkgver"
+    # Install PyInstaller in the build environment
+    python -m pip install --user pyinstaller
+}
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
