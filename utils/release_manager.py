@@ -227,8 +227,14 @@ class ReleaseThread(QThread):
         for d in ["pkg", "src", "dist"]:
             build_dir = self.project_dir / d
             if build_dir.exists():
-                import shutil
-                shutil.rmtree(build_dir)
+                try:
+                    import shutil
+                    shutil.rmtree(build_dir)
+                    self.output_message(f"Cleaned up {d} directory")
+                except Exception as e:
+                    self.output_message(f"Warning: Could not clean {d} directory: {e}")
+                    # Continue with other directories even if one fails
+                    continue
         
         # # Clean up any stray artifacts
         # for pattern in ["*.pkg.tar.zst", "*.tar.gz"]:
