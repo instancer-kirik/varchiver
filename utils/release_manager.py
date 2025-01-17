@@ -325,6 +325,21 @@ class ReleaseThread(QThread):
         if not pkgbuild_path.exists():
             raise Exception("PKGBUILD not found in project directory")
             
+        # Update PKGBUILD version first
+        with open(pkgbuild_path, 'r') as f:
+            pkgbuild_content = f.read()
+            
+        # Update version
+        pkgbuild_content = re.sub(
+            r'^pkgver=.*$',
+            f'pkgver={self.version}',
+            pkgbuild_content,
+            flags=re.MULTILINE
+        )
+        
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+            
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
         dist_dir.mkdir(exist_ok=True)
