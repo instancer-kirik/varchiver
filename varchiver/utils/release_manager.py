@@ -325,6 +325,72 @@ class ReleaseThread(QThread):
         if not pkgbuild_path.exists():
             raise Exception("PKGBUILD not found in project directory")
             
+        # Update PKGBUILD version first
+        with open(pkgbuild_path, 'r') as f:
+            pkgbuild_content = f.read()
+            
+        self.output_message(f"Updating PKGBUILD version to {self.version}")
+        
+        # First find the current version
+        current_version = re.search(r'^pkgver=([0-9.]+)', pkgbuild_content, re.MULTILINE)
+        if current_version:
+            self.output_message(f"Current version in PKGBUILD: {current_version.group(1)}")
+        else:
+            self.output_message("Warning: Could not find current version in PKGBUILD")
+        
+        # Update version and reset pkgrel
+        pkgbuild_content = re.sub(
+            r'^pkgver=.*$',
+            f'pkgver={self.version}',
+            pkgbuild_content,
+            flags=re.MULTILINE
+        )
+        pkgbuild_content = re.sub(
+            r'^pkgrel=.*$',
+            'pkgrel=1',
+            pkgbuild_content,
+            flags=re.MULTILINE
+        )
+        
+        # Update source filename to match new version
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("$pkgname-{self.version}.tar.gz::$url/archive/v{self.version}.tar.gz")',
+            pkgbuild_content
+        )
+        
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+            
+        # Verify the update
+        with open(pkgbuild_path, 'r') as f:
+            updated_content = f.read()
+            if f'pkgver={self.version}' not in updated_content:
+                self.output_message("Error: Failed to update version in PKGBUILD")
+                self.output_message("Current PKGBUILD content:")
+                self.output_message(updated_content[:500])  # Show more content for debugging
+                raise Exception("Failed to update version in PKGBUILD")
+            else:
+                self.output_message("Successfully updated PKGBUILD version")
+                
+        # Commit the PKGBUILD changes before creating source archive
+        self._run_command(['git', 'add', 'PKGBUILD'])
+        try:
+            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version}'])
+            # Make sure to use the committed changes
+            self._run_command(['git', 'reset', '--hard', 'HEAD'])
+        except Exception as e:
+            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
+            
+        # Double check version after commit
+        with open(pkgbuild_path, 'r') as f:
+            final_content = f.read()
+            final_version = re.search(r'^pkgver=([0-9.]+)', final_content, re.MULTILINE)
+            if final_version:
+                self.output_message(f"Final version in PKGBUILD: {final_version.group(1)}")
+                if final_version.group(1) != self.version:
+                    raise Exception(f"Version mismatch: PKGBUILD has {final_version.group(1)} but should be {self.version}")
+            
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
         dist_dir.mkdir(exist_ok=True)
@@ -349,7 +415,7 @@ class ReleaseThread(QThread):
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
         archive_path = self.project_dir / archive_name
         
-        # Create source archive using git archive
+        # Create source archive using git archive from the latest commit
         self._run_command([
             "git", "archive",
             "--format=tar.gz",
