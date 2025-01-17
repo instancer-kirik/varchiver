@@ -377,8 +377,19 @@ class ReleaseThread(QThread):
         self._run_command(['git', 'add', 'PKGBUILD'])
         try:
             self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version}'])
+            # Make sure to use the committed changes
+            self._run_command(['git', 'reset', '--hard', 'HEAD'])
         except Exception as e:
             self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
+            
+        # Double check version after commit
+        with open(pkgbuild_path, 'r') as f:
+            final_content = f.read()
+            final_version = re.search(r'^pkgver=([0-9.]+)', final_content, re.MULTILINE)
+            if final_version:
+                self.output_message(f"Final version in PKGBUILD: {final_version.group(1)}")
+                if final_version.group(1) != self.version:
+                    raise Exception(f"Version mismatch: PKGBUILD has {final_version.group(1)} but should be {self.version}")
             
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
@@ -404,7 +415,7 @@ class ReleaseThread(QThread):
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
         archive_path = self.project_dir / archive_name
         
-        # Create source archive using git archive
+        # Create source archive using git archive from the latest commit
         self._run_command([
             "git", "archive",
             "--format=tar.gz",
