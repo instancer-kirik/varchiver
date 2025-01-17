@@ -333,18 +333,35 @@ class ReleaseThread(QThread):
         
         # Update version and source filename
         old_content = pkgbuild_content
+        
+        # First find the current version
+        current_version = re.search(r'^pkgver=([0-9.]+)', pkgbuild_content, re.MULTILINE)
+        if current_version:
+            self.output_message(f"Current version in PKGBUILD: {current_version.group(1)}")
+        else:
+            self.output_message("Warning: Could not find current version in PKGBUILD")
+        
+        # Update version
         pkgbuild_content = re.sub(
-            r'pkgver=[\d.]+',
+            r'^pkgver=[0-9.]+$',
             f'pkgver={self.version}',
-            pkgbuild_content
+            pkgbuild_content,
+            flags=re.MULTILINE
         )
         
         if old_content == pkgbuild_content:
             self.output_message("Warning: Version update did not change PKGBUILD content")
+            self.output_message("Trying alternative version update pattern...")
+            # Try alternative pattern
+            pkgbuild_content = re.sub(
+                r'pkgver=[0-9.]+\n',
+                f'pkgver={self.version}\n',
+                pkgbuild_content
+            )
         
         # Update source filename to match new version
         pkgbuild_content = re.sub(
-            r'source=\(".*"\)',
+            r'source=\([^)]*\)',
             f'source=("$pkgname-{self.version}.tar.gz::$url/archive/v{self.version}.tar.gz")',
             pkgbuild_content
         )
@@ -357,7 +374,11 @@ class ReleaseThread(QThread):
             updated_content = f.read()
             if f'pkgver={self.version}' not in updated_content:
                 self.output_message("Error: Failed to update version in PKGBUILD")
+                self.output_message("Current PKGBUILD content:")
+                self.output_message(updated_content[:200] + "...")  # Show first 200 chars
                 raise Exception("Failed to update version in PKGBUILD")
+            else:
+                self.output_message("Successfully updated PKGBUILD version")
             
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
