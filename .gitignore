@@ -27,6 +27,11 @@ pkg/
 *.tar.gz
 *.tar.zst
 
+# AppImage related
+*.AppImage
+AppDir/
+linuxdeploy*
+
 # Release logs
 logs/
 

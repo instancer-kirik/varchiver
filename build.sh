@@ -41,7 +41,37 @@ mkdir -p dist
 cd dist
 if [ -f varchiver ]; then
     tar czf varchiver-linux-x86_64.tar.gz varchiver
-    echo "Build complete! Binary is packaged in dist/varchiver-linux-x86_64.tar.gz"
+    echo "Binary packaged in dist/varchiver-linux-x86_64.tar.gz"
+    
+    # Create AppImage
+    echo "Creating AppImage..."
+    cd ..
+    
+    # Download linuxdeploy if not present
+    if [ ! -f linuxdeploy-x86_64.AppImage ]; then
+        wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage
+    fi
+    
+    # Create AppDir structure
+    mkdir -p AppDir/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
+    cp dist/varchiver AppDir/usr/bin/
+    cp varchiver.desktop AppDir/usr/share/applications/
+    cp resources/icons/archive.svg AppDir/usr/share/icons/hicolor/scalable/apps/varchiver.svg
+    
+    # Create AppImage
+    VERSION=$(grep '^pkgver=' PKGBUILD | cut -d'=' -f2)
+    ./linuxdeploy-x86_64.AppImage \
+        --appdir AppDir \
+        --output appimage \
+        --desktop-file=varchiver.desktop \
+        --icon-file=resources/icons/archive.svg
+    
+    # Move AppImage to dist
+    mv Varchiver*.AppImage dist/varchiver-${VERSION}-x86_64.AppImage
+    echo "AppImage created at dist/varchiver-${VERSION}-x86_64.AppImage"
+    
+    cd dist
 else
     echo "Error: varchiver binary not found. Build may have failed."
     exit 1

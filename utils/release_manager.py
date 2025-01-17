@@ -333,7 +333,7 @@ class ReleaseThread(QThread):
         self.output_message("Cleaning up previous build artifacts...")
         
         # Clean build directories and artifacts
-        for d in ["pkg", "src", "dist"]:
+        for d in ["pkg", "src", "dist", "AppDir"]:
             build_dir = self.project_dir / d
             if build_dir.exists():
                 try:
@@ -512,9 +512,17 @@ class ReleaseThread(QThread):
         # Add built package files to release notes
         dist_dir = self.project_dir / 'dist'
         if dist_dir.exists():
+            release_notes += "\nAvailable packages:\n"
             for file in dist_dir.glob('*'):
                 if file.is_file():
-                    release_notes += f"- {file.name}\n"
+                    if file.name.endswith('.AppImage'):
+                        release_notes += f"- {file.name} (Portable Linux AppImage)\n"
+                    elif file.name.endswith('.tar.gz'):
+                        release_notes += f"- {file.name} (Linux binary)\n"
+                    elif file.name.endswith('.pkg.tar.zst'):
+                        release_notes += f"- {file.name} (Arch Linux package)\n"
+                    else:
+                        release_notes += f"- {file.name}\n"
         
         # Create the release using gh cli
         self._run_command([
