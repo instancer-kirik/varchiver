@@ -43,27 +43,13 @@ build() {
     # Install dependencies
     pip install --no-cache-dir -e .
     
-    # Ensure package structure is correct
-    mkdir -p varchiver/{resources,widgets}
-    
-    # Copy resources if they exist in root
-    if [ -d "resources" ]; then
-        cp -r resources/* varchiver/resources/
-    fi
-    
-    # Copy widgets if they exist in root
-    if [ -d "widgets" ]; then
-        cp -r widgets/* varchiver/widgets/
-    fi
-    
     # Build executable with explicit module includes
     pyinstaller --clean --onefile --name varchiver \
         --hidden-import varchiver \
         --hidden-import varchiver.utils \
         --hidden-import varchiver.threads \
         --hidden-import varchiver.widgets \
-        --add-data "varchiver/resources:varchiver/resources" \
-        --add-data "varchiver/widgets:varchiver/widgets" \
+        --add-data "$pkgname:$pkgname" \
         --collect-all PyQt6 \
         bootstrap.py
     
@@ -76,17 +62,13 @@ package() {
     
     # Create necessary directories
     install -dm755 "$pkgdir/usr/share/$pkgname"
-    install -dm755 "$pkgdir/usr/share/$pkgname/resources"
     
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
     
     # Install desktop file and icon
     install -Dm644 varchiver.desktop "$pkgdir/usr/share/applications/varchiver.desktop"
-    install -Dm644 resources/icons/archive.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
-    
-    # Install resources
-    cp -r resources/* "$pkgdir/usr/share/$pkgname/resources/"
+    install -Dm644 varchiver.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
     
     # Install license and readme
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
