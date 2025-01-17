@@ -55,7 +55,7 @@ class ReleaseThread(QThread):
         self.version_files = ['pyproject.toml', 'PKGBUILD']
         self.version_patterns = {
             'pyproject.toml': r'version\s*=\s*"[^"]*"',
-            'PKGBUILD': r'^pkgver=[0-9][0-9a-zA-Z.-]*$'
+            'PKGBUILD': r'^pkgver=[0-9][0-9a-z.-]*$'
         }
 
     def _get_git_url(self) -> Optional[str]:
@@ -596,9 +596,10 @@ class ReleaseThread(QThread):
             '--title', f'Release {tag}',
             '--notes', release_notes,
             *[str(f) for f in dist_dir.glob('*') if f.is_file()]
-        ])
+        ], timeout=300)  # Increase timeout to 5 minutes
         
-        self.output_message(f"GitHub release {tag} created successfully")
+        self.output_message(f"\nGitHub release {tag} created successfully!")
+        self.output_message("Release process completed successfully!")
 
     def _update_aur(self):
         """Update AUR package with proper .SRCINFO handling"""

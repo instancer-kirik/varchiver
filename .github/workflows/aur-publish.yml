@@ -1,57 +1,55 @@
-name: AUR publish
+name: Publish to AUR
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 jobs:
   aur-publish:
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: archlinux:latest
-      options: --privileged
-    
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
           pacman -S --noconfirm base-devel git openssh
-      
-      - name: Setup SSH key
-        env:
-          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          
+      - name: Create build user
         run: |
-          mkdir -p ~/.ssh
-          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
-          chmod 600 ~/.ssh/aur
-          echo -e "Host aur.archlinux.org\n  IdentityFile ~/.ssh/aur\n  User aur" > ~/.ssh/config
-          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts
-      
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder .
+          
+      - name: Import SSH key
+        run: |
+          mkdir -p /home/builder/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /home/builder/.ssh/aur
+          chmod 600 /home/builder/.ssh/aur
+          echo "Host aur.archlinux.org" > /home/builder/.ssh/config
+          echo "  IdentityFile ~/.ssh/aur" >> /home/builder/.ssh/config
+          echo "  User aur" >> /home/builder/.ssh/config
+          chown -R builder:builder /home/builder/.ssh
+          
       - name: Build and publish
-        env:
-          VERSION: ${{ github.ref_name }}
         run: |
           # Configure git
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
-          # Build package
-          makepkg -s --noconfirm
+          # Switch to builder user and build package
+          su - builder -c "cd $GITHUB_WORKSPACE && makepkg -s --noconfirm"
           
-          # Clone AUR repo
-          git clone ssh://aur@aur.archlinux.org/varchiver.git aur-repo
-          cd aur-repo
-          
-          # Update PKGBUILD and .SRCINFO
-          cp ../PKGBUILD .
-          makepkg --printsrcinfo > .SRCINFO
-          
-          # Commit and push
-          git add PKGBUILD .SRCINFO
-          git commit -m "Update to version ${VERSION#v}"
-          git push 
+          # Clone AUR repo and update
+          su - builder -c "cd $GITHUB_WORKSPACE && \
+            git clone ssh://aur@aur.archlinux.org/varchiver.git aur-repo && \
+            cd aur-repo && \
+            cp ../PKGBUILD . && \
+            makepkg --printsrcinfo > .SRCINFO && \
+            git add PKGBUILD .SRCINFO && \
+            git commit -m 'Update to version ${VERSION#v}' && \
+            git push"
+        env:
+          VERSION: ${{ github.ref_name }} 
