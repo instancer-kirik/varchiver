@@ -608,6 +608,29 @@ class ReleaseThread(QThread):
             
         self.progress.emit("Updating AUR package...")
         
+        # Calculate SHA256 sum first
+        self.progress.emit("Calculating SHA256 of GitHub release file...")
+        try:
+            # Wait a bit for GitHub to make the release available
+            time.sleep(5)
+            
+            # Try to download and calculate SHA256
+            sha256_result = self._run_command([
+                "bash", "-c",
+                f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
+            ], timeout=60)
+            sha256 = sha256_result.stdout.split()[0]
+            
+            # Verify the SHA256 sum is valid
+            if not re.match(r'^[a-f0-9]{64}$', sha256):
+                raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
+                
+            self.output_message(f"Calculated SHA256: {sha256}")
+        except Exception as e:
+            self.output_message(f"Failed to calculate SHA256: {e}")
+            self.output_message("Will retry after cloning AUR repo...")
+            sha256 = None
+        
         # Clone AUR repo if it doesn't exist
         if not self.aur_dir.exists():
             self.progress.emit("Cloning AUR repository...")
@@ -644,23 +667,32 @@ class ReleaseThread(QThread):
                 flags=re.MULTILINE
             )
             
-            # Update source array if needed
-            if 'source=(' not in pkgbuild_content:
-                pkgbuild_content = re.sub(
-                    r'source=.*$',
-                    'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                    pkgbuild_content,
-                    flags=re.MULTILINE
-                )
+            # Update source array
+            pkgbuild_content = re.sub(
+                r'source=\([^)]*\)',
+                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                pkgbuild_content,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
+            # If we don't have SHA256 yet, try to calculate it again
+            if not sha256:
+                self.output_message("Retrying SHA256 calculation...")
+                try:
+                    sha256_result = self._run_command([
+                        "bash", "-c",
+                        f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
+                    ], timeout=60)
+                    sha256 = sha256_result.stdout.split()[0]
+                    
+                    if not re.match(r'^[a-f0-9]{64}$', sha256):
+                        raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
+                        
+                    self.output_message(f"Calculated SHA256: {sha256}")
+                except Exception as e:
+                    raise Exception(f"Failed to calculate SHA256 after multiple attempts: {e}")
             
             # Update SHA256 sum
-            self.progress.emit("Calculating SHA256 of GitHub release file...")
-            sha256_result = self._run_command([
-                "bash", "-c",
-                f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
-            ])
-            sha256 = sha256_result.stdout.split()[0]
-            
             pkgbuild_content = re.sub(
                 r'sha256sums=\([^)]*\)',
                 f'sha256sums=("{sha256}")',
