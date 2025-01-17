@@ -329,10 +329,18 @@ class ReleaseThread(QThread):
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
             
-        # Update version
+        # Update version and source filename
         pkgbuild_content = re.sub(
             r'^pkgver=.*$',
             f'pkgver={self.version}',
+            pkgbuild_content,
+            flags=re.MULTILINE
+        )
+        
+        # Update source filename to match new version
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("$pkgname-{self.version}.tar.gz::$url/archive/v{self.version}.tar.gz")',
             pkgbuild_content,
             flags=re.MULTILINE
         )
