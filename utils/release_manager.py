@@ -17,11 +17,11 @@ print("Imports completed in release_manager module")
 
 class ReleaseThread(QThread):
     # Define signals
-    progress = pyqtSignal(str)
-    error = pyqtSignal(str)
-    finished = pyqtSignal(bool)
-    dialog_signal = pyqtSignal(str, str, list)  # title, message, options
-    output = pyqtSignal(str)
+    progress = pyqtSignal(str)  # For progress bar and output widget
+    error = pyqtSignal(str)     # For error messages
+    finished = pyqtSignal(bool) # For completion status
+    dialog_signal = pyqtSignal(str, str, list)  # For user interaction dialogs
+    
     def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
                  use_aur: bool = False, aur_dir: Optional[Path] = None):
         super().__init__()
@@ -81,20 +81,10 @@ class ReleaseThread(QThread):
     def output_message(self, message: str):
         """Thread-safe message output"""
         try:
-            # Emit progress signal for progress bar
+            # Emit progress signal for UI updates
             self.progress.emit(message)
             
-            # Update widget through signal if needed
-            if self.output_widget:
-                QMetaObject.invokeMethod(self.output_widget, "append", 
-                                       Qt.ConnectionType.QueuedConnection,
-                                       Q_ARG(str, message))
-                # Scroll to bottom - fixed method call
-                QMetaObject.invokeMethod(self.output_widget, "verticalScrollBar().setValue",
-                                       Qt.ConnectionType.QueuedConnection,
-                                       Q_ARG(int, self.output_widget.verticalScrollBar().maximum()))
-            
-            # Write to log file
+            # Write to log file if available
             if self.log_file:
                 with open(self.log_file, 'a') as f:
                     f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
@@ -655,8 +645,8 @@ class ReleaseManager(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        """Initialize the UI components"""
         layout = QVBoxLayout()
-        self.setLayout(layout)
         
         # Version input
         version_group = QGroupBox("Release Version")
@@ -667,7 +657,7 @@ class ReleaseManager(QWidget):
         settings = QSettings("Varchiver", "ReleaseManager")
         
         # Try to get current version from PKGBUILD
-        project_path = settings.value("project_path")
+        project_path = settings.value("project_path", str(Path.cwd()))
         if project_path:
             pkgbuild_path = Path(project_path) / "PKGBUILD"
             if pkgbuild_path.exists():
@@ -721,85 +711,150 @@ class ReleaseManager(QWidget):
         aur_browse.clicked.connect(self.browse_aur_dir)
         aur_layout.addWidget(aur_browse)
         layout.addWidget(aur_group)
-
-        # Start button and progress bar in horizontal layout
-        controls_layout = QHBoxLayout()
         
-        # Start button
-        self.release_start_button = QPushButton("Start Release")
-        self.release_start_button.clicked.connect(self.start_release_process)
-        controls_layout.addWidget(self.release_start_button)
-        
-        # Progress bar
+        # Progress display
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(True)
-        self.progress_bar.hide()
-        controls_layout.addWidget(self.progress_bar)
+        self.progress_bar.hide()  # Initially hidden
+        layout.addWidget(self.progress_bar)
         
-        layout.addLayout(controls_layout)
-
-        # Output area
+        # Output display
         output_group = QGroupBox("Release Output")
         output_layout = QVBoxLayout()
         output_group.setLayout(output_layout)
 
-        self.release_output = QTextEdit()
-        self.release_output.setReadOnly(True)
-        self.release_output.setMaximumHeight(150)  # Limit height
-        output_layout.addWidget(self.release_output)
+        self.output_text = QTextEdit()
+        self.output_text.setReadOnly(True)
+        self.output_text.setMaximumHeight(150)  # Limit height
+        output_layout.addWidget(self.output_text)
         layout.addWidget(output_group)
+        
+        # Control buttons
+        button_layout = QHBoxLayout()
+        self.start_button = QPushButton("Start Release")
+        self.start_button.clicked.connect(self.start_release)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.cancel_release)
+        self.cancel_button.setEnabled(False)
+        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.cancel_button)
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+        self.release_thread = None
 
-        # Apply dark mode compatible styles
-        self.apply_styles()
-
-    def apply_styles(self):
-        """Apply dark mode compatible styles"""
-        self.setStyleSheet("""
-            QGroupBox {
-                background-color: transparent;
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 3px;
-            }
-            QLineEdit {
-                background-color: palette(base);
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                padding: 4px;
-            }
-            QTextEdit {
-                background-color: palette(base);
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-            }
-            QComboBox {
-                background-color: palette(button);
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                padding: 4px;
-                min-width: 6em;
-            }
-            QPushButton {
-                background-color: palette(button);
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                padding: 6px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: palette(light);
-            }
-            QPushButton:pressed {
-                background-color: palette(dark);
-            }
-        """)
-
+    def update_progress(self, message: str):
+        """Update progress bar and output text"""
+        # Update output text
+        self.output_text.append(message)
+        cursor = self.output_text.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        self.output_text.setTextCursor(cursor)
+        
+        # Update progress bar text
+        self.progress_bar.setFormat(message.split('\n')[0])  # Use first line for progress bar
+        
+    def handle_error(self, error_msg: str):
+        """Handle error messages from the release thread"""
+        QMessageBox.critical(self, "Error", error_msg)
+        self.release_finished(False)
+        
+    def handle_dialog(self, title: str, message: str, options: list):
+        """Handle dialog requests from the release thread"""
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(title)
+        dialog.setText(message)
+        dialog.setIcon(QMessageBox.Icon.Question)
+        
+        # Create buttons for each option
+        buttons = {}
+        for option in options:
+            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
+            buttons[button] = option
+            
+        dialog.exec()
+        clicked = dialog.clickedButton()
+        
+        if clicked in buttons and self.release_thread:
+            self.release_thread.handle_dialog_response(buttons[clicked])
+            
+    def release_finished(self, success: bool):
+        """Handle release process completion"""
+        self.start_button.setEnabled(True)
+        self.cancel_button.setEnabled(False)
+        
+        if success:
+            self.progress_bar.setFormat("Release completed successfully")
+            QMessageBox.information(self, "Success", "Release process completed successfully!")
+        else:
+            self.progress_bar.setFormat("Release failed")
+            
+    def start_release(self):
+        """Start the release process"""
+        # Get selected tasks based on combo selection
+        selected = self.task_combo.currentText()
+        tasks = []
+        if "Update Version" in selected:
+            tasks.append('update_version')
+        if "Create Release" in selected:
+            tasks.append('create_release')
+        if "Update AUR" in selected:
+            tasks.append('update_aur')
+        
+        if not tasks:
+            QMessageBox.warning(self, "Warning", "No tasks selected!")
+            return
+            
+        version = self.version_input.text().strip()
+        if not version:
+            QMessageBox.warning(self, "Warning", "Version number required!")
+            return
+            
+        # Create and start release thread
+        self.release_thread = ReleaseThread(
+            project_dir=Path.cwd(),
+            version=version,
+            tasks=tasks,
+            output_widget=self.output_text,
+            use_aur='update_aur' in tasks,
+            aur_dir=Path(self.aur_path.text()) if self.aur_path.text() else None
+        )
+        
+        # Connect signals
+        self.release_thread.progress.connect(self.update_progress)
+        self.release_thread.error.connect(self.handle_error)
+        self.release_thread.finished.connect(self.release_finished)
+        self.release_thread.dialog_signal.connect(self.handle_dialog)
+        
+        # Update UI state
+        self.start_button.setEnabled(False)
+        self.cancel_button.setEnabled(True)
+        self.progress_bar.setFormat("Starting release process...")
+        self.progress_bar.show()
+        self.output_text.clear()
+        
+        # Save settings
+        settings = QSettings("Varchiver", "ReleaseManager")
+        settings.setValue("last_version", version)
+        settings.setValue("aur_path", self.aur_path.text())
+        
+        # Start the thread
+        self.release_thread.start()
+        
+    def cancel_release(self):
+        """Cancel the release process"""
+        if self.release_thread and self.release_thread.isRunning():
+            reply = QMessageBox.question(
+                self,
+                "Confirm Cancel",
+                "Are you sure you want to cancel the release process?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                self.release_thread.terminate()
+                self.release_finished(False)
+                
     def browse_aur_dir(self):
         """Browse for AUR package directory"""
         settings = QSettings("Varchiver", "ReleaseManager")
@@ -813,111 +868,3 @@ class ReleaseManager(QWidget):
         if aur_dir:
             self.aur_path.setText(aur_dir)
             settings.setValue("aur_path", aur_dir)
-
-    def start_release_process(self):
-        """Start the release process with the selected task"""
-        version = self.version_input.text()
-        if not version:
-            QMessageBox.warning(self, "Error", "Please enter a version number")
-            return
-            
-        # Check AUR directory if needed
-        selected = self.task_combo.currentText()
-        if "Update AUR" in selected and not self.aur_path.text():
-            QMessageBox.warning(self, "Error", "Please select AUR package directory for AUR update")
-            return
-
-        # Save settings
-        settings = QSettings("Varchiver", "ReleaseManager")
-        project_path = settings.value("project_path")
-        if not project_path:
-            QMessageBox.warning(self, "Error", "Project path not set")
-            return
-            
-        settings.setValue("last_version", version)
-        settings.setValue("aur_path", self.aur_path.text())
-
-        # Get selected tasks based on combo selection
-        selected_tasks = []
-        if "Update Version" in selected:
-            selected_tasks.append('update_version')
-        if "Create Release" in selected:
-            selected_tasks.append('create_release')
-        if "Update AUR" in selected:
-            selected_tasks.append('update_aur')
-
-        # Start release process
-        self.release_start_button.setEnabled(False)
-        self.release_output.clear()
-        
-        try:
-            self.release_thread = ReleaseThread(
-                project_dir=Path(project_path),
-                version=version,
-                tasks=selected_tasks,
-                output_widget=self.release_output,
-                use_aur="Update AUR" in selected,
-                aur_dir=Path(self.aur_path.text()) if "Update AUR" in selected else None
-            )
-            
-            self.release_thread.progress.connect(self.update_progress)
-            self.release_thread.error.connect(self.show_error)
-            self.release_thread.output.connect(self.update_output)
-            self.release_thread.finished.connect(self.on_release_complete)
-            
-            self.release_thread.start()
-            
-        except Exception as e:
-            self.release_start_button.setEnabled(True)
-            QMessageBox.critical(self, "Error", f"Failed to start release process: {str(e)}")
-            self.release_output.append(f"Error: {str(e)}")
-            return
-
-    def on_release_complete(self, success: bool):
-        """Handle completion of release process"""
-        self.release_start_button.setEnabled(True)
-        self.progress_bar.hide()
-        
-        if success:
-            QMessageBox.information(
-                self,
-                "Release Complete",
-                "Release process completed successfully!\n\n"
-                "All selected tasks have been completed."
-            )
-        else:
-            # Error message will have already been shown by show_error
-            pass
-            
-        # Ensure the output is scrolled to the end
-        cursor = self.release_output.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        self.release_output.setTextCursor(cursor)
-
-    def show_error(self, message: str):
-        """Show error message"""
-        self.progress_bar.hide()
-        QMessageBox.critical(self, "Error", message)
-        self.release_start_button.setEnabled(True)
-
-    def update_progress(self, message: str):
-        """Update progress message in the output"""
-        self.release_output.append(message)
-        # Show progress bar during long operations
-        if any(x in message.lower() for x in ["building package", "creating github release", "updating aur package"]):
-            self.progress_bar.setRange(0, 0)  # Indeterminate progress
-            self.progress_bar.show()
-        elif "completed" in message.lower():
-            self.progress_bar.hide()
-        # Ensure the new text is visible
-        cursor = self.release_output.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        self.release_output.setTextCursor(cursor)
-
-    def update_output(self, text: str):
-        """Update output text"""
-        self.release_output.append(text)
-        # Ensure the new text is visible
-        cursor = self.release_output.textCursor()
-        cursor.movePosition(cursor.MoveOperation.End)
-        self.release_output.setTextCursor(cursor)
