@@ -28,7 +28,7 @@ optdepends=(
     'python-rarfile: for RAR archive support'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("a590ba13d054752356209e6f4e3e5305a02283770e8a0c695749c680a9df41b9")  # Will be updated by release manager
+sha256sums=("f54e8924c44f2d8c033a7b4f075f95ca1cee844797fe0daf706142ae8d62ef99")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
@@ -42,6 +42,14 @@ build() {
     
     # Install dependencies
     pip install --no-cache-dir -e .
+    
+    # Ensure resources directory exists
+    if [ ! -d "varchiver/resources" ]; then
+        mkdir -p varchiver/resources
+        if [ -d "resources" ]; then
+            cp -r resources/* varchiver/resources/
+        fi
+    fi
     
     # Build executable with explicit module includes
     pyinstaller --clean --onefile --name varchiver \

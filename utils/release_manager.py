@@ -344,6 +344,14 @@ class ReleaseThread(QThread):
                     self.output_message(f"Warning: Could not clean {d} directory: {e}")
                     continue
         
+        # Ensure resources are in the correct location for the build
+        resources_dir = self.project_dir / "varchiver" / "resources"
+        if not resources_dir.exists() and (self.project_dir / "resources").exists():
+            self.output_message("Copying resources to varchiver package directory...")
+            resources_dir.mkdir(parents=True, exist_ok=True)
+            import shutil
+            shutil.copytree(self.project_dir / "resources", resources_dir, dirs_exist_ok=True)
+        
         # Create source archive
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
