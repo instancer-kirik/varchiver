@@ -329,24 +329,35 @@ class ReleaseThread(QThread):
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
             
+        self.output_message(f"Updating PKGBUILD version to {self.version}")
+        
         # Update version and source filename
+        old_content = pkgbuild_content
         pkgbuild_content = re.sub(
-            r'^pkgver=.*$',
+            r'pkgver=[\d.]+',
             f'pkgver={self.version}',
-            pkgbuild_content,
-            flags=re.MULTILINE
+            pkgbuild_content
         )
+        
+        if old_content == pkgbuild_content:
+            self.output_message("Warning: Version update did not change PKGBUILD content")
         
         # Update source filename to match new version
         pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
+            r'source=\(".*"\)',
             f'source=("$pkgname-{self.version}.tar.gz::$url/archive/v{self.version}.tar.gz")',
-            pkgbuild_content,
-            flags=re.MULTILINE
+            pkgbuild_content
         )
         
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
+            
+        # Verify the update
+        with open(pkgbuild_path, 'r') as f:
+            updated_content = f.read()
+            if f'pkgver={self.version}' not in updated_content:
+                self.output_message("Error: Failed to update version in PKGBUILD")
+                raise Exception("Failed to update version in PKGBUILD")
             
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
