@@ -1,4 +1,25 @@
 """Project-specific constants and configurations."""
+import re
+from pathlib import Path
+
+def get_version_from_pkgbuild() -> str:
+    """Get version from PKGBUILD file."""
+    try:
+        pkgbuild_path = Path(__file__).resolve().parent.parent.parent / 'PKGBUILD'
+        if not pkgbuild_path.exists():
+            return '0.0.0'  # Fallback version if PKGBUILD not found
+            
+        content = pkgbuild_path.read_text()
+        match = re.search(r'^pkgver=([0-9][0-9a-z.-]*)$', content, re.MULTILINE)
+        if match:
+            return match.group(1)
+        return '0.0.0'  # Fallback version if version not found
+    except Exception:
+        return '0.0.0'  # Fallback version if any error occurs
+
+# Project-wide constants
+PROJECT_NAME = 'Varchiver'
+PROJECT_VERSION = get_version_from_pkgbuild()
 
 # Project type configurations
 PROJECT_CONFIGS = {
@@ -21,7 +42,10 @@ PROJECT_CONFIGS = {
         "files": "go.mod",
         "patterns": 'v*',
         "build": "go build"
-    }
+    },
+    # Application config
+    "name": PROJECT_NAME,
+    "version": PROJECT_VERSION
 }
 
 # Common Git export-ignore patterns with descriptions, grouped by category

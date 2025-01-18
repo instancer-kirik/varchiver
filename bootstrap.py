@@ -31,10 +31,13 @@ def main():
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+        # Import project constants first
+        from varchiver.utils.project_constants import PROJECT_CONFIGS
+
         # Create application
         app = QApplication(sys.argv)
-        app.setApplicationName('Varchiver')
-        app.setApplicationVersion('2.0.0')
+        app.setApplicationName(PROJECT_CONFIGS['name'])
+        app.setApplicationVersion(PROJECT_CONFIGS['version'])
         app.setStyle('Fusion')
         
         # Set application icon
