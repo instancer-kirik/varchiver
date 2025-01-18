@@ -383,11 +383,26 @@ class ReleaseThread(QThread):
         if not pkgbuild_path.exists():
             raise Exception("PKGBUILD not found in project directory")
             
-        # Update PKGBUILD version first
+        # Create dist directory first
+        dist_dir = self.project_dir / "dist"
+        dist_dir.mkdir(exist_ok=True, parents=True)
+        
+        # Clean up previous build artifacts
+        self.output_message("Cleaning up previous build artifacts...")
+        for d in ["pkg", "src"]:
+            build_dir = self.project_dir / d
+            if build_dir.exists():
+                try:
+                    import shutil
+                    shutil.rmtree(build_dir)
+                    self.output_message(f"Cleaned up {d} directory")
+                except Exception as e:
+                    self.output_message(f"Warning: Could not clean {d} directory: {e}")
+        
+        # Update PKGBUILD version
+        self.output_message(f"Updating PKGBUILD version to {self.version}")
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
-            
-        self.output_message(f"Updating PKGBUILD version to {self.version}")
         
         # First find the current version
         current_version = re.search(r'^pkgver=([0-9.]+)', pkgbuild_content, re.MULTILINE)
@@ -418,31 +433,11 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
         
-        # Create dist directory if it doesn't exist
-        dist_dir = self.project_dir / "dist"
-        dist_dir.mkdir(exist_ok=True)
+        # Write updated PKGBUILD
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
         
-        # Clean up previous build artifacts
-        self.output_message("Cleaning up previous build artifacts...")
-        for d in ["pkg", "src", "dist", "AppDir"]:
-            build_dir = self.project_dir / d
-            if build_dir.exists():
-                try:
-                    import shutil
-                    shutil.rmtree(build_dir)
-                    self.output_message(f"Cleaned up {d} directory")
-                except Exception as e:
-                    self.output_message(f"Warning: Could not clean {d} directory: {e}")
-        
-        # Commit PKGBUILD version update first
-        self._run_command(['git', 'add', 'PKGBUILD'])
-        try:
-            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version}'])
-            self._run_command(['git', 'push', 'origin', 'HEAD'])
-        except Exception as e:
-            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
-        
-        # Create source archive from the latest commit
+        # Create source archive
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
         archive_path = dist_dir / archive_name
@@ -460,7 +455,7 @@ class ReleaseThread(QThread):
         sha256_result = self._run_command(["sha256sum", str(archive_path)])
         sha256 = sha256_result.stdout.split()[0]
         
-        # Update PKGBUILD with new SHA256
+        # Update PKGBUILD with SHA256
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
         
@@ -471,18 +466,17 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
         
+        # Write updated PKGBUILD with SHA256
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
         
-        # Commit and push SHA256 update
+        # Commit all PKGBUILD changes
         self._run_command(['git', 'add', 'PKGBUILD'])
         try:
-            self._run_command(['git', 'commit', '-m', f'Update SHA256 for version {self.version}'])
+            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version} with SHA256'])
             self._run_command(['git', 'push', 'origin', 'HEAD'])
-            # Make sure to use the committed changes
-            self._run_command(['git', 'reset', '--hard', 'HEAD'])
         except Exception as e:
-            self.output_message(f"Warning: Failed to commit SHA256 update: {e}")
+            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
         
         # Double check version after commit
         with open(pkgbuild_path, 'r') as f:
