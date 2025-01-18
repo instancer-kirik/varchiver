@@ -609,7 +609,7 @@ class ReleaseThread(QThread):
         # Get system architecture
         arch = self._run_command(['uname', '-m']).stdout.strip()
         
-        # Check for uncommitted changes
+        # Check for uncommitted changes and push them
         self.progress.emit("Checking git status...")
         result = self._run_command(['git', 'status', '--porcelain'])
         if result.stdout.strip():
@@ -617,6 +617,10 @@ class ReleaseThread(QThread):
             self.progress.emit("Committing changes...")
             self._run_command(['git', 'add', '.'])
             self._run_command(['git', 'commit', '-m', f'Release version {self.version}'])
+            
+            # Push changes to remote
+            self.output_message("Pushing changes to remote...")
+            self._run_command(['git', 'push', 'origin', 'HEAD'])
         
         # Create and push tag
         tag = f'v{self.version}'
@@ -654,10 +658,13 @@ class ReleaseThread(QThread):
             '--title', f'Release {tag}',
             '--notes', release_notes,
             *[str(f) for f in dist_dir.glob('*') if f.is_file()]
-        ], timeout=300)  # Increase timeout to 5 minutes
+        ], timeout=300)  # 5 minutes timeout
         
-        self.output_message(f"\nGitHub release {tag} created successfully!")
-        self.output_message("Release process completed successfully!")
+        # Verify release and wait for it to be available
+        if not self._verify_release_assets(self.version):
+            raise Exception("Failed to verify release assets after creation")
+        
+        self.output_message(f"\nGitHub release {tag} created and verified successfully!")
 
     def _update_aur(self):
         """Update AUR package with proper .SRCINFO handling"""
@@ -665,6 +672,11 @@ class ReleaseThread(QThread):
             return
             
         self.progress.emit("Updating AUR package...")
+        
+        # First verify that the GitHub release exists and is accessible
+        self.output_message("Verifying GitHub release is available...")
+        if not self._verify_release_assets(self.version, max_retries=10, retry_delay=10):
+            raise Exception("GitHub release is not available. Cannot update AUR package.")
         
         # Clone AUR repo if it doesn't exist
         if not self.aur_dir.exists():
@@ -710,8 +722,8 @@ class ReleaseThread(QThread):
                 flags=re.MULTILINE | re.DOTALL
             )
             
-            # Wait for GitHub release to be available and calculate SHA256
-            self.output_message("Waiting for GitHub release to be available...")
+            # Calculate SHA256 with retries
+            self.output_message("Calculating SHA256 of GitHub release file...")
             max_retries = 5
             sha256 = None
             
@@ -727,12 +739,22 @@ class ReleaseThread(QThread):
                     if not re.match(r'^[a-f0-9]{64}$', sha256):
                         raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
                         
-                    self.output_message(f"Calculated SHA256: {sha256}")
-                    break
+                    # Verify the SHA256 by downloading and checking
+                    verify_result = self._run_command([
+                        "bash", "-c",
+                        f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum -c --status <(echo {sha256}  -)"
+                    ], check=False)
+                    
+                    if verify_result.returncode == 0:
+                        self.output_message(f"SHA256 verified: {sha256}")
+                        break
+                    else:
+                        raise Exception("SHA256 verification failed")
+                        
                 except Exception as e:
                     self.output_message(f"Attempt {attempt + 1} failed: {e}")
                     if attempt == max_retries - 1:
-                        raise Exception("Failed to calculate SHA256 after multiple attempts")
+                        raise Exception("Failed to calculate and verify SHA256 after multiple attempts")
             
             # Update SHA256 sum
             pkgbuild_content = re.sub(
