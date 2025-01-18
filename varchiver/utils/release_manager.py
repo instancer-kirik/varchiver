@@ -443,10 +443,10 @@ class ReleaseThread(QThread):
         sha256_result = self._run_command(["sha256sum", str(archive_path)])
         sha256 = sha256_result.stdout.split()[0]
         
-        # Update source and sha256sums in PKGBUILD
+        # Update source and sha256sums in PKGBUILD for local build
         pkgbuild_content = re.sub(
             r'source=\([^)]*\)',
-            f'source=("{archive_name}")',  # Use local source
+            f'source=("{archive_name}")',  # Use local source for build
             pkgbuild_content,
             flags=re.MULTILINE | re.DOTALL
         )
@@ -467,23 +467,6 @@ class ReleaseThread(QThread):
         root_archive = self.project_dir / archive_name
         shutil.copy2(archive_path, root_archive)
         
-        # Commit PKGBUILD changes
-        self._run_command(['git', 'add', 'PKGBUILD'])
-        try:
-            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version} with SHA256'])
-            self._run_command(['git', 'push', 'origin', 'HEAD'])
-        except Exception as e:
-            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
-        
-        # Double check version after commit
-        with open(pkgbuild_path, 'r') as f:
-            final_content = f.read()
-            final_version = re.search(r'^pkgver=([0-9.]+)', final_content, re.MULTILINE)
-            if final_version:
-                self.output_message(f"Final version in PKGBUILD: {final_version.group(1)}")
-                if final_version.group(1) != self.version:
-                    raise Exception(f"Version mismatch: PKGBUILD has {final_version.group(1)} but should be {self.version}")
-            
         # Build package
         self.output_message("Starting makepkg process...")
         try:
@@ -516,6 +499,17 @@ class ReleaseThread(QThread):
             # Clean up local source archive
             if root_archive.exists():
                 root_archive.unlink()
+                
+            # Restore PKGBUILD source to use GitHub URL for AUR
+            pkgbuild_content = re.sub(
+                r'source=\([^)]*\)',
+                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+                pkgbuild_content,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
+            with open(pkgbuild_path, 'w') as f:
+                f.write(pkgbuild_content)
                 
         except subprocess.TimeoutExpired:
             raise Exception("Build process timed out")
