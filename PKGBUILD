@@ -28,7 +28,7 @@ optdepends=(
     'python-rarfile: for RAR archive support'
 )
 source=("varchiver-0.5.8.tar.gz")
-sha256sums=("54d071dad13f0f0b597055524475d345206a16cd97210f26f811956735317a9b")  # Will be updated by release manager
+sha256sums=("c1aaa9b1fd995d38231e5713bf56bd27d64dc0409b20a9e0dd5ad2efac1a6ffc")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
