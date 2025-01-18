@@ -413,50 +413,17 @@ class ReleaseThread(QThread):
         # Update source filename to match new version
         pkgbuild_content = re.sub(
             r'source=\([^)]*\)',
-            f'source=("$pkgname-{self.version}.tar.gz::$url/archive/v{self.version}.tar.gz")',
-            pkgbuild_content
+            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
         )
         
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-            
-        # Verify the update
-        with open(pkgbuild_path, 'r') as f:
-            updated_content = f.read()
-            if f'pkgver={self.version}' not in updated_content:
-                self.output_message("Error: Failed to update version in PKGBUILD")
-                self.output_message("Current PKGBUILD content:")
-                self.output_message(updated_content[:500])  # Show more content for debugging
-                raise Exception("Failed to update version in PKGBUILD")
-            else:
-                self.output_message("Successfully updated PKGBUILD version")
-                
-        # Commit the PKGBUILD changes before creating source archive
-        self._run_command(['git', 'add', 'PKGBUILD'])
-        try:
-            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version}'])
-            # Make sure to use the committed changes
-            self._run_command(['git', 'reset', '--hard', 'HEAD'])
-        except Exception as e:
-            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
-            
-        # Double check version after commit
-        with open(pkgbuild_path, 'r') as f:
-            final_content = f.read()
-            final_version = re.search(r'^pkgver=([0-9.]+)', final_content, re.MULTILINE)
-            if final_version:
-                self.output_message(f"Final version in PKGBUILD: {final_version.group(1)}")
-                if final_version.group(1) != self.version:
-                    raise Exception(f"Version mismatch: PKGBUILD has {final_version.group(1)} but should be {self.version}")
-            
         # Create dist directory if it doesn't exist
         dist_dir = self.project_dir / "dist"
         dist_dir.mkdir(exist_ok=True)
-            
+        
         # Clean up previous build artifacts
         self.output_message("Cleaning up previous build artifacts...")
-        
-        # Clean build directories and artifacts
         for d in ["pkg", "src", "dist", "AppDir"]:
             build_dir = self.project_dir / d
             if build_dir.exists():
@@ -466,14 +433,21 @@ class ReleaseThread(QThread):
                     self.output_message(f"Cleaned up {d} directory")
                 except Exception as e:
                     self.output_message(f"Warning: Could not clean {d} directory: {e}")
-                    continue
         
-        # Create source archive
+        # Commit PKGBUILD version update first
+        self._run_command(['git', 'add', 'PKGBUILD'])
+        try:
+            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version}'])
+            self._run_command(['git', 'push', 'origin', 'HEAD'])
+        except Exception as e:
+            self.output_message(f"Warning: Failed to commit PKGBUILD changes: {e}")
+        
+        # Create source archive from the latest commit
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
-        archive_path = self.project_dir / archive_name
+        archive_path = dist_dir / archive_name
         
-        # Create source archive using git archive from the latest commit
+        # Create source archive using git archive
         self._run_command([
             "git", "archive",
             "--format=tar.gz",
@@ -486,19 +460,38 @@ class ReleaseThread(QThread):
         sha256_result = self._run_command(["sha256sum", str(archive_path)])
         sha256 = sha256_result.stdout.split()[0]
         
-        # Update PKGBUILD with new source and checksum
+        # Update PKGBUILD with new SHA256
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
-            
-        # Update source and sha256sums
+        
         pkgbuild_content = re.sub(
             r'sha256sums=\([^)]*\)',
             f'sha256sums=("{sha256}")',
-            pkgbuild_content
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
         )
         
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
+        
+        # Commit and push SHA256 update
+        self._run_command(['git', 'add', 'PKGBUILD'])
+        try:
+            self._run_command(['git', 'commit', '-m', f'Update SHA256 for version {self.version}'])
+            self._run_command(['git', 'push', 'origin', 'HEAD'])
+            # Make sure to use the committed changes
+            self._run_command(['git', 'reset', '--hard', 'HEAD'])
+        except Exception as e:
+            self.output_message(f"Warning: Failed to commit SHA256 update: {e}")
+        
+        # Double check version after commit
+        with open(pkgbuild_path, 'r') as f:
+            final_content = f.read()
+            final_version = re.search(r'^pkgver=([0-9.]+)', final_content, re.MULTILINE)
+            if final_version:
+                self.output_message(f"Final version in PKGBUILD: {final_version.group(1)}")
+                if final_version.group(1) != self.version:
+                    raise Exception(f"Version mismatch: PKGBUILD has {final_version.group(1)} but should be {self.version}")
             
         # Build package
         self.output_message("Starting makepkg process...")
