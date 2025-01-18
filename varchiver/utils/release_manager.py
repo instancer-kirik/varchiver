@@ -425,18 +425,6 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE
         )
         
-        # Update source filename to match new version
-        pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        # Write updated PKGBUILD
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
         # Create source archive
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
@@ -455,9 +443,13 @@ class ReleaseThread(QThread):
         sha256_result = self._run_command(["sha256sum", str(archive_path)])
         sha256 = sha256_result.stdout.split()[0]
         
-        # Update PKGBUILD with SHA256
-        with open(pkgbuild_path, 'r') as f:
-            pkgbuild_content = f.read()
+        # Update source and sha256sums in PKGBUILD
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("{archive_name}")',  # Use local source
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
         
         pkgbuild_content = re.sub(
             r'sha256sums=\([^)]*\)',
@@ -466,11 +458,16 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
         
-        # Write updated PKGBUILD with SHA256
+        # Write updated PKGBUILD
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
         
-        # Commit all PKGBUILD changes
+        # Copy source archive to project root for makepkg
+        import shutil
+        root_archive = self.project_dir / archive_name
+        shutil.copy2(archive_path, root_archive)
+        
+        # Commit PKGBUILD changes
         self._run_command(['git', 'add', 'PKGBUILD'])
         try:
             self._run_command(['git', 'commit', '-m', f'Update PKGBUILD to version {self.version} with SHA256'])
@@ -498,7 +495,6 @@ class ReleaseThread(QThread):
             if src_resources.exists():
                 dst_resources = self.project_dir / "src" / f"{self.project_dir.name}-{self.version}" / "varchiver" / "resources"
                 dst_resources.parent.mkdir(parents=True, exist_ok=True)
-                import shutil
                 if dst_resources.exists():
                     shutil.rmtree(dst_resources)
                 shutil.copytree(src_resources, dst_resources)
@@ -517,10 +513,18 @@ class ReleaseThread(QThread):
                 self.output_message("\nBuild warnings:")
                 self.output_message(result.stderr)
                 
+            # Clean up local source archive
+            if root_archive.exists():
+                root_archive.unlink()
+                
         except subprocess.TimeoutExpired:
             raise Exception("Build process timed out")
         except subprocess.CalledProcessError as e:
             raise Exception(f"Build failed with error code {e.returncode}")
+        finally:
+            # Always try to clean up local source archive
+            if root_archive.exists():
+                root_archive.unlink()
             
         # Verify build artifacts
         package_file = next(dist_dir.glob("*.pkg.tar.zst"), None)
