@@ -101,6 +101,64 @@ class ReleaseThread(QThread):
         try:
             self.output_message(f"Starting release process for version {self.version}")
             
+            # First check for unpushed commits
+            self.output_message("Checking for unpushed commits...")
+            try:
+                # Get the current branch
+                branch_result = self._run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+                current_branch = branch_result.stdout.strip()
+                
+                # Check for unpushed commits
+                unpushed = self._run_command(
+                    ["git", "log", f"origin/{current_branch}..{current_branch}", "--oneline"],
+                    check=False
+                )
+                
+                if unpushed.stdout.strip():
+                    self.output_message("\nWARNING: There are unpushed commits:")
+                    self.output_message(unpushed.stdout)
+                    
+                    # Show dialog and wait for response
+                    self.wait_for_dialog = True
+                    self.dialog_signal.emit(
+                        "Unpushed Commits",
+                        "There are unpushed commits. Choose an action:\n\n" +
+                        "1. Push commits\n" +
+                        "2. Reset to remote\n" +
+                        "3. Cancel release",
+                        ["Push", "Reset", "Cancel"]
+                    )
+                    
+                    # Wait for response with timeout
+                    start_time = time.time()
+                    while self.wait_for_dialog:
+                        if time.time() - start_time > 60:  # 1 minute timeout
+                            self.output_message("Dialog timed out")
+                            return False
+                        self.msleep(100)
+                        QApplication.processEvents()
+                    
+                    # Handle response
+                    if self.dialog_response == "Cancel":
+                        self.output_message("Release cancelled by user")
+                        self.finished.emit(False)
+                        return False
+                    
+                    try:
+                        if self.dialog_response == "Push":
+                            self._run_command(["git", "push", "origin", current_branch])
+                            self.output_message("Pushed commits successfully")
+                        elif self.dialog_response == "Reset":
+                            self._run_command(["git", "fetch", "origin"])
+                            self._run_command(["git", "reset", "--hard", f"origin/{current_branch}"])
+                            self.output_message("Reset to remote successfully")
+                    except Exception as e:
+                        self.output_message(f"Failed to handle unpushed commits: {e}")
+                        return False
+            except Exception as e:
+                self.output_message(f"Error checking unpushed commits: {e}")
+                return False
+            
             # Check Git status first
             if not self._handle_git_status():
                 return  # Git status handling failed or was cancelled
@@ -608,29 +666,6 @@ class ReleaseThread(QThread):
             
         self.progress.emit("Updating AUR package...")
         
-        # Calculate SHA256 sum first
-        self.progress.emit("Calculating SHA256 of GitHub release file...")
-        try:
-            # Wait a bit for GitHub to make the release available
-            time.sleep(5)
-            
-            # Try to download and calculate SHA256
-            sha256_result = self._run_command([
-                "bash", "-c",
-                f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
-            ], timeout=60)
-            sha256 = sha256_result.stdout.split()[0]
-            
-            # Verify the SHA256 sum is valid
-            if not re.match(r'^[a-f0-9]{64}$', sha256):
-                raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
-                
-            self.output_message(f"Calculated SHA256: {sha256}")
-        except Exception as e:
-            self.output_message(f"Failed to calculate SHA256: {e}")
-            self.output_message("Will retry after cloning AUR repo...")
-            sha256 = None
-        
         # Clone AUR repo if it doesn't exist
         if not self.aur_dir.exists():
             self.progress.emit("Cloning AUR repository...")
@@ -675,10 +710,14 @@ class ReleaseThread(QThread):
                 flags=re.MULTILINE | re.DOTALL
             )
             
-            # If we don't have SHA256 yet, try to calculate it again
-            if not sha256:
-                self.output_message("Retrying SHA256 calculation...")
+            # Wait for GitHub release to be available and calculate SHA256
+            self.output_message("Waiting for GitHub release to be available...")
+            max_retries = 5
+            sha256 = None
+            
+            for attempt in range(max_retries):
                 try:
+                    time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
                     sha256_result = self._run_command([
                         "bash", "-c",
                         f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
@@ -689,8 +728,11 @@ class ReleaseThread(QThread):
                         raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
                         
                     self.output_message(f"Calculated SHA256: {sha256}")
+                    break
                 except Exception as e:
-                    raise Exception(f"Failed to calculate SHA256 after multiple attempts: {e}")
+                    self.output_message(f"Attempt {attempt + 1} failed: {e}")
+                    if attempt == max_retries - 1:
+                        raise Exception("Failed to calculate SHA256 after multiple attempts")
             
             # Update SHA256 sum
             pkgbuild_content = re.sub(
