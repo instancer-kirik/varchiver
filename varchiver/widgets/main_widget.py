@@ -793,27 +793,52 @@ class MainWidget(QWidget):
         dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)  # Allow selecting multiple files
         dialog.setOption(QFileDialog.Option.DontUseNativeDialog)
         dialog.setOption(QFileDialog.Option.DontUseCustomDirectoryIcons)
-        dialog.setLabelText(QFileDialog.DialogLabel.Accept, "Choose")
-        dialog.setLabelText(QFileDialog.DialogLabel.Reject, "Cancel")
+        
+        # Get the tree view from the dialog
+        tree_view = dialog.findChild(QTreeView)
+        if tree_view:
+            tree_view.setSelectionMode(QTreeView.SelectionMode.ExtendedSelection)
         
         # Add a button to select current directory
         current_dir_button = QPushButton("Select Current Directory", dialog)
         current_dir_button.clicked.connect(lambda: self._select_current_dir(dialog))
         
-        # Add the button to the dialog's layout
+        # Add a button to toggle directory mode
+        dir_mode_button = QPushButton("Toggle Directory Mode", dialog)
+        dir_mode_button.setCheckable(True)
+        
+        def toggle_dir_mode(checked):
+            if checked:
+                dialog.setFileMode(QFileDialog.FileMode.Directory)
+                dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+            else:
+                dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
+                dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
+        
+        dir_mode_button.toggled.connect(toggle_dir_mode)
+        
+        # Add buttons to dialog layout
         layout = dialog.layout()
         if layout:
-            # Try to find a good spot for the button
+            # Try to find a good spot for the buttons
             if isinstance(layout, QGridLayout):
                 # Add to the last row
                 row = layout.rowCount()
-                layout.addWidget(current_dir_button, row, 0, 1, -1)
+                layout.addWidget(current_dir_button, row, 0)
+                layout.addWidget(dir_mode_button, row, 1)
             else:
                 # If not a grid layout, just add to the end
                 layout.addWidget(current_dir_button)
+                layout.addWidget(dir_mode_button)
         
-        if dialog.exec() == QFileDialog.DialogCode.Accepted:
-            selected_files = dialog.selectedFiles()
+        selected_files = []
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # Handle both files and directories
+            if dialog.fileMode() == QFileDialog.FileMode.Directory:
+                selected_files = [dialog.selectedFiles()[0]]  # Single directory mode
+            else:
+                selected_files = dialog.selectedFiles()  # Multiple files/directories mode
+            
             if not selected_files:
                 return
             
@@ -842,7 +867,7 @@ class MainWidget(QWidget):
             # Connect filter change signal
             save_dialog.filterSelected.connect(lambda selected_filter: self.on_filter_selected(save_dialog, selected_filter))
             
-            if save_dialog.exec() != QFileDialog.DialogCode.Accepted:
+            if save_dialog.exec() != QDialog.DialogCode.Accepted:
                 return
 
             archive_name = save_dialog.selectedFiles()[0]
@@ -2519,6 +2544,66 @@ class MainWidget(QWidget):
             # Cancel was clicked
             if self.release_thread:
                 self.release_thread.handle_dialog_response("Cancel")
+
+    def _populate_tree(self, entries):
+        """Populate tree view with archive or directory contents"""
+        self._tree.clear()
+        
+        if not entries:
+            return
+            
+        # If entries is a list of paths (directory mode)
+        if isinstance(entries[0], (str, Path)):
+            for path in entries:
+                self.display_filesystem_item(path)
+            return
+            
+        # Handle archive entries
+        for entry in entries:
+            item = QTreeWidgetItem(self._tree)
+            
+            # Set name
+            item.setText(0, entry.get('name', ''))
+            
+            # Set size
+            size = entry.get('size', 0)
+            if isinstance(size, (int, float)):
+                size_str = self._format_size(size)
+            else:
+                size_str = str(size)
+            item.setText(1, size_str)
+            
+            # Set modified time
+            mtime = entry.get('mtime', '')
+            if mtime:
+                if isinstance(mtime, (int, float)):
+                    mtime_str = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    mtime_str = str(mtime)
+                item.setText(2, mtime_str)
+            
+            # Set compression ratio
+            compressed_size = entry.get('compressed_size', size)
+            if size > 0 and compressed_size is not None:
+                ratio = (compressed_size / size) * 100
+                item.setText(3, f"{ratio:.1f}%")
+            
+            # Set icon based on type
+            if entry.get('is_dir', False):
+                item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon))
+            else:
+                item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+                
+        # Update files found label
+        self.files_found_label.setText(f"Files found: {len(entries)}")
+        
+    def _format_size(self, size):
+        """Format size in bytes to human readable format"""
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} PB"
 
 def main():
     app = QApplication(sys.argv)

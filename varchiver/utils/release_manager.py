@@ -425,6 +425,18 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE
         )
         
+        # Update source URL
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        
+        # Write updated PKGBUILD
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+        
         # Create source archive
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
@@ -438,34 +450,6 @@ class ReleaseThread(QThread):
             "-o", str(archive_path),
             "HEAD"
         ])
-        
-        # Calculate SHA256 sum
-        sha256_result = self._run_command(["sha256sum", str(archive_path)])
-        sha256 = sha256_result.stdout.split()[0]
-        
-        # Update source and sha256sums in PKGBUILD for local build
-        pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("{archive_name}")',  # Use local source for build
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        pkgbuild_content = re.sub(
-            r'sha256sums=\([^)]*\)',
-            f'sha256sums=("{sha256}")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        # Write updated PKGBUILD
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
-        # Copy source archive to project root for makepkg
-        import shutil
-        root_archive = self.project_dir / archive_name
-        shutil.copy2(archive_path, root_archive)
         
         # Build package
         self.output_message("Starting makepkg process...")
@@ -496,29 +480,10 @@ class ReleaseThread(QThread):
                 self.output_message("\nBuild warnings:")
                 self.output_message(result.stderr)
                 
-            # Clean up local source archive
-            if root_archive.exists():
-                root_archive.unlink()
-                
-            # Restore PKGBUILD source to use GitHub URL for AUR
-            pkgbuild_content = re.sub(
-                r'source=\([^)]*\)',
-                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                pkgbuild_content,
-                flags=re.MULTILINE | re.DOTALL
-            )
-            
-            with open(pkgbuild_path, 'w') as f:
-                f.write(pkgbuild_content)
-                
         except subprocess.TimeoutExpired:
             raise Exception("Build process timed out")
         except subprocess.CalledProcessError as e:
             raise Exception(f"Build failed with error code {e.returncode}")
-        finally:
-            # Always try to clean up local source archive
-            if root_archive.exists():
-                root_archive.unlink()
             
         # Verify build artifacts
         package_file = next(dist_dir.glob("*.pkg.tar.zst"), None)
@@ -611,34 +576,6 @@ class ReleaseThread(QThread):
             "HEAD"
         ])
         
-        # Calculate SHA256 sum of the source archive
-        sha256_result = self._run_command(["sha256sum", str(archive_path)])
-        sha256 = sha256_result.stdout.split()[0]
-        
-        # Update PKGBUILD with new source and checksum
-        pkgbuild_path = self.project_dir / "PKGBUILD"
-        with open(pkgbuild_path, 'r') as f:
-            pkgbuild_content = f.read()
-            
-        # Update source and sha256sums
-        pkgbuild_content = re.sub(
-            r'sha256sums=\([^)]*\)',
-            f'sha256sums=("{sha256}")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
-        # Commit PKGBUILD changes
-        self._run_command(['git', 'add', 'PKGBUILD'])
-        self._run_command(['git', 'commit', '-m', f'Update PKGBUILD SHA256 for {self.version}'])
-        
-        # Push all changes
-        self.output_message("Pushing changes to remote...")
-        self._run_command(['git', 'push', 'origin', 'HEAD'])
-        
         # Create and push tag
         tag = f'v{self.version}'
         try:
@@ -679,6 +616,63 @@ class ReleaseThread(QThread):
         # Verify release and wait for it to be available
         if not self._verify_release_assets(self.version):
             raise Exception("Failed to verify release assets after creation")
+            
+        # Calculate SHA256 from GitHub release
+        self.output_message("Calculating SHA256 of GitHub release file...")
+        max_retries = 5
+        sha256 = None
+        
+        for attempt in range(max_retries):
+            try:
+                time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
+                sha256_result = self._run_command([
+                    "bash", "-c",
+                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
+                ], timeout=60)
+                sha256 = sha256_result.stdout.split()[0]
+                
+                if not re.match(r'^[a-f0-9]{64}$', sha256):
+                    raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
+                    
+                # Verify the SHA256 by downloading and checking
+                verify_result = self._run_command([
+                    "bash", "-c",
+                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum -c --status <(echo {sha256}  -)"
+                ], check=False)
+                
+                if verify_result.returncode == 0:
+                    self.output_message(f"SHA256 verified: {sha256}")
+                    break
+                else:
+                    raise Exception("SHA256 verification failed")
+                    
+            except Exception as e:
+                self.output_message(f"Attempt {attempt + 1} failed: {e}")
+                if attempt == max_retries - 1:
+                    raise Exception("Failed to calculate and verify SHA256 after multiple attempts")
+        
+        # Update PKGBUILD with SHA256
+        pkgbuild_path = self.project_dir / "PKGBUILD"
+        with open(pkgbuild_path, 'r') as f:
+            pkgbuild_content = f.read()
+            
+        pkgbuild_content = re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+        
+        # Commit PKGBUILD changes
+        self._run_command(['git', 'add', 'PKGBUILD'])
+        self._run_command(['git', 'commit', '-m', f'Update PKGBUILD SHA256 for {self.version}'])
+        
+        # Push all changes
+        self.output_message("Pushing changes to remote...")
+        self._run_command(['git', 'push', 'origin', 'HEAD'])
         
         self.output_message(f"\nGitHub release {tag} created and verified successfully!")
 
