@@ -542,8 +542,8 @@ class ReleaseThread(QThread):
 
     def _verify_release_assets(self, version, max_retries=20, retry_delay=15):
         """Verify release assets with retries"""
-        archive_name = f"{self.project_dir.name}-{version}"
-        archive_url = f"{self.url}/releases/download/v{version}/{archive_name}.tar.gz"
+        archive_name = f"{self.project_dir.name}-{version}.tar.gz"
+        archive_url = f"{self.url}/archive/v{version}/{archive_name}"
         
         for attempt in range(max_retries):
             try:
@@ -561,7 +561,7 @@ class ReleaseThread(QThread):
                         time.sleep(retry_delay)
                     continue
                 
-                # Then verify the asset is downloadable
+                # Then verify the source archive is downloadable
                 result = self._run_command(
                     ["curl", "-IL", archive_url],
                     timeout=30,
@@ -577,10 +577,9 @@ class ReleaseThread(QThread):
                     if test_download.returncode == 0:
                         self.output_message("Release assets verified successfully")
                         return True
-                    
-                if attempt < max_retries - 1:
-                    self.output_message(f"Assets not ready yet, waiting {retry_delay} seconds...")
-                    time.sleep(retry_delay)
+                
+                self.output_message(f"Assets not ready yet, waiting {retry_delay} seconds...")
+                time.sleep(retry_delay)
             except Exception as e:
                 self.output_message(f"Verification attempt failed: {e}")
                 if attempt < max_retries - 1:
@@ -609,18 +608,51 @@ class ReleaseThread(QThread):
         # Get system architecture
         arch = self._run_command(['uname', '-m']).stdout.strip()
         
-        # Check for uncommitted changes and push them
-        self.progress.emit("Checking git status...")
-        result = self._run_command(['git', 'status', '--porcelain'])
-        if result.stdout.strip():
-            self.output_message("Committing changes before release...")
-            self.progress.emit("Committing changes...")
-            self._run_command(['git', 'add', '.'])
-            self._run_command(['git', 'commit', '-m', f'Release version {self.version}'])
+        # Create source archive first
+        self.output_message("Creating source archive...")
+        archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
+        archive_path = self.project_dir / "dist" / archive_name
+        
+        # Ensure dist directory exists
+        dist_dir = self.project_dir / "dist"
+        dist_dir.mkdir(exist_ok=True)
+        
+        # Create source archive using git archive
+        self._run_command([
+            "git", "archive",
+            "--format=tar.gz",
+            f"--prefix={self.project_dir.name}-{self.version}/",
+            "-o", str(archive_path),
+            "HEAD"
+        ])
+        
+        # Calculate SHA256 sum of the source archive
+        sha256_result = self._run_command(["sha256sum", str(archive_path)])
+        sha256 = sha256_result.stdout.split()[0]
+        
+        # Update PKGBUILD with new source and checksum
+        pkgbuild_path = self.project_dir / "PKGBUILD"
+        with open(pkgbuild_path, 'r') as f:
+            pkgbuild_content = f.read()
             
-            # Push changes to remote
-            self.output_message("Pushing changes to remote...")
-            self._run_command(['git', 'push', 'origin', 'HEAD'])
+        # Update source and sha256sums
+        pkgbuild_content = re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+        
+        # Commit PKGBUILD changes
+        self._run_command(['git', 'add', 'PKGBUILD'])
+        self._run_command(['git', 'commit', '-m', f'Update PKGBUILD SHA256 for {self.version}'])
+        
+        # Push all changes
+        self.output_message("Pushing changes to remote...")
+        self._run_command(['git', 'push', 'origin', 'HEAD'])
         
         # Create and push tag
         tag = f'v{self.version}'
@@ -632,13 +664,12 @@ class ReleaseThread(QThread):
         except Exception as e:
             if 'already exists' not in str(e):
                 raise
-                
+        
         # Create GitHub release
         self.progress.emit("Creating GitHub release...")
         release_notes = f"Release {tag}\n\nPackage files:\n"
         
         # Add built package files to release notes
-        dist_dir = self.project_dir / 'dist'
         if dist_dir.exists():
             release_notes += "\nAvailable packages:\n"
             for file in dist_dir.glob('*'):
@@ -646,13 +677,13 @@ class ReleaseThread(QThread):
                     if file.name.endswith('.AppImage'):
                         release_notes += f"- {file.name} (Portable Linux AppImage)\n"
                     elif file.name.endswith('.tar.gz'):
-                        release_notes += f"- {file.name} (Linux binary)\n"
+                        release_notes += f"- {file.name} (Source archive)\n"
                     elif file.name.endswith('.pkg.tar.zst'):
                         release_notes += f"- {file.name} (Arch Linux package)\n"
                     else:
                         release_notes += f"- {file.name}\n"
         
-        # Create the release using gh cli
+        # Create the release using gh cli, including the source archive
         self._run_command([
             'gh', 'release', 'create', tag,
             '--title', f'Release {tag}',
