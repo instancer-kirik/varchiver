@@ -447,12 +447,19 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
         
+        # Copy source archive to build directory
+        self._run_command(["cp", str(archive_path), "."])
+        
+        # Calculate SHA256 of local archive
+        sha256_result = self._run_command(["sha256sum", str(archive_path)])
+        local_sha256 = sha256_result.stdout.split()[0]
+        
+        # Update SHA256 in PKGBUILD
+        pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, local_sha256)
+        
         # Write updated PKGBUILD
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
-        
-        # Copy source archive to build directory
-        self._run_command(["cp", str(archive_path), "."])
         
         # Build package
         self.output_message("Starting makepkg process...")
@@ -667,12 +674,7 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
             
-        pkgbuild_content = re.sub(
-            r'sha256sums=\([^)]*\)',
-            f'sha256sums=("{sha256}")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
+        pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, sha256)
         
         with open(pkgbuild_path, 'w') as f:
             f.write(pkgbuild_content)
@@ -778,12 +780,7 @@ class ReleaseThread(QThread):
                         raise Exception("Failed to calculate and verify SHA256 after multiple attempts")
             
             # Update SHA256 sum
-            pkgbuild_content = re.sub(
-                r'sha256sums=\([^)]*\)',
-                f'sha256sums=("{sha256}")',
-                pkgbuild_content,
-                flags=re.MULTILINE | re.DOTALL
-            )
+            pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, sha256)
             
             # Write updated PKGBUILD
             pkgbuild_dest = self.aur_dir / "PKGBUILD"
@@ -829,6 +826,15 @@ class ReleaseThread(QThread):
         content = file_path.read_text()
         updated = re.sub(pattern, replacement, content)
         file_path.write_text(updated)
+
+    def _update_pkgbuild_sha256(self, pkgbuild_content: str, sha256: str) -> str:
+        """Update SHA256 sum in PKGBUILD content"""
+        return re.sub(
+            r'sha256sums=\([^)]*\)',
+            f'sha256sums=("{sha256}")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
 
 
 class ReleaseManager(QWidget):
