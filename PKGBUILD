@@ -1,6 +1,6 @@
 # Maintainer: instancer-kirik
 pkgname=varchiver
-pkgver=0.6.2
+pkgver=0.6.3
 pkgrel=1
 pkgdesc="A variable archiver and github/aur release manager (serialize your variables first)"
 arch=('x86_64')
@@ -27,8 +27,8 @@ makedepends=(
 optdepends=(
     'python-rarfile: for RAR archive support'
 )
-source=("varchiver-0.6.2.tar.gz")
-sha256sums=("bf4749fe70f5b64909f33be982d82b68504895c0f5b7be1a3fd6cd0b172491a8")  # Will be updated by release manager
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=("da5cac66d48126c84ce0012f2026322a0f8eb1eada14594886383516c9337dec")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
