@@ -425,18 +425,6 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE
         )
         
-        # Update source URL
-        pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        # Write updated PKGBUILD
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
         # Create source archive
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
@@ -450,6 +438,21 @@ class ReleaseThread(QThread):
             "-o", str(archive_path),
             "HEAD"
         ])
+
+        # Update source URL to use local archive during build
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("{archive_name}")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        
+        # Write updated PKGBUILD
+        with open(pkgbuild_path, 'w') as f:
+            f.write(pkgbuild_content)
+        
+        # Copy source archive to build directory
+        self._run_command(["cp", str(archive_path), "."])
         
         # Build package
         self.output_message("Starting makepkg process...")
@@ -655,6 +658,14 @@ class ReleaseThread(QThread):
         pkgbuild_path = self.project_dir / "PKGBUILD"
         with open(pkgbuild_path, 'r') as f:
             pkgbuild_content = f.read()
+            
+        # Update source URL to use GitHub release
+        pkgbuild_content = re.sub(
+            r'source=\([^)]*\)',
+            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
+            pkgbuild_content,
+            flags=re.MULTILINE | re.DOTALL
+        )
             
         pkgbuild_content = re.sub(
             r'sha256sums=\([^)]*\)',
