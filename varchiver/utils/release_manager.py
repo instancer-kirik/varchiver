@@ -888,19 +888,27 @@ class ReleaseManager(QWidget):
         # Release buttons
         button_layout = QHBoxLayout()
         
-        start_button = QPushButton("Start Release")
-        start_button.clicked.connect(self.start_release)
-        button_layout.addWidget(start_button)
+        self.start_button = QPushButton("Start Release")
+        self.start_button.clicked.connect(self.start_release)
+        button_layout.addWidget(self.start_button)
         
-        cancel_button = QPushButton("Cancel")
-        cancel_button.clicked.connect(self.cancel_release)
-        button_layout.addWidget(cancel_button)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.cancel_release)
+        self.cancel_button.setEnabled(False)
+        button_layout.addWidget(self.cancel_button)
         
         layout.addLayout(button_layout)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.hide()
+        layout.addWidget(self.progress_bar)
         
         # Output display
         self.output_widget = QTextEdit()
         self.output_widget.setReadOnly(True)
+        self.output_widget.setPlaceholderText("Release process output will appear here...")
         layout.addWidget(self.output_widget)
         
     def start_release(self):
