@@ -3,7 +3,7 @@ print("Loading release_manager module")
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLineEdit, QLabel, QComboBox, QProgressBar, QMessageBox, QDialog,
                             QFileDialog, QGroupBox, QFormLayout, QTextEdit, QApplication)
-from PyQt6.QtCore import QThread, pyqtSignal, QSettings, pyqtSlot, QDir, QMetaObject, Qt, Q_ARG
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, QSettings, pyqtSlot, QDir, QMetaObject, Qt, Q_ARG
 from PyQt6.QtGui import QTextCursor
 import subprocess
 import os
@@ -837,196 +837,46 @@ class ReleaseThread(QThread):
         )
 
 
-class ReleaseManager(QWidget):
-    """Widget for managing release process."""
+class ReleaseManager(QObject):
+    """Manages the release process."""
+    
+    # Signals
+    progress = pyqtSignal(str)  # For progress bar and output widget
+    error = pyqtSignal(str)     # For error messages
+    finished = pyqtSignal(bool) # For completion status
+    dialog_signal = pyqtSignal(str, str, list)  # For user interaction dialogs
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.project_dir = None
         self.release_thread = None
-        self.init_ui()
         
-    def init_ui(self):
-        """Initialize the UI components."""
-        layout = QVBoxLayout(self)
-        
-        # Version input
-        version_layout = QHBoxLayout()
-        version_label = QLabel("Version:")
-        self.version_input = QLineEdit()
-        self.version_input.setPlaceholderText("1.0.0")
-        version_layout.addWidget(version_label)
-        version_layout.addWidget(self.version_input)
-        layout.addLayout(version_layout)
-        
-        # Task selection
-        task_layout = QHBoxLayout()
-        task_label = QLabel("Task:")
-        self.task_combo = QComboBox()
-        self.task_combo.addItems([
-            "All Tasks",
-            "Update Version + Build + Create Release",
-            "Build + Create Release",
-            "Create Release Only",
-            "Update AUR Only"
-        ])
-        task_layout.addWidget(task_label)
-        task_layout.addWidget(self.task_combo)
-        layout.addLayout(task_layout)
-        
-        # AUR package directory
-        aur_layout = QHBoxLayout()
-        aur_label = QLabel("AUR Package:")
-        self.aur_path = QLineEdit()
-        aur_browse = QPushButton("Browse")
-        aur_browse.clicked.connect(self.browse_aur_dir)
-        aur_layout.addWidget(aur_label)
-        aur_layout.addWidget(self.aur_path)
-        aur_layout.addWidget(aur_browse)
-        layout.addLayout(aur_layout)
-        
-        # Release buttons
-        button_layout = QHBoxLayout()
-        
-        self.start_button = QPushButton("Start Release")
-        self.start_button.clicked.connect(self.start_release)
-        button_layout.addWidget(self.start_button)
-        
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.clicked.connect(self.cancel_release)
-        self.cancel_button.setEnabled(False)
-        button_layout.addWidget(self.cancel_button)
-        
-        layout.addLayout(button_layout)
-        
-        # Progress bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
-        self.progress_bar.hide()
-        layout.addWidget(self.progress_bar)
-        
-        # Output display
-        self.output_widget = QTextEdit()
-        self.output_widget.setReadOnly(True)
-        self.output_widget.setPlaceholderText("Release process output will appear here...")
-        layout.addWidget(self.output_widget)
-        
-    def start_release(self):
+    def start_release(self, version: str, tasks: list, output_widget: QTextEdit,
+                     use_aur: bool = False, aur_dir: Optional[Path] = None):
         """Start the release process."""
         if not self.project_dir:
-            QMessageBox.critical(self, "Error", "Project directory not set")
-            return
-            
-        version = self.version_input.text().strip()
-        if not version:
-            QMessageBox.critical(self, "Error", "Version number required")
-            return
-            
-        # Get selected tasks based on combo box selection
-        task_index = self.task_combo.currentIndex()
-        tasks = []
-        if task_index == 0:  # All Tasks
-            tasks = ["update_version", "build", "create_release", "update_aur"]
-        elif task_index == 1:  # Update Version + Build + Create Release
-            tasks = ["update_version", "build", "create_release"]
-        elif task_index == 2:  # Build + Create Release
-            tasks = ["build", "create_release"]
-        elif task_index == 3:  # Create Release Only
-            tasks = ["create_release"]
-        elif task_index == 4:  # Update AUR Only
-            tasks = ["update_aur"]
-            
-        # Check if AUR path is needed and provided
-        if "update_aur" in tasks and not self.aur_path.text().strip():
-            QMessageBox.critical(self, "Error", "AUR package path required for AUR update")
-            return
+            raise RuntimeError("Project directory not set")
             
         # Create and start release thread
         self.release_thread = ReleaseThread(
             self.project_dir,
             version,
             tasks,
-            self.output_widget,
-            use_aur="update_aur" in tasks,
-            aur_dir=Path(self.aur_path.text().strip()) if self.aur_path.text().strip() else None
+            output_widget,
+            use_aur=use_aur,
+            aur_dir=aur_dir
         )
         
         # Connect signals
-        self.release_thread.progress.connect(self.update_progress)
-        self.release_thread.error.connect(self.handle_error)
-        self.release_thread.finished.connect(self.release_finished)
-        self.release_thread.dialog_signal.connect(self.handle_dialog)
+        self.release_thread.progress.connect(self.progress)
+        self.release_thread.error.connect(self.error)
+        self.release_thread.finished.connect(self.finished)
+        self.release_thread.dialog_signal.connect(self.dialog_signal)
         
         # Start thread
         self.release_thread.start()
         
-    def cancel_release(self):
-        """Cancel the release process"""
-        if self.release_thread and self.release_thread.isRunning():
-            reply = QMessageBox.question(
-                self,
-                "Confirm Cancel",
-                "Are you sure you want to cancel the release process?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            
-            if reply == QMessageBox.StandardButton.Yes:
-                self.release_thread.terminate()
-                self.release_finished(False)
-                
-    def browse_aur_dir(self):
-        """Browse for AUR package directory"""
-        settings = QSettings("Varchiver", "ReleaseManager")
-        start_dir = self.aur_path.text() or settings.value("aur_path") or QDir.homePath()
-        
-        aur_dir = QFileDialog.getExistingDirectory(
-            self, "Select AUR Package Directory",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if aur_dir:
-            self.aur_path.setText(aur_dir)
-            settings.setValue("aur_path", aur_dir)
-
-    def update_progress(self, message: str):
-        """Update progress bar and output text"""
-        # Update output text
-        self.output_widget.append(message)
-        cursor = self.output_widget.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        self.output_widget.setTextCursor(cursor)
-        
-    def handle_error(self, error_msg: str):
-        """Handle error messages from the release thread"""
-        QMessageBox.critical(self, "Error", error_msg)
-        self.release_finished(False)
-        
-    def handle_dialog(self, title: str, message: str, options: list):
-        """Handle dialog requests from the release thread"""
-        dialog = QMessageBox(self)
-        dialog.setWindowTitle(title)
-        dialog.setText(message)
-        dialog.setIcon(QMessageBox.Icon.Question)
-        
-        # Create buttons for each option
-        buttons = {}
-        for option in options:
-            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
-            buttons[button] = option
-            
-        dialog.exec()
-        clicked = dialog.clickedButton()
-        
-        if clicked in buttons and self.release_thread:
-            self.release_thread.handle_dialog_response(buttons[clicked])
-            
-    def release_finished(self, success: bool):
-        """Handle release process completion"""
-        self.start_button.setEnabled(True)
-        self.cancel_button.setEnabled(False)
-        
-        if success:
-            self.progress_bar.setFormat("Release completed successfully")
-            QMessageBox.information(self, "Success", "Release process completed successfully!")
-        else:
-            self.progress_bar.setFormat("Release failed")
+    def handle_dialog_response(self, response: str):
+        """Handle dialog response from UI."""
+        if self.release_thread:
+            self.release_thread.handle_dialog_response(response)

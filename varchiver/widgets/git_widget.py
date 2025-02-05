@@ -10,7 +10,9 @@ from PyQt6.QtWidgets import (
     QDialog, QDialogButtonBox
 )
 from PyQt6.QtCore import pyqtSignal, QSettings, QDir, Qt
+from PyQt6.QtGui import QMovie
 from datetime import datetime
+import re
 
 from ..utils.git_manager import GitManager
 from ..utils.git_config_manager import GitConfigManager
@@ -202,14 +204,17 @@ class GitWidget(QWidget):
         release_tab = QWidget()
         release_layout = QVBoxLayout(release_tab)
         
-        # Version input
+        # Version input with infer button
         version_layout = QHBoxLayout()
         version_label = QLabel("Version:")
         self.version_input = QLineEdit()
         self.version_input.setPlaceholderText("1.0.0")
         self.version_input.setText(self.settings.value("last_version", ""))
+        infer_version_btn = QPushButton("Infer")
+        infer_version_btn.clicked.connect(self.infer_version)
         version_layout.addWidget(version_label)
         version_layout.addWidget(self.version_input)
+        version_layout.addWidget(infer_version_btn)
         release_layout.addLayout(version_layout)
         
         # Task selection
@@ -217,10 +222,11 @@ class GitWidget(QWidget):
         task_label = QLabel("Task:")
         self.task_combo = QComboBox()
         self.task_combo.addItems([
-            "Update Version",
-            "Create Release",
-            "Update AUR",
-            "All Tasks"
+            "All Tasks",
+            "Update Version + Build + Create Release",
+            "Build + Create Release",
+            "Create Release Only",
+            "Update AUR Only"
         ])
         task_layout.addWidget(task_label)
         task_layout.addWidget(self.task_combo)
@@ -246,13 +252,25 @@ class GitWidget(QWidget):
         aur_layout.addLayout(aur_btn_layout)
         release_layout.addLayout(aur_layout)
         
-        # Release buttons
+        # Release buttons and progress
         release_buttons = QHBoxLayout()
         self.release_start_button = QPushButton("Start Release Process")
         self.release_start_button.clicked.connect(self.start_release_process)
         release_buttons.addWidget(self.release_start_button)
         
+        # Add loading spinner
+        self.loading_label = QLabel()
+        self.loading_movie = QMovie(":/icons/loading.gif")
+        self.loading_label.setMovie(self.loading_movie)
+        self.loading_label.hide()
+        release_buttons.addWidget(self.loading_label)
+        
         release_layout.addLayout(release_buttons)
+        
+        # Progress bar
+        self.release_progress = QProgressBar()
+        self.release_progress.hide()
+        release_layout.addWidget(self.release_progress)
         
         # Release log
         self.release_output = QTextEdit()
@@ -440,47 +458,72 @@ class GitWidget(QWidget):
     def _infer_version(self, repo_path: Path) -> str:
         """Try to infer version from package files."""
         try:
-            # First check src directory for original version
-            src_version_path = repo_path / "src" / f"{repo_path.name}-"
-            if src_version_path.parent.exists():
-                # Find directories matching the pattern
-                version_dirs = [d for d in src_version_path.parent.glob(f"{repo_path.name}-*") if d.is_dir()]
-                if version_dirs:
-                    # Get the latest version directory
-                    latest_dir = sorted(version_dirs)[-1]
-                    version = latest_dir.name.replace(f"{repo_path.name}-", "")
-                    return version
+            latest_version = None
             
-            # Check common version files
-            version_files = [
-                (repo_path / "PKGBUILD", r'pkgver=([0-9][0-9a-z.-]*)'),
-                (repo_path / "pyproject.toml", r'version\s*=\s*["\']([^"\']+)["\']'),
-                (repo_path / "package.json", r'"version":\s*"([^"]+)"'),
-                (repo_path / "Cargo.toml", r'version\s*=\s*"([^"]+)"')
-            ]
-            
-            import re
-            for file_path, pattern in version_files:
-                if file_path.exists():
-                    content = file_path.read_text()
-                    match = re.search(pattern, content)
-                    if match:
-                        return match.group(1)
-            
-            # Try to get latest git tag as fallback
+            # First try to get latest git tag
             result = subprocess.run(
-                ["git", "describe", "--tags", "--abbrev=0"],
+                ["git", "tag", "-l", "v*"],
                 cwd=repo_path,
                 capture_output=True,
                 text=True
             )
-            if result.returncode == 0:
-                return result.stdout.strip().lstrip('v')
+            if result.returncode == 0 and result.stdout.strip():
+                # Get all version tags and sort them
+                version_tags = [tag.lstrip('v') for tag in result.stdout.strip().split('\n')]
+                version_tags.sort(key=lambda v: [int(x) for x in v.split('.')])
+                if version_tags:
+                    latest_version = version_tags[-1]
+            
+            # If no git tags, check PKGBUILD
+            if not latest_version:
+                pkgbuild = repo_path / "PKGBUILD"
+                if pkgbuild.exists():
+                    content = pkgbuild.read_text()
+                    match = re.search(r'pkgver=([0-9][0-9a-z.-]*)', content)
+                    if match:
+                        latest_version = match.group(1)
+            
+            # If still no version, check other common files
+            if not latest_version:
+                version_files = [
+                    (repo_path / "pyproject.toml", r'version\s*=\s*["\']([^"\']+)["\']'),
+                    (repo_path / "package.json", r'"version":\s*"([^"]+)"'),
+                    (repo_path / "Cargo.toml", r'version\s*=\s*"([^"]+)"')
+                ]
+                
+                for file_path, pattern in version_files:
+                    if file_path.exists():
+                        content = file_path.read_text()
+                        match = re.search(pattern, content)
+                        if match:
+                            latest_version = match.group(1)
+                            break
+            
+            # If we found a version, increment the patch number
+            if latest_version:
+                try:
+                    # Split version into parts
+                    parts = latest_version.split('.')
+                    if len(parts) >= 3:
+                        # Increment patch version
+                        parts[-1] = str(int(parts[-1]) + 1)
+                    elif len(parts) == 2:
+                        # Add patch version
+                        parts.append('1')
+                    elif len(parts) == 1:
+                        # Add minor and patch version
+                        parts.extend(['0', '1'])
+                    return '.'.join(parts)
+                except ValueError:
+                    # If version parsing fails, return the version as is
+                    return latest_version
+            
+            # Default to 0.1.0 if no version found
+            return "0.1.0"
                 
         except Exception as e:
             print(f"Version inference error: {e}")
-            
-        return ""
+            return "0.1.0"
 
     def select_git_output(self):
         """Open dialog to select output directory."""
@@ -852,49 +895,151 @@ class GitWidget(QWidget):
 
     def start_release_process(self):
         """Start the release process."""
-        try:
-            # Get current repository path
-            repo_path = Path(self.git_repo_path.text())
-            if not repo_path.exists():
-                raise RuntimeError("Repository path not found")
-
-            # Get version
-            version = self.version_input.text().strip()
-            if not version:
-                raise RuntimeError("Version number required")
-
-            # Get AUR path if available
-            aur_path = self.aur_path.text().strip()
-
-            # Initialize release manager if not exists
-            if not hasattr(self, 'release_manager') or self.release_manager is None:
-                self.release_manager = ReleaseManager(parent=self)
-                self.release_manager.setWindowTitle("Release Manager")
-                self.release_manager.setWindowFlags(self.release_manager.windowFlags() | Qt.WindowType.Window)
-
-            # Configure release manager with current repository and version
-            self.release_manager.project_dir = repo_path
-            self.release_manager.version_input.setText(version)
+        if not self.git_repo_path.text():
+            QMessageBox.critical(self, "Error", "No Git repository selected")
+            return
             
-            # Determine tasks based on configuration
+        version = self.version_input.text().strip()
+        if not version:
+            QMessageBox.critical(self, "Error", "Version number required")
+            return
+            
+        # Check if version tag already exists
+        try:
+            result = subprocess.run(
+                ["git", "tag", "-l", f"v{version}"],
+                cwd=self.git_repo_path.text(),
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                # Tag exists, ask to increment
+                reply = QMessageBox.question(
+                    self,
+                    "Version Exists",
+                    f"Version v{version} already exists. Would you like to increment the version?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                if reply == QMessageBox.StandardButton.Yes:
+                    # Simple increment of last number
+                    parts = version.split('.')
+                    if len(parts) > 0 and parts[-1].isdigit():
+                        parts[-1] = str(int(parts[-1]) + 1)
+                        version = '.'.join(parts)
+                        self.version_input.setText(version)
+                    return
+                else:
+                    return
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Failed to check version tag: {e}")
+            return
+            
+        # Get selected tasks based on combo box selection
+        task_index = self.task_combo.currentIndex()
+        tasks = []
+        if task_index == 0:  # All Tasks
+            tasks = ["update_version", "build", "create_release", "update_aur"]
+        elif task_index == 1:  # Update Version + Build + Create Release
             tasks = ["update_version", "build", "create_release"]
-            if aur_path:
-                tasks.append("update_aur")
-                self.release_manager.aur_path.setText(aur_path)
-
-            # Set tasks in combo box
-            task_index = 0  # Default to all tasks
-            if not aur_path:
-                task_index = 1  # Skip AUR update
-            self.release_manager.task_combo.setCurrentIndex(task_index)
-
-            # Show the release manager window
-            self.release_manager.show()
-            self.release_manager.raise_()
-            self.release_manager.activateWindow()
-
+        elif task_index == 2:  # Build + Create Release
+            tasks = ["build", "create_release"]
+        elif task_index == 3:  # Create Release Only
+            tasks = ["create_release"]
+        elif task_index == 4:  # Update AUR Only
+            tasks = ["update_aur"]
+            
+        # Check if AUR path is needed and provided
+        if "update_aur" in tasks and not self.aur_path.text().strip():
+            QMessageBox.critical(self, "Error", "AUR package path required for AUR update")
+            return
+            
+        # Show loading spinner and disable start button
+        self.loading_label.show()
+        self.loading_movie.start()
+        self.release_start_button.setEnabled(False)
+        self.release_progress.show()
+        self.release_progress.setRange(0, 0)  # Indeterminate progress
+        
+        try:
+            # Create ReleaseManager instance
+            self.release_manager = ReleaseManager(parent=self)
+            self.release_manager.project_dir = Path(self.git_repo_path.text())
+            
+            # Connect signals
+            self.release_manager.progress.connect(self.update_release_progress)
+            self.release_manager.error.connect(self.handle_release_error)
+            self.release_manager.finished.connect(self.release_finished)
+            self.release_manager.dialog_signal.connect(self.handle_release_dialog)
+            
+            # Start release thread
+            self.release_manager.start_release(
+                version,
+                tasks,
+                self.release_output,
+                use_aur="update_aur" in tasks,
+                aur_dir=Path(self.aur_path.text().strip()) if self.aur_path.text().strip() else None
+            )
+            
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to start release process: {str(e)}")
+            self.handle_release_error(str(e))
+            
+    def update_release_progress(self, message: str):
+        """Update release progress output."""
+        self.release_output.append(message)
+        cursor = self.release_output.textCursor()
+        cursor.movePosition(cursor.End)
+        self.release_output.setTextCursor(cursor)
+        
+    def handle_release_error(self, error_msg: str):
+        """Handle release process errors."""
+        QMessageBox.critical(self, "Error", f"Failed to start release process: {error_msg}")
+        self.release_finished(False)
+        
+    def handle_release_dialog(self, title: str, message: str, options: list):
+        """Handle dialog requests from release process."""
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(title)
+        dialog.setText(message)
+        dialog.setIcon(QMessageBox.Icon.Question)
+        
+        # Create buttons for each option
+        buttons = {}
+        for option in options:
+            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
+            buttons[button] = option
+            
+        dialog.exec()
+        clicked = dialog.clickedButton()
+        
+        if clicked in buttons and self.release_manager:
+            self.release_manager.handle_dialog_response(buttons[clicked])
+            
+    def release_finished(self, success: bool):
+        """Handle release process completion."""
+        # Hide loading spinner and progress bar
+        self.loading_label.hide()
+        self.loading_movie.stop()
+        self.release_start_button.setEnabled(True)
+        self.release_progress.hide()
+        
+        if success:
+            QMessageBox.information(self, "Success", "Release process completed successfully!")
+            # Save successful version
+            self.settings.setValue("last_version", self.version_input.text().strip())
+        
+    def infer_version(self):
+        """Infer version from repository."""
+        if not self.git_repo_path.text():
+            QMessageBox.critical(self, "Error", "No Git repository selected")
+            return
+            
+        version = self._infer_version(Path(self.git_repo_path.text()))
+        if version:
+            self.version_input.setText(version)
+        else:
+            QMessageBox.warning(self, "Warning", "Could not infer version from repository")
 
     def _update_git_buttons(self):
         """Update Git button states."""
