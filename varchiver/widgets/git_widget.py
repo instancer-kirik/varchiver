@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QDialog, QDialogButtonBox
 )
 from PyQt6.QtCore import pyqtSignal, QSettings, QDir, Qt
-from PyQt6.QtGui import QMovie
+from PyQt6.QtGui import QMovie, QTextCursor
 from datetime import datetime
 import re
 
@@ -989,7 +989,7 @@ class GitWidget(QWidget):
         """Update release progress output."""
         self.release_output.append(message)
         cursor = self.release_output.textCursor()
-        cursor.movePosition(cursor.End)
+        cursor.movePosition(QTextCursor.MoveOperation.End)
         self.release_output.setTextCursor(cursor)
         
     def handle_release_error(self, error_msg: str):
