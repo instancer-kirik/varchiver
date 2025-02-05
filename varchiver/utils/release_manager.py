@@ -568,14 +568,19 @@ class ReleaseThread(QThread):
         # Get system architecture
         arch = self._run_command(['uname', '-m']).stdout.strip()
         
+        # Clean up dist directory first
+        dist_dir = self.project_dir / "dist"
+        if dist_dir.exists():
+            self.output_message("Cleaning up old distribution files...")
+            for file in dist_dir.glob('*'):
+                if file.is_file():
+                    file.unlink()
+        dist_dir.mkdir(exist_ok=True)
+        
         # Create source archive first
         self.output_message("Creating source archive...")
         archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
         archive_path = self.project_dir / "dist" / archive_name
-        
-        # Ensure dist directory exists
-        dist_dir = self.project_dir / "dist"
-        dist_dir.mkdir(exist_ok=True)
         
         # Create source archive using git archive
         self._run_command([
@@ -601,26 +606,26 @@ class ReleaseThread(QThread):
         self.progress.emit("Creating GitHub release...")
         release_notes = f"Release {tag}\n\nPackage files:\n"
         
-        # Add built package files to release notes
+        # Add only current version files to release notes
         if dist_dir.exists():
             release_notes += "\nAvailable packages:\n"
-            for file in dist_dir.glob('*'):
-                if file.is_file():
-                    if file.name.endswith('.AppImage'):
-                        release_notes += f"- {file.name} (Portable Linux AppImage)\n"
-                    elif file.name.endswith('.tar.gz'):
-                        release_notes += f"- {file.name} (Source archive)\n"
-                    elif file.name.endswith('.pkg.tar.zst'):
-                        release_notes += f"- {file.name} (Arch Linux package)\n"
-                    else:
-                        release_notes += f"- {file.name}\n"
+            current_files = [f for f in dist_dir.glob('*') if f.is_file() and str(self.version) in f.name]
+            for file in current_files:
+                if file.name.endswith('.AppImage'):
+                    release_notes += f"- {file.name} (Portable Linux AppImage)\n"
+                elif file.name.endswith('.tar.gz'):
+                    release_notes += f"- {file.name} (Source archive)\n"
+                elif file.name.endswith('.pkg.tar.zst'):
+                    release_notes += f"- {file.name} (Arch Linux package)\n"
+                else:
+                    release_notes += f"- {file.name}\n"
         
-        # Create the release using gh cli, including the source archive
+        # Create the release using gh cli, including only current version files
         self._run_command([
             'gh', 'release', 'create', tag,
             '--title', f'Release {tag}',
             '--notes', release_notes,
-            *[str(f) for f in dist_dir.glob('*') if f.is_file()]
+            str(archive_path)  # Only include the current version source archive
         ], timeout=300)  # 5 minutes timeout
         
         # Verify release and wait for it to be available
