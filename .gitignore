@@ -1,44 +1,40 @@
-dist/
-*.7z
-*.idx
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-build/
-develop-eggs/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-release/
-varchiver-bin
-*.spec
-pkg/
-*.tar.gz
-*.tar.zst
 
 # AppImage related
-*.AppImage
-AppDir/
-linuxdeploy*
-
-# Release logs
-logs/
-
-# Build directories
-src/
-pkg/
-
 # Build artifacts
-*.tar.gz
+# Build directories
+# Release logs
+*.7z
+*.AppImage
+*.egg
+*.egg-info/
+*.idx
 *.pkg.tar.zst
+*.pyc
+*.pyd
+*.pyo
+*.spec
+*.tar.gz
+*.tar.zst
+.Python
+.eggs/
+.git_storage/
+.installed.cfg
+AppDir/
+__pycache__/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+linuxdeploy*
+logs/
+parts/
+pkg/
+release/
+sdist/
+src/
+var/
+varchiver-bin
+wheels/

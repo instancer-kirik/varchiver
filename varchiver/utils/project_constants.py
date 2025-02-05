@@ -2,24 +2,51 @@
 import re
 from pathlib import Path
 
-def get_version_from_pkgbuild() -> str:
-    """Get version from PKGBUILD file."""
-    try:
-        pkgbuild_path = Path(__file__).resolve().parent.parent.parent / 'PKGBUILD'
-        if not pkgbuild_path.exists():
-            return '0.0.0'  # Fallback version if PKGBUILD not found
-            
-        content = pkgbuild_path.read_text()
-        match = re.search(r'^pkgver=([0-9][0-9a-z.-]*)$', content, re.MULTILINE)
-        if match:
-            return match.group(1)
-        return '0.0.0'  # Fallback version if version not found
-    except Exception:
-        return '0.0.0'  # Fallback version if any error occurs
+class ProjectConfig:
+    _instance = None
+    _repo_path = None
+    
+    def __init__(self):
+        self.update_repo_path(Path(__file__).resolve().parent.parent.parent)
+    
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = ProjectConfig()
+        return cls._instance
+    
+    def update_repo_path(self, path: Path | str):
+        """Update the repository path and refresh project settings."""
+        self._repo_path = Path(path)
+        self.PROJECT_VERSION = self.get_version_from_pkgbuild()
+        
+    def get_version_from_pkgbuild(self) -> str:
+        """Get version from PKGBUILD file."""
+        try:
+            pkgbuild_path = self._repo_path / 'PKGBUILD'
+            if not pkgbuild_path.exists():
+                return '0.0.0'  # Fallback version if PKGBUILD not found
+                
+            content = pkgbuild_path.read_text()
+            match = re.search(r'^pkgver=([0-9][0-9a-z.-]*)$', content, re.MULTILINE)
+            if match:
+                return match.group(1)
+            return '0.0.0'  # Fallback version if version not found
+        except Exception:
+            return '0.0.0'  # Fallback version if any error occurs
+
+# Initialize the singleton
+_config = ProjectConfig.get_instance()
 
 # Project-wide constants
 PROJECT_NAME = 'Varchiver'
-PROJECT_VERSION = get_version_from_pkgbuild()
+PROJECT_VERSION = _config.PROJECT_VERSION
+
+def update_project_path(path: Path | str):
+    """Update the project path and refresh constants."""
+    _config.update_repo_path(path)
+    global PROJECT_VERSION
+    PROJECT_VERSION = _config.PROJECT_VERSION
 
 # Project type configurations
 PROJECT_CONFIGS = {

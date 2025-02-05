@@ -1,256 +1,590 @@
-"""Git configuration management utilities with user-friendly interface."""
+"""Git configuration management functionality."""
 
 from pathlib import Path
+import os
 import subprocess
-from typing import List, Dict, Optional
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                            QLabel, QTextEdit, QGroupBox, QCheckBox, QMessageBox,
-                            QComboBox, QFormLayout, QScrollArea, QDialog, QDialogButtonBox,
-                            QSizePolicy)
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QTextEdit, QPushButton, QMessageBox,
+    QTabWidget, QHBoxLayout, QCheckBox, QGroupBox, QComboBox,
+    QLabel, QGridLayout, QDialog, QDialogButtonBox, QMenu
+)
+from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QAction
 
-from PyQt6.QtGui import QFont
-from .project_constants import GIT_EXPORT_PATTERNS
+class GitConfigHighlighter(QSyntaxHighlighter):
+    """Syntax highlighter for Git config files."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Formatting for different elements
+        self.key_format = QTextCharFormat()
+        self.key_format.setForeground(QColor("#2E86C1"))  # Blue
+        
+        self.value_format = QTextCharFormat()
+        self.value_format.setForeground(QColor("#27AE60"))  # Green
+        
+        self.section_format = QTextCharFormat()
+        self.section_format.setForeground(QColor("#8E44AD"))  # Purple
+        
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor("#95A5A6"))  # Gray
+        
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to the given block of text."""
+        # Highlight comments
+        if text.lstrip().startswith('#'):
+            self.setFormat(0, len(text), self.comment_format)
+            return
+            
+        # Highlight sections [section]
+        if text.startswith('[') and ']' in text:
+            end = text.index(']') + 1
+            self.setFormat(0, end, self.section_format)
+            return
+            
+        # Highlight key=value pairs
+        if '=' in text:
+            key, value = text.split('=', 1)
+            self.setFormat(0, len(key), self.key_format)
+            self.setFormat(len(key) + 1, len(value), self.value_format)
+
+class GitAttributesHighlighter(QSyntaxHighlighter):
+    """Syntax highlighter for .gitattributes files."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Formatting for different elements
+        self.pattern_format = QTextCharFormat()
+        self.pattern_format.setForeground(QColor("#2E86C1"))  # Blue
+        
+        self.attribute_format = QTextCharFormat()
+        self.attribute_format.setForeground(QColor("#27AE60"))  # Green
+        
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor("#95A5A6"))  # Gray
+        
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to the given block of text."""
+        # Highlight comments
+        if text.lstrip().startswith('#'):
+            self.setFormat(0, len(text), self.comment_format)
+            return
+            
+        # Highlight pattern and attributes
+        parts = text.split(None, 1)
+        if len(parts) > 0:
+            # Pattern
+            self.setFormat(0, len(parts[0]), self.pattern_format)
+            if len(parts) > 1:
+                # Attributes
+                self.setFormat(len(parts[0]) + 1, len(parts[1]), self.attribute_format)
+
+class GitIgnoreHighlighter(QSyntaxHighlighter):
+    """Syntax highlighter for .gitignore files."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Formatting for different elements
+        self.pattern_format = QTextCharFormat()
+        self.pattern_format.setForeground(QColor("#2E86C1"))  # Blue
+        
+        self.negation_format = QTextCharFormat()
+        self.negation_format.setForeground(QColor("#E74C3C"))  # Red
+        
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor("#95A5A6"))  # Gray
+        
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to the given block of text."""
+        # Highlight comments
+        if text.lstrip().startswith('#'):
+            self.setFormat(0, len(text), self.comment_format)
+            return
+            
+        # Highlight negation patterns
+        if text.startswith('!'):
+            self.setFormat(0, len(text), self.negation_format)
+        else:
+            self.setFormat(0, len(text), self.pattern_format)
+
+class TemplateDialog(QDialog):
+    """Dialog for selecting and customizing templates."""
+    
+    GITIGNORE_TEMPLATES = {
+        "Python": [
+            "*.py[cod]",
+            "__pycache__/",
+            "*.so",
+            "build/",
+            "dist/",
+            "*.egg-info/",
+            ".env/",
+            ".venv/",
+            "venv/",
+            ".pytest_cache/",
+            ".coverage",
+            "htmlcov/"
+        ],
+        "Node.js": [
+            "node_modules/",
+            "npm-debug.log",
+            "yarn-debug.log",
+            "yarn-error.log",
+            ".env",
+            ".env.local",
+            "dist/",
+            "build/",
+            "coverage/"
+        ],
+        "C++": [
+            "*.o",
+            "*.obj",
+            "*.exe",
+            "*.out",
+            "*.app",
+            "*.dll",
+            "*.so",
+            "*.dylib",
+            "build/",
+            "CMakeFiles/",
+            "CMakeCache.txt"
+        ]
+    }
+    
+    GITATTRIBUTES_TEMPLATES = {
+        "Basic": [
+            "* text=auto",
+            "*.txt text",
+            "*.md text",
+            "*.png binary",
+            "*.jpg binary",
+            "*.gif binary"
+        ],
+        "Python": [
+            "* text=auto",
+            "*.py text diff=python",
+            "*.pyw text diff=python",
+            "*.ipynb text",
+            "*.pyd binary",
+            "*.pyo binary",
+            "*.pyc binary"
+        ],
+        "Web": [
+            "* text=auto",
+            "*.html text diff=html",
+            "*.css text diff=css",
+            "*.js text",
+            "*.json text",
+            "*.png binary",
+            "*.jpg binary",
+            "*.gif binary",
+            "*.woff binary",
+            "*.woff2 binary"
+        ]
+    }
+    
+    def __init__(self, template_type: str, parent=None):
+        super().__init__(parent)
+        self.template_type = template_type
+        self.selected_template = []
+        self.init_ui()
+        
+    def init_ui(self):
+        """Initialize the UI components."""
+        self.setWindowTitle(f"Select {self.template_type} Template")
+        layout = QVBoxLayout(self)
+        
+        # Template selection
+        templates = self.GITIGNORE_TEMPLATES if self.template_type == "gitignore" else self.GITATTRIBUTES_TEMPLATES
+        
+        template_group = QGroupBox("Available Templates")
+        template_layout = QVBoxLayout()
+        
+        self.template_combo = QComboBox()
+        self.template_combo.addItems(templates.keys())
+        self.template_combo.currentTextChanged.connect(self.preview_template)
+        template_layout.addWidget(self.template_combo)
+        
+        # Preview area
+        self.preview = QTextEdit()
+        self.preview.setReadOnly(True)
+        template_layout.addWidget(self.preview)
+        
+        template_group.setLayout(template_layout)
+        layout.addWidget(template_group)
+        
+        # Buttons
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok |
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+        
+        # Show initial preview
+        self.preview_template(self.template_combo.currentText())
+        
+    def preview_template(self, template_name: str):
+        """Preview the selected template."""
+        templates = self.GITIGNORE_TEMPLATES if self.template_type == "gitignore" else self.GITATTRIBUTES_TEMPLATES
+        content = templates.get(template_name, [])
+        self.preview.setPlainText('\n'.join(content))
+        self.selected_template = content
+        
+    @classmethod
+    def get_template(cls, template_type: str, parent=None) -> list[str]:
+        """Show dialog and return selected template."""
+        dialog = cls(template_type, parent)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            return dialog.selected_template
+        return []
 
 class GitConfigManager(QWidget):
-    """User-friendly interface for managing Git configurations."""
+    """Widget for managing Git configuration."""
     
-    config_changed = pyqtSignal()  # Signal emitted when configuration changes
-
-    def __init__(self, repo_path: str, parent=None):
-        """Initialize the Git config manager."""
+    def __init__(self, repo_path: Path, parent=None):
         super().__init__(parent)
         self.repo_path = repo_path
-        self.pattern_checkboxes = {}
+        self.settings = QSettings("Varchiver", "GitManager")
         self.init_ui()
-        self.apply_styles()
-
+        
     def init_ui(self):
-        """Initialize the Git config manager UI"""
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        # Description label
-        desc_label = QLabel("Configure Git export-ignore patterns for your project. These patterns determine which files are excluded from release archives.")
-        desc_label.setWordWrap(True)
-        layout.addWidget(desc_label)
-
-        # Create scroll area for patterns
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        layout.addWidget(scroll)
-
-        # Container for pattern groups
-        pattern_container = QWidget()
-        pattern_layout = QVBoxLayout(pattern_container)
-
-        # Group patterns by category
-        current_category = None
-        group_box = None
-        group_layout = None
-
-        for pattern_tuple in GIT_EXPORT_PATTERNS:
-            pattern, description = pattern_tuple[:2]
-            default_checked = True if len(pattern_tuple) <= 2 else pattern_tuple[2]
-
-            # Check for category in description (denoted by #)
-            if pattern.startswith('#'):
-                current_category = pattern.lstrip('# ')
-                group_box = QGroupBox(current_category)
-                group_layout = QVBoxLayout()
-                group_box.setLayout(group_layout)
-                pattern_layout.addWidget(group_box)
-                continue
-
-            if group_layout is None:
-                # Create default group if none exists
-                group_box = QGroupBox("General")
-                group_layout = QVBoxLayout()
-                group_box.setLayout(group_layout)
-                pattern_layout.addWidget(group_box)
-
-            # Create pattern widget
-            pattern_widget = QWidget()
-            pattern_widget_layout = QVBoxLayout()
-            pattern_widget.setLayout(pattern_widget_layout)
-
-            # Add checkbox with pattern
-            checkbox = QCheckBox(pattern)
-            checkbox.setChecked(default_checked)
-            self.pattern_checkboxes[pattern] = checkbox
-            pattern_widget_layout.addWidget(checkbox)
-
-            # Add description label
-            desc_label = QLabel(description)
-            desc_label.setWordWrap(True)
-            desc_label.setStyleSheet("color: palette(text); font-size: 9pt; margin-left: 20px;")
-            pattern_widget_layout.addWidget(desc_label)
-
-            group_layout.addWidget(pattern_widget)
-
-        scroll.setWidget(pattern_container)
-
-        # Buttons container
-        buttons_container = QWidget()
-        buttons_layout = QHBoxLayout()
-        buttons_container.setLayout(buttons_layout)
-
-        # Preview button
-        preview_btn = QPushButton("Preview Selected")
-        preview_btn.clicked.connect(self.preview_selected_patterns)
-        buttons_layout.addWidget(preview_btn)
-
-        # Save button
-        save_btn = QPushButton("Save Selected")
-        save_btn.clicked.connect(self.save_selected_patterns)
-        buttons_layout.addWidget(save_btn)
-
-        layout.addWidget(buttons_container)
-
-    def preview_selected_patterns(self):
-        """Show preview of selected patterns"""
-        preview_text = "#Generated by Varchiver GitConfigManager\n* text=auto\n"
+        """Initialize the UI components."""
+        layout = QVBoxLayout(self)
         
-        # Get existing patterns
-        gitattributes_path = Path(self.repo_path) / ".gitattributes"
-        existing_patterns = set()
-        if gitattributes_path.exists():
-            existing_patterns = set(gitattributes_path.read_text().splitlines())
-
-        # Add selected patterns by category
-        current_category = None
-        selected_patterns = []
+        # Create tab widget
+        self.tab_widget = QTabWidget()
         
-        for pattern_tuple in GIT_EXPORT_PATTERNS:
-            pattern, description = pattern_tuple[:2]
-            
-            # Handle category headers
-            if description is None:
-                if selected_patterns:  # Add newline between categories if we have patterns
-                    selected_patterns.append("")
-                selected_patterns.append(pattern)
-                continue
-                
-            # Skip unselected patterns
-            if not self.pattern_checkboxes[pattern].isChecked():
-                continue
-                
-            # Add pattern with status
-            if pattern in existing_patterns:
-                selected_patterns.append(f"{pattern}  # already in .gitattributes")
-            else:
-                selected_patterns.append(pattern)
-
-        if selected_patterns:
-            preview_text += "\n" + "\n".join(selected_patterns)
-        else:
-            preview_text += "\n# No patterns selected"
-
-        # Show preview dialog
-        preview_dialog = QDialog(self)
-        preview_dialog.setWindowTitle("Preview Selected Patterns")
-        preview_dialog.setMinimumWidth(600)
-        preview_dialog.setMinimumHeight(400)
-
-        dialog_layout = QVBoxLayout()
-        preview_dialog.setLayout(dialog_layout)
-
-        preview_edit = QTextEdit()
-        preview_edit.setReadOnly(True)
-        preview_edit.setFont(QFont("Monospace"))
-        preview_edit.setText(preview_text)
-        dialog_layout.addWidget(preview_edit)
-
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
-        button_box.accepted.connect(preview_dialog.accept)
-        dialog_layout.addWidget(button_box)
-
-        preview_dialog.exec()
-
-    def save_selected_patterns(self):
-        """Save selected patterns to .gitattributes"""
+        # Git Config tab
+        config_tab = QWidget()
+        config_layout = QVBoxLayout(config_tab)
+        
+        # Common settings toggles
+        settings_group = QGroupBox("Common Settings")
+        settings_layout = QGridLayout()
+        
+        # Auto CRLF
+        self.auto_crlf = QCheckBox("Auto CRLF")
+        self.auto_crlf.stateChanged.connect(lambda state: self.toggle_setting(
+            "core.autocrlf", "true" if state == Qt.CheckState.Checked else "false"
+        ))
+        settings_layout.addWidget(self.auto_crlf, 0, 0)
+        
+        # Safe CRLF
+        self.safe_crlf = QCheckBox("Safe CRLF")
+        self.safe_crlf.stateChanged.connect(lambda state: self.toggle_setting(
+            "core.safecrlf", "true" if state == Qt.CheckState.Checked else "false"
+        ))
+        settings_layout.addWidget(self.safe_crlf, 0, 1)
+        
+        # File mode
+        self.filemode = QCheckBox("File Mode")
+        self.filemode.stateChanged.connect(lambda state: self.toggle_setting(
+            "core.filemode", "true" if state == Qt.CheckState.Checked else "false"
+        ))
+        settings_layout.addWidget(self.filemode, 1, 0)
+        
+        # Ignore case
+        self.ignorecase = QCheckBox("Ignore Case")
+        self.ignorecase.stateChanged.connect(lambda state: self.toggle_setting(
+            "core.ignorecase", "true" if state == Qt.CheckState.Checked else "false"
+        ))
+        settings_layout.addWidget(self.ignorecase, 1, 1)
+        
+        settings_group.setLayout(settings_layout)
+        config_layout.addWidget(settings_group)
+        
+        # Advanced config editor
+        self.config_editor = QTextEdit()
+        self.config_editor.setPlaceholderText("Git configuration will appear here...")
+        self.config_highlighter = GitConfigHighlighter(self.config_editor.document())
+        config_layout.addWidget(self.config_editor)
+        
+        config_buttons = QHBoxLayout()
+        refresh_config_btn = QPushButton("Refresh Config")
+        refresh_config_btn.clicked.connect(self.load_config)
+        config_buttons.addWidget(refresh_config_btn)
+        
+        save_config_btn = QPushButton("Save Config")
+        save_config_btn.clicked.connect(self.save_config)
+        config_buttons.addWidget(save_config_btn)
+        
+        config_layout.addLayout(config_buttons)
+        self.tab_widget.addTab(config_tab, "Git Config")
+        
+        # Git Attributes tab
+        attributes_tab = QWidget()
+        attributes_layout = QVBoxLayout(attributes_tab)
+        
+        # Common attributes toggles
+        attr_group = QGroupBox("Common Attributes")
+        attr_layout = QGridLayout()
+        
+        # Text auto
+        self.text_auto = QCheckBox("text=auto")
+        self.text_auto.stateChanged.connect(lambda state: self.toggle_attribute(
+            "*", "text=auto" if state == Qt.CheckState.Checked else "-text=auto"
+        ))
+        attr_layout.addWidget(self.text_auto, 0, 0)
+        
+        # EOL handling
+        eol_label = QLabel("EOL:")
+        self.eol_combo = QComboBox()
+        self.eol_combo.addItems(["", "lf", "crlf"])
+        self.eol_combo.currentTextChanged.connect(lambda text: self.toggle_attribute(
+            "*", f"eol={text}" if text else "-eol"
+        ))
+        attr_layout.addWidget(eol_label, 0, 1)
+        attr_layout.addWidget(self.eol_combo, 0, 2)
+        
+        attr_group.setLayout(attr_layout)
+        attributes_layout.addWidget(attr_group)
+        
+        self.attributes_editor = QTextEdit()
+        self.attributes_editor.setPlaceholderText("Git attributes will appear here...")
+        self.attributes_highlighter = GitAttributesHighlighter(self.attributes_editor.document())
+        attributes_layout.addWidget(self.attributes_editor)
+        
+        attributes_buttons = QHBoxLayout()
+        refresh_attr_btn = QPushButton("Refresh Attributes")
+        refresh_attr_btn.clicked.connect(self.load_attributes)
+        attributes_buttons.addWidget(refresh_attr_btn)
+        
+        save_attr_btn = QPushButton("Save Attributes")
+        save_attr_btn.clicked.connect(self.save_attributes)
+        attributes_buttons.addWidget(save_attr_btn)
+        
+        template_attr_btn = QPushButton("Load Template...")
+        template_attr_btn.clicked.connect(lambda: self.load_template("gitattributes"))
+        attributes_buttons.addWidget(template_attr_btn)
+        
+        attributes_layout.addLayout(attributes_buttons)
+        self.tab_widget.addTab(attributes_tab, "Git Attributes")
+        
+        # Git Ignore tab
+        ignore_tab = QWidget()
+        ignore_layout = QVBoxLayout(ignore_tab)
+        
+        # Common ignore patterns
+        ignore_group = QGroupBox("Common Patterns")
+        ignore_layout_grid = QGridLayout()
+        
+        # Build artifacts
+        self.ignore_build = QCheckBox("Build Artifacts")
+        self.ignore_build.stateChanged.connect(lambda state: self.toggle_ignore(
+            ["build/", "dist/", "*.o", "*.pyc", "__pycache__/"] if state == Qt.CheckState.Checked else []
+        ))
+        ignore_layout_grid.addWidget(self.ignore_build, 0, 0)
+        
+        # IDE files
+        self.ignore_ide = QCheckBox("IDE Files")
+        self.ignore_ide.stateChanged.connect(lambda state: self.toggle_ignore(
+            [".idea/", ".vscode/", "*.swp", "*.swo"] if state == Qt.CheckState.Checked else []
+        ))
+        ignore_layout_grid.addWidget(self.ignore_ide, 0, 1)
+        
+        # Environment files
+        self.ignore_env = QCheckBox("Environment Files")
+        self.ignore_env.stateChanged.connect(lambda state: self.toggle_ignore(
+            [".env", ".env.local", "*.env"] if state == Qt.CheckState.Checked else []
+        ))
+        ignore_layout_grid.addWidget(self.ignore_env, 1, 0)
+        
+        # Log files
+        self.ignore_logs = QCheckBox("Log Files")
+        self.ignore_logs.stateChanged.connect(lambda state: self.toggle_ignore(
+            ["*.log", "logs/", "npm-debug.log*"] if state == Qt.CheckState.Checked else []
+        ))
+        ignore_layout_grid.addWidget(self.ignore_logs, 1, 1)
+        
+        ignore_group.setLayout(ignore_layout_grid)
+        ignore_layout.addWidget(ignore_group)
+        
+        self.ignore_editor = QTextEdit()
+        self.ignore_editor.setPlaceholderText("Git ignore patterns will appear here...")
+        self.ignore_highlighter = GitIgnoreHighlighter(self.ignore_editor.document())
+        ignore_layout.addWidget(self.ignore_editor)
+        
+        ignore_buttons = QHBoxLayout()
+        refresh_ignore_btn = QPushButton("Refresh Ignore")
+        refresh_ignore_btn.clicked.connect(self.load_ignore)
+        ignore_buttons.addWidget(refresh_ignore_btn)
+        
+        save_ignore_btn = QPushButton("Save Ignore")
+        save_ignore_btn.clicked.connect(self.save_ignore)
+        ignore_buttons.addWidget(save_ignore_btn)
+        
+        template_ignore_btn = QPushButton("Load Template...")
+        template_ignore_btn.clicked.connect(lambda: self.load_template("gitignore"))
+        ignore_buttons.addWidget(template_ignore_btn)
+        
+        ignore_layout.addLayout(ignore_buttons)
+        self.tab_widget.addTab(ignore_tab, "Git Ignore")
+        
+        layout.addWidget(self.tab_widget)
+        
+        # Load initial content
+        self.load_config()
+        self.load_attributes()
+        self.load_ignore()
+        
+    def toggle_setting(self, key: str, value: str):
+        """Toggle a Git config setting."""
         try:
-            gitattributes_path = Path(self.repo_path) / ".gitattributes"
+            subprocess.run(
+                ["git", "config", "--local", key, value],
+                cwd=self.repo_path,
+                check=True
+            )
+            self.load_config()  # Refresh to show changes
+        except subprocess.CalledProcessError as e:
+            QMessageBox.warning(self, "Error", f"Failed to set {key}: {e.stderr}")
             
-            # Get existing patterns
-            existing_patterns = set()
-            if gitattributes_path.exists():
-                existing_patterns = set(line.strip() for line in gitattributes_path.read_text().splitlines()
-                                     if line.strip() and not line.strip().startswith('#'))
+    def toggle_attribute(self, pattern: str, attribute: str):
+        """Toggle a Git attribute."""
+        current = self.attributes_editor.toPlainText().splitlines()
+        
+        # Remove existing attribute for pattern
+        current = [line for line in current if not line.startswith(pattern)]
+        
+        # Add new attribute if not removing
+        if not attribute.startswith("-"):
+            current.append(f"{pattern} {attribute}")
+            
+        self.attributes_editor.setPlainText('\n'.join(current))
+        self.save_attributes()
+        
+    def toggle_ignore(self, patterns: list[str]):
+        """Toggle Git ignore patterns."""
+        current = set(self.ignore_editor.toPlainText().splitlines())
+        
+        if patterns:
+            # Add patterns
+            current.update(patterns)
+        else:
+            # Remove patterns
+            current.difference_update(patterns)
+            
+        self.ignore_editor.setPlainText('\n'.join(sorted(current)))
+        self.save_ignore()
+        
+    def load_template(self, template_type: str):
+        """Load a template for gitignore or gitattributes."""
+        template = TemplateDialog.get_template(template_type, self)
+        if template:
+            if template_type == "gitignore":
+                current = self.ignore_editor.toPlainText().splitlines()
+                self.ignore_editor.setPlainText('\n'.join(current + template))
+                self.save_ignore()
+            else:
+                current = self.attributes_editor.toPlainText().splitlines()
+                self.attributes_editor.setPlainText('\n'.join(current + template))
+                self.save_attributes()
 
-            # Build new content with categories
-            new_content = ["# Git export-ignore patterns"]
-            current_category = None
+    def load_config(self):
+        """Load Git configuration from repository."""
+        try:
+            result = subprocess.run(
+                ["git", "config", "--list", "--local"],
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            self.config_editor.setPlainText(result.stdout)
+        except subprocess.CalledProcessError as e:
+            QMessageBox.warning(self, "Error", f"Failed to load Git config: {e.stderr}")
             
-            for pattern_tuple in GIT_EXPORT_PATTERNS:
-                pattern, description = pattern_tuple[:2]
-                
-                # Handle category headers
-                if description is None:
-                    if new_content[-1] != "":  # Add newline before category if needed
-                        new_content.append("")
-                    new_content.append(pattern)
-                    continue
+    def save_config(self):
+        """Save Git configuration to repository."""
+        try:
+            # First clear existing config
+            subprocess.run(
+                ["git", "config", "--local", "--remove-section", "."],
+                cwd=self.repo_path,
+                capture_output=True,
+                check=False  # Ignore errors if no config exists
+            )
+            
+            # Parse and set new config
+            config_text = self.config_editor.toPlainText()
+            for line in config_text.splitlines():
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
                     
-                # Add selected patterns
-                if self.pattern_checkboxes[pattern].isChecked():
-                    new_content.append(pattern)
-
-            # Write to file
-            gitattributes_path.write_text("\n".join(new_content) + "\n")
-
-            QMessageBox.information(self, "Success", "Patterns saved to .gitattributes")
-
+                    subprocess.run(
+                        ["git", "config", "--local", key, value],
+                        cwd=self.repo_path,
+                        check=True
+                    )
+                    
+            QMessageBox.information(self, "Success", "Git configuration saved")
+            
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Failed to save Git config: {e.stderr}")
+            
+    def load_attributes(self):
+        """Load Git attributes from repository."""
+        attributes_path = self.repo_path / '.gitattributes'
+        try:
+            if attributes_path.exists():
+                self.attributes_editor.setPlainText(attributes_path.read_text())
+            else:
+                self.attributes_editor.clear()
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to save patterns: {str(e)}")
-
-    def apply_styles(self):
-        """Apply dark mode compatible styles"""
-        self.setStyleSheet("""
-            QGroupBox {
-                background-color: transparent;
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 3px;
-            }
-            QCheckBox {
-                color: palette(text);
-            }
-            QCheckBox:hover {
-                color: palette(highlight);
-            }
-            QPushButton {
-                background-color: palette(button);
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-                padding: 6px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: palette(light);
-            }
-            QPushButton:pressed {
-                background-color: palette(dark);
-            }
-            QScrollArea {
-                border: 1px solid palette(mid);
-                border-radius: 4px;
-            }
-        """)
-
-def setup_git_config(repo_path: Path) -> None:
-    """Helper function to set up initial Git configuration."""
-    if not (repo_path / '.git').exists():
-        raise ValueError(f"Not a Git repository: {repo_path}")
-    
-    # Ensure .gitattributes exists
-    gitattributes_path = repo_path / '.gitattributes'
-    if not gitattributes_path.exists():
-        gitattributes_path.write_text("# Generated by Varchiver Git Config Manager\n") 
+            QMessageBox.warning(self, "Error", f"Failed to load .gitattributes: {str(e)}")
+            
+    def save_attributes(self):
+        """Save Git attributes to repository."""
+        attributes_path = self.repo_path / '.gitattributes'
+        try:
+            content = self.attributes_editor.toPlainText()
+            if content.strip():
+                attributes_path.write_text(content)
+                QMessageBox.information(self, "Success", "Git attributes saved")
+            elif attributes_path.exists():
+                if QMessageBox.question(
+                    self,
+                    "Delete File?",
+                    "The .gitattributes file is empty. Would you like to delete it?"
+                ) == QMessageBox.StandardButton.Yes:
+                    attributes_path.unlink()
+                    QMessageBox.information(self, "Success", ".gitattributes has been deleted")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save .gitattributes: {str(e)}")
+            
+    def load_ignore(self):
+        """Load Git ignore patterns from repository."""
+        ignore_path = self.repo_path / '.gitignore'
+        try:
+            if ignore_path.exists():
+                self.ignore_editor.setPlainText(ignore_path.read_text())
+            else:
+                self.ignore_editor.clear()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to load .gitignore: {str(e)}")
+            
+    def save_ignore(self):
+        """Save Git ignore patterns to repository."""
+        ignore_path = self.repo_path / '.gitignore'
+        try:
+            content = self.ignore_editor.toPlainText()
+            if content.strip():
+                ignore_path.write_text(content)
+                QMessageBox.information(self, "Success", "Git ignore patterns saved")
+            elif ignore_path.exists():
+                if QMessageBox.question(
+                    self,
+                    "Delete File?",
+                    "The .gitignore file is empty. Would you like to delete it?"
+                ) == QMessageBox.StandardButton.Yes:
+                    ignore_path.unlink()
+                    QMessageBox.information(self, "Success", ".gitignore has been deleted")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save .gitignore: {str(e)}") 

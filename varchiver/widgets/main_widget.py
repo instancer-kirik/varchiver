@@ -1,39 +1,42 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                            QLabel, QProgressBar, QTextEdit, QComboBox,
-                            QGroupBox, QCheckBox, QDialog, QGridLayout, QFrame,
-                            QInputDialog, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QSlider,
-                            QTreeWidget, QTreeWidgetItem, QHeaderView, QApplication, QStyle, QDialogButtonBox,
-                            QProgressDialog, QTreeView, QTabWidget,  QMenu, QListWidget, QScrollArea)
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent, QSettings
-from PyQt6.QtGui import QAction
+"""Main application widget."""
+
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Any
 import os
+import signal
+import sys
 import subprocess
 import tempfile
 import shutil
-import signal
-import sys
 import psutil
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLabel, QProgressBar, QTextEdit, QComboBox,
+    QGroupBox, QCheckBox, QDialog, QGridLayout, QFrame,
+    QInputDialog, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QSlider,
+    QTreeWidget, QTreeWidgetItem, QHeaderView, QApplication, QStyle, QDialogButtonBox,
+    QProgressDialog, QTreeView, QTabWidget, QMenu, QListWidget, QScrollArea
+)
+from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent, QSettings
+from PyQt6.QtGui import QAction, QTextCursor
+
 from ..threads.archive_thread import ArchiveThread
 from ..threads.extraction_thread import ExtractionThread
 from ..threads.browse_thread import BrowseThread
 from ..threads.directory_update_thread import DirectoryUpdateThread
 from ..utils.project_constants import DEFAULT_SKIP_PATTERNS, ARCHIVE_EXTENSIONS
 from ..utils.archive_utils import get_archive_type, is_rar_available
-from ..sevenz import SevenZipHandler
-from ..utils.git_utils import backup_git_configs, restore_git_configs, GitConfigHandler
 from ..utils.theme_manager import ThemeManager
 from ..utils.release_manager import ReleaseManager
+from ..utils.git_manager import GitManager
 from .file_preview_dialog import FilePreviewDialog
 from .collision_dialog import CollisionDialog
-from datetime import datetime
-from ..utils.git_config_manager import GitConfigManager
+from .git_widget import GitWidget
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
         """Initialize the main widget"""
         super().__init__(parent)
+        self.setWindowTitle('Varchiver')
         
         # Initialize instance variables
         self.archive_path = None  # Path to current archive
@@ -44,70 +47,33 @@ class MainWidget(QWidget):
         self.password = None  # Current archive password
         self.skip_checkboxes = {}  # Skip pattern checkboxes
         self.extraction_queue = []  # Queue for pending extractions
-        self.release_manager = None  # Release manager instance
-        self.setWindowTitle('Varchiver')
         
         # Check RAR availability
         self.rar_available = is_rar_available()
-        
-        # Initialize Git UI elements
-        self.git_repo_path = QLineEdit()
-        self.git_output_path = QLineEdit()
-        self.git_status_label = QLabel("Select repository to begin")
-        self.git_config_status = QLabel("Select a Git repository to begin")
-        self.git_error_text = QTextEdit()
-        self.git_progress_bar = QProgressBar()
-        
-        # Main layout
-        self.main_layout = QVBoxLayout()
-        self.setLayout(self.main_layout)
-        
-        # Add donation widget
-        donation_widget = QWidget()
-        donation_layout = QHBoxLayout()
-        donation_widget.setLayout(donation_layout)
-        
-        sol_label = QLabel("Free the source! $Instancer or SOL:")
-        sol_label.setStyleSheet("font-weight: bold;")
-        donation_layout.addWidget(sol_label)
-        sol_address = "4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq"
-        sol_input = QLineEdit(sol_address)
-        sol_input.setReadOnly(True)
-        sol_input.setMinimumWidth(400)
-        sol_input.setStyleSheet("""
-            QLineEdit {
-                background-color: transparent;
-                border: 1px solid #BDBDBD;
-                border-radius: 4px;
-                padding: 4px;
-            }
-        """)
-        donation_layout.addWidget(sol_input)
-        
-        copy_button = QPushButton("Copy")
-        copy_button.clicked.connect(lambda: self._copy_to_clipboard(sol_address))
-        donation_layout.addWidget(copy_button)
-        
-        donation_layout.addStretch()
-        self.main_layout.addWidget(donation_widget)
-        self.main_layout.addWidget(QLabel("Src repo: https://github.com/instancer-kirik/Varchiver"))
-        
-        # Add separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setFrameShadow(QFrame.Shadow.Sunken)
-        self.main_layout.addWidget(separator)
         
         # Initialize theme manager
         self.theme_manager = ThemeManager()
         self.theme_manager.apply_theme()
         
-        # Mode selector group
-        self.mode_group = QGroupBox("Operation Mode")
-        mode_layout = QVBoxLayout()
-        self.mode_group.setLayout(mode_layout)
+        # Initialize Git widget and manager
+        self.git_manager = GitManager()
+        self.git_widget = GitWidget()
+        self.git_widget.repo_changed.connect(self.on_repository_changed)
+        self.git_widget.sequester_path_changed.connect(self.on_sequester_path_changed)
+        self.git_widget.artifacts_path_changed.connect(self.on_artifacts_path_changed)
+        self.git_widget.setVisible(False)  # Initially hidden
         
-        self.main_layout.addWidget(self.git_config_status)
+        # Initialize UI
+        self.setup_ui()
+        
+    def setup_ui(self):
+        """Initialize the UI components."""
+        main_layout = QVBoxLayout(self)
+        
+        # Mode selector and tools container
+        mode_container = QWidget()
+        mode_layout = QVBoxLayout(mode_container)
+        
         # Add theme toggle and release manager next to mode selector
         mode_header = QHBoxLayout()
         self.mode_combo = QComboBox()
@@ -134,74 +100,14 @@ class MainWidget(QWidget):
         mode_header.addWidget(self.release_button)
         
         mode_layout.addLayout(mode_header)
-        self.main_layout.addWidget(self.mode_group)
-
-        # Current archive label
-        self.current_archive_label = QLabel('')
-        self.main_layout.addWidget(self.current_archive_label)
-        # Status label for detailed progress
-        self.status_label = QLabel(" ")
-        self.status_label.setStyleSheet("""
-            QLabel {
-                color: #666666;
-                padding: 10px;
-                font-size: 12px;
-                background-color: #AACCCC;
-                border-radius: 4px;
-            }
-        """)
-        self.status_label.setWordWrap(True)
-        self.main_layout.addWidget(self.status_label)
-
-        # Progress bar for loading feedback
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
-        self.progress_bar.hide()
-        self.main_layout.addWidget(self.progress_bar)
-
-        # Files found label
-        self.files_found_label = QLabel('')
-        self.main_layout.addWidget(self.files_found_label)
+        main_layout.addWidget(mode_container)
         
-        # Error box with consistent styling
-        error_box = QGroupBox()
-        error_layout = QHBoxLayout()
-        error_box.setLayout(error_layout)
-        error_box.setStyleSheet("""
-            QGroupBox {
-                border: none;
-                margin-top: 10px;
-            }
-        """)
-
-        self.error_label = QLabel('')
-        self.error_label.setWordWrap(True)
-        self.error_label.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                background-color: #d32f2f;
-                padding: 8px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-        """)
-        error_layout.addWidget(self.error_label)
+        # Add Git widget
+        main_layout.addWidget(self.git_widget)
         
-        self.copy_error_button = QPushButton("Copy Error")
-        self.copy_error_button.clicked.connect(self.copy_error_to_clipboard)
-        self.copy_error_button.setVisible(False)
-        error_layout.addWidget(self.copy_error_button)
-        
-        self.main_layout.addWidget(error_box)
-        
-        self.setup_archive_ui(self.main_layout)
-
-    def setup_archive_ui(self, parent_layout):
-        """Set up the archive-related UI elements"""
-        # Create archive group box
+        # Create archive group
         self.archive_group = QGroupBox("Archive Operations")
-        archive_layout = QVBoxLayout()
-        self.archive_group.setLayout(archive_layout)
+        archive_layout = QVBoxLayout(self.archive_group)
         
         # Create toolbar
         toolbar = QHBoxLayout()
@@ -211,12 +117,6 @@ class MainWidget(QWidget):
         self.browse_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogStart))
         self.browse_button.clicked.connect(self.browse_archive_dialog)
         toolbar.addWidget(self.browse_button)
-        
-        # Preview button (commented out for now)
-        # self.preview_button = QPushButton("Preview")
-        # self.preview_button.setEnabled(False)
-        # self.preview_button.clicked.connect(self.show_file_preview)
-        # toolbar.addWidget(self.preview_button)
         
         # Info button
         self.info_button = QPushButton("Info")
@@ -233,35 +133,27 @@ class MainWidget(QWidget):
         
         # Extract buttons
         extract_button_section = QHBoxLayout()
-
+        
         # Queue Extract button
         self.queue_extract_button = QPushButton("Queue Extract")
         self.queue_extract_button.clicked.connect(lambda: self.extract_archive_dialog(queue=True))
         extract_button_section.addWidget(self.queue_extract_button)
-
+        
         # Start Extract button
         self.start_extract_button = QPushButton("Start Extract")
         self.start_extract_button.clicked.connect(self.process_extraction_queue)
         self.start_extract_button.setEnabled(False)
         extract_button_section.addWidget(self.start_extract_button)
-
+        
         extract_button_section.addStretch()
         toolbar.addLayout(extract_button_section)
         
         # Add toolbar to layout
         archive_layout.addLayout(toolbar)
         
-        # Create collapsible settings section
-        settings_group = QGroupBox("Archive Settings")
-        settings_group.setCheckable(True)
-        settings_group.setChecked(True)  # Start expanded
-        settings_layout = QVBoxLayout()
-        settings_group.setLayout(settings_layout)
-        
         # Create skip patterns section
         skip_group = QGroupBox("Skip Patterns")
-        skip_layout = QVBoxLayout()
-        skip_group.setLayout(skip_layout)
+        skip_layout = QVBoxLayout(skip_group)
         
         # Add description
         skip_desc = QLabel("Common patterns to exclude:")
@@ -270,13 +162,11 @@ class MainWidget(QWidget):
         
         # Create horizontal layout for skip patterns
         skip_patterns_layout = QHBoxLayout()
-        skip_layout.addLayout(skip_patterns_layout)
         
         # Create a flow layout container
         flow_widget = QWidget()
-        flow_layout = QHBoxLayout()
+        flow_layout = QHBoxLayout(flow_widget)
         flow_layout.setSpacing(4)
-        flow_widget.setLayout(flow_layout)
         
         # Add checkboxes to flow layout
         self.skip_checkboxes = {}
@@ -292,6 +182,7 @@ class MainWidget(QWidget):
         
         # Add flow widget to skip layout
         skip_patterns_layout.addWidget(flow_widget)
+        skip_layout.addLayout(skip_patterns_layout)
         
         # Add custom patterns input
         custom_layout = QHBoxLayout()
@@ -304,15 +195,12 @@ class MainWidget(QWidget):
         custom_layout.addWidget(self.skip_patterns_edit)
         
         skip_layout.addLayout(custom_layout)
-        
-        # Add to main layout
         archive_layout.addWidget(skip_group)
         
         # Options group
         options_group = QGroupBox("Options")
-        options_layout = QFormLayout()
-        options_group.setLayout(options_layout)
-
+        options_layout = QFormLayout(options_group)
+        
         # Compression level slider
         compression_layout = QHBoxLayout()
         
@@ -361,8 +249,7 @@ class MainWidget(QWidget):
         
         # Collision strategy selector
         collision_group = QGroupBox("On File Collision")
-        collision_layout = QVBoxLayout()
-        collision_group.setLayout(collision_layout)
+        collision_layout = QVBoxLayout(collision_group)
         
         # Add description
         collision_desc = QLabel("Choose how to handle existing files:")
@@ -381,9 +268,6 @@ class MainWidget(QWidget):
             'overwrite' # Always overwrite
         ])
         
-        # Create a grid for collision strategy description
-
-       
         # Style the combo box to be more prominent
         self.collision_combo.setStyleSheet("""
             QComboBox {
@@ -400,7 +284,7 @@ class MainWidget(QWidget):
         """)
         
         collision_layout.addWidget(self.collision_combo)
-     
+        
         # Add to options layout
         options_layout.addRow("", collision_group)
         
@@ -410,28 +294,9 @@ class MainWidget(QWidget):
         self.preserve_permissions.setEnabled(True)
         options_layout.addRow("", self.preserve_permissions)
         
-        # Add options group to settings
-        settings_layout.addWidget(options_group)
+        archive_layout.addWidget(options_group)
         
-        archive_layout.addWidget(settings_group)
-        
-        # Create status section
-        status_group = QGroupBox("Status")
-        status_layout = QVBoxLayout()
-        status_group.setLayout(status_layout)
-        
-        # Progress bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        status_layout.addWidget(self.progress_bar)
-        
-        # Status label
-        self.status_label = QLabel()
-        status_layout.addWidget(self.status_label)
-        
-        archive_layout.addWidget(status_group)
-        
-        # Tree view for file display
+        # Create tree view for file display
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Name", "Size", "Modified", "Ratio"])
         self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -439,8 +304,68 @@ class MainWidget(QWidget):
         self._tree.itemDoubleClicked.connect(self._on_tree_item_double_clicked)
         archive_layout.addWidget(self._tree)
         
-        # Add archive group to parent layout
-        parent_layout.addWidget(self.archive_group)
+        main_layout.addWidget(self.archive_group)
+        
+        # Status label for detailed progress
+        self.status_label = QLabel(" ")
+        self.status_label.setStyleSheet("""
+            QLabel {
+                color: #666666;
+                padding: 10px;
+                font-size: 12px;
+                background-color: #AACCCC;
+                border-radius: 4px;
+            }
+        """)
+        self.status_label.setWordWrap(True)
+        main_layout.addWidget(self.status_label)
+        
+        # Progress bar for loading feedback
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.hide()
+        main_layout.addWidget(self.progress_bar)
+        
+        # Error box with consistent styling
+        error_box = QGroupBox()
+        error_layout = QHBoxLayout(error_box)
+        error_box.setStyleSheet("""
+            QGroupBox {
+                border: none;
+                margin-top: 10px;
+            }
+        """)
+        
+        self.error_label = QLabel('')
+        self.error_label.setWordWrap(True)
+        self.error_label.setStyleSheet("""
+            QLabel {
+                color: #ffffff;
+                background-color: #d32f2f;
+                padding: 8px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+        """)
+        error_layout.addWidget(self.error_label)
+        
+        self.copy_error_button = QPushButton("Copy Error")
+        self.copy_error_button.clicked.connect(self.copy_error_to_clipboard)
+        self.copy_error_button.setVisible(False)
+        error_layout.addWidget(self.copy_error_button)
+        
+        main_layout.addWidget(error_box)
+        
+        # Update theme button
+        self.update_theme_button()
+        
+        # Initially hide archive group in Dev Tools mode
+        if self.mode_combo.currentText() == "Dev Tools":
+            self.archive_group.hide()
+            self.git_widget.show()
+        else:
+            self.archive_group.show()
+            self.git_widget.hide()
 
     def update_compression_label(self):
         """Update the compression label based on slider value"""
@@ -563,7 +488,7 @@ class MainWidget(QWidget):
             self.current_archive_path = filename
             self.status_label.setText(f"Opening: {os.path.basename(filename)}")
             self.progress_bar.setVisible(True)
-            self.progress_bar.setValue(0)
+            self.progressbar.setValue(0)
             self.error_label.setVisible(False)
 
             # Create and start browse thread
@@ -1252,19 +1177,19 @@ class MainWidget(QWidget):
         # Re-enable UI elements
         self.setEnabled(True)
 
-    def update_theme_button(self):
-        """Update theme button icon based on current theme."""
-        if self.theme_manager.dark_mode:
-            # Sun icon for light mode option
-            self.theme_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarNormalButton))
-        else:
-            # Moon icon for dark mode option
-            self.theme_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarShadeButton))
-    
     def toggle_theme(self):
-        """Toggle between light and dark themes."""
+        """Toggle between light and dark theme."""
         self.theme_manager.toggle_theme()
         self.update_theme_button()
+
+    def update_theme_button(self):
+        """Update theme button icon based on current theme."""
+        if hasattr(self, 'theme_button'):
+            icon_type = (QStyle.StandardPixmap.SP_DialogCloseButton 
+                        if self.theme_manager.is_dark_theme() 
+                        else QStyle.StandardPixmap.SP_DialogOkButton)
+            icon = self.style().standardIcon(icon_type)
+            self.theme_button.setIcon(icon)
 
     def show_file_preview(self, mode="create"):
         """Show file preview dialog"""
@@ -1343,1267 +1268,67 @@ class MainWidget(QWidget):
         if hasattr(self, 'tree_view'):
             self.tree_view.setEnabled(enabled)
 
-    def review_git_configs(self):
-        """Show dialog to review git configurations"""
-        dialog = QDialog(self)
-        dialog.setWindowTitle("GitConfigManager")
-        dialog.setMinimumWidth(700)
-        dialog.setMinimumHeight(500)
-        
-        layout = QVBoxLayout()
-        dialog.setLayout(layout)
-        
-        # Create tab widget
-        tabs = QTabWidget()
-        
-        # Config Tab
-        config_tab = QWidget()
-        config_layout = QVBoxLayout()
-        config_tab.setLayout(config_layout)
-        
-        config_text = QTextEdit()
-        config_text.setReadOnly(True)
-        config_layout.addWidget(config_text)
-        
-        # Gitignore Tab
-        gitignore_tab = QWidget()
-        gitignore_layout = QVBoxLayout()
-        gitignore_tab.setLayout(gitignore_layout)
-        
-        gitignore_text = QTextEdit()
-        gitignore_layout.addWidget(gitignore_text)
-        
-        # Add save button for gitignore
-        save_gitignore_btn = QPushButton("Save .gitignore")
-        gitignore_layout.addWidget(save_gitignore_btn)
-        
-        # Add tabs
-        tabs.addTab(config_tab, "GitConfig")
-        tabs.addTab(gitignore_tab, "Gitignore")
-        layout.addWidget(tabs)
-        
-        # Get git configuration data
-        if self.git_repo_path.text():
-            try:
-                handler = GitConfigHandler(self.git_repo_path.text())
-                if handler.is_git_repo():
-                    config = handler.get_git_config()
-                    config_str = []
-                    
-                    # Add local config
-                    if config.get('local_config'):
-                        config_str.append("LocalConfig:")
-                        config_str.extend(f"  {k} = {v}" for k, v in config['local_config'].items())
-                        config_str.append("")
-                    
-                    # Add remotes
-                    if config.get('remotes'):
-                        config_str.append("Remotes:")
-                        config_str.extend(f"  {name}: {url}" for name, url in config['remotes'].items())
-                        config_str.append("")
-                    
-                    # Add branches
-                    if config.get('branches'):
-                        config_str.append("Branches:")
-                        config_str.extend(
-                            f"  {branch} {f'-> {tracking}' if tracking else ''}"
-                            for branch, tracking in config['branches'].items()
-                        )
-                        config_str.append("")
-                    
-                    # Add submodules more compactly
-                    if config.get('submodules'):
-                        config_str.append("Submodules:")
-                        for path, submodule in config['submodules'].items():
-                            parts = [f"  {path}"]
-                            if 'url' in submodule:
-                                parts.append(f"[{submodule['url']}]")
-                            if 'branch' in submodule:
-                                parts.append(f"({submodule['branch']})")
-                            config_str.append(" ".join(parts))
-                        config_str.append("")
-                    
-                    # Add modules more compactly
-                    if config.get('modules'):
-                        config_str.append("GitModules:")
-                        for path, module_config in config['modules'].items():
-                            config_str.append(f"  {path}")
-                            if module_config.get('remotes'):
-                                remotes = ", ".join(f"{k}: {v}" for k, v in module_config['remotes'].items())
-                                config_str.append(f"    Remotes: {remotes}")
-                            if module_config.get('branches'):
-                                branches = ", ".join(
-                                    f"{b}{f' -> {t}' if t else ''}"
-                                    for b, t in module_config['branches'].items()
-                                )
-                                config_str.append(f"    Branches: {branches}")
-                        config_str.append("")
-                    
-                    config_text.setText("\n".join(config_str))
-                    
-                    # Load gitignore content
-                    gitignore_path = os.path.join(self.git_repo_path.text(), '.gitignore')
-                    if os.path.exists(gitignore_path):
-                        with open(gitignore_path, 'r') as f:
-                            gitignore_text.setText(f.read())
-                    
-                    # Connect save button
-                    def save_gitignore():
-                        try:
-                            with open(gitignore_path, 'w') as f:
-                                f.write(gitignore_text.toPlainText())
-                            QMessageBox.information(dialog, "Success", ".gitignore saved successfully!")
-                        except Exception as e:
-                            QMessageBox.warning(dialog, "Error", f"Failed to save .gitignore: {str(e)}")
-                    
-                    save_gitignore_btn.clicked.connect(save_gitignore)
-                    
-                else:
-                    config_text.setText("Selected directory is not a Git repository.")
-                    gitignore_text.setEnabled(False)
-                    save_gitignore_btn.setEnabled(False)
-            except Exception as e:
-                config_text.setText(f"Error reading Git configuration: {str(e)}")
-                gitignore_text.setEnabled(False)
-                save_gitignore_btn.setEnabled(False)
-        else:
-            config_text.setText("Please select a Git repository first.")
-            gitignore_text.setEnabled(False)
-            save_gitignore_btn.setEnabled(False)
-        
-        # Add buttons at bottom
-        button_box = QDialogButtonBox()
-        ok_button = button_box.addButton(QDialogButtonBox.StandardButton.Ok)
-        button_box.accepted.connect(dialog.accept)
-        layout.addWidget(button_box)
-        
-        # Show dialog
-        dialog.exec()
-
-    def copy_git_config(self, source_dir):
-        """Copy git configuration to a target repository"""
-        if not os.path.exists(os.path.join(source_dir, '.git')):
-            raise ValueError(f"Not a git repository: {source_dir}")
-            
-        # Get target repository
-        target_dir = QFileDialog.getExistingDirectory(
-            self, "Select Target Repository Directory"
-        )
-        
-        if not target_dir:
-            return
-            
-        if not os.path.exists(os.path.join(target_dir, '.git')):
-            raise ValueError(f"Not a git repository: {target_dir}")
-            
-        # Copy configuration
-        source_config = os.path.join(source_dir, '.git', 'config')
-        target_config = os.path.join(target_dir, '.git', 'config')
-        
-        if os.path.exists(source_config):
-            shutil.copy2(source_config, target_config)
-            
-        self.status_label.setText(f"Copied Git config to: {target_dir}")
-
-    def on_mode_changed(self, mode):
-        """Handle mode change between archive and dev tools modes"""
-        if mode == 'Dev Tools':
-            # Hide archive UI
-            self.hide_archive_ui()
-            
-            # Show Git-related UI elements
-            git_group = QGroupBox("GitTools")
-            git_layout = QVBoxLayout()
-            git_group.setLayout(git_layout)
-
-            # Repository selection at the top level
-            repo_section = QHBoxLayout()
-            repo_label = QLabel("Git Repository:")
-            self.git_repo_path = QLineEdit()
-            
-            # Use release manager settings if available
-            settings = QSettings("Varchiver", "ReleaseManager")
-            if settings.value("project_path"):
-                self.git_repo_path.setText(settings.value("project_path"))
-            
-            repo_section.addWidget(repo_label)
-            repo_section.addWidget(self.git_repo_path)
-            select_repo_button = QPushButton("Select Repository")
-            select_repo_button.clicked.connect(self.select_git_repo)
-            repo_section.addWidget(select_repo_button)
-            git_layout.addLayout(repo_section)
-
-            # Git URL and branch controls
-            git_controls = QHBoxLayout()
-            
-            # Git URL
-            url_label = QLabel("Remote URL:")
-            self.git_url = QLineEdit()
-            self.git_url.setPlaceholderText("Git remote URL (e.g., https://github.com/user/repo.git)")
-            git_controls.addWidget(url_label)
-            git_controls.addWidget(self.git_url)
-            
-            # Branch
-            branch_label = QLabel("Branch:")
-            self.git_branch = QLineEdit()
-            self.git_branch.setPlaceholderText("main")
-            git_controls.addWidget(branch_label)
-            git_controls.addWidget(self.git_branch)
-            
-            # Add remote button
-            add_remote = QPushButton("Add Remote")
-            add_remote.clicked.connect(self.add_git_remote)
-            git_controls.addWidget(add_remote)
-            
-            git_layout.addLayout(git_controls)
-
-            # Create tabs for different Git tools
-            git_tabs = QTabWidget()
-            self.git_tabs = git_tabs  # Store reference for later use
-
-            # GitConfigManager tab
-            config_tab = QWidget()
-            config_layout = QVBoxLayout()
-            config_tab.setLayout(config_layout)
-
-            # Git config manager container
-            self.git_config_container = QWidget()
-            config_container_layout = QVBoxLayout()
-            self.git_config_container.setLayout(config_container_layout)
-            
-            # Initialize GitConfigManager if repo is selected
-            if self.git_repo_path.text():
-                self.git_config_manager = GitConfigManager(Path(self.git_repo_path.text()))
-                config_container_layout.addWidget(self.git_config_manager)
-            
-            config_layout.addWidget(self.git_config_container)
-
-            # Add gitignore link
-            gitignore_link = QPushButton("Open .gitignore")
-            gitignore_link.clicked.connect(self.open_gitignore)
-            config_layout.addWidget(gitignore_link)
-
-            git_tabs.addTab(config_tab, "GitConfigManager")
-
-            # GitSequester tab
-            sequester_tab = QWidget()
-            sequester_layout = QVBoxLayout()
-            sequester_tab.setLayout(sequester_layout)
-
-            # Git config backup/restore section
-            backup_group = QGroupBox("Git Backup/Restore")
-            backup_layout = QVBoxLayout()
-            backup_group.setLayout(backup_layout)
-
-            # Storage location
-            storage_layout = QHBoxLayout()
-            storage_label = QLabel("Storage Location:")
-            self.git_storage_path = QLineEdit(settings.value("git_storage_path") or os.path.join(os.path.expanduser("~"), ".varchiver", "git_archives"))
-            self.git_storage_path.setPlaceholderText("Select storage location for Git archives")
-            storage_layout.addWidget(storage_label)
-            storage_layout.addWidget(self.git_storage_path)
-            
-            storage_browse = QPushButton("Browse")
-            storage_browse.clicked.connect(self.select_git_storage)
-            storage_layout.addWidget(storage_browse)
-            backup_layout.addLayout(storage_layout)
-
-            # Operation buttons
-            button_layout = QHBoxLayout()
-            self.archive_git_button = QPushButton("Archive Git State")
-            self.archive_git_button.clicked.connect(self.archive_git_state)
-            button_layout.addWidget(self.archive_git_button)
-
-            self.restore_git_button = QPushButton("Restore Git State")
-            self.restore_git_button.clicked.connect(self.restore_git_state)
-            button_layout.addWidget(self.restore_git_button)
-            backup_layout.addLayout(button_layout)
-
-            # Status and progress
-            self.git_status_label = QLabel("Select repository and storage location to begin")
-            backup_layout.addWidget(self.git_status_label)
-
-            self.git_progress_bar = QProgressBar()
-            self.git_progress_bar.hide()
-            backup_layout.addWidget(self.git_progress_bar)
-
-            self.git_error_text = QTextEdit()
-            self.git_error_text.setReadOnly(True)
-            self.git_error_text.setMaximumHeight(60)
-            self.git_error_text.hide()
-            backup_layout.addWidget(self.git_error_text)
-
-            sequester_layout.addWidget(backup_group)
-
-            # Untracked files section
-            untracked_group = QGroupBox("Untracked Files")
-            untracked_layout = QVBoxLayout()
-            untracked_group.setLayout(untracked_layout)
-
-            refresh_button = QPushButton("Refresh Untracked Files")
-            refresh_button.clicked.connect(self.refresh_untracked_files)
-            untracked_layout.addWidget(refresh_button)
-
-            self.untracked_list = QListWidget()
-            self.untracked_list.setMinimumHeight(200)
-            untracked_layout.addWidget(self.untracked_list)
-
-            sequester_layout.addWidget(untracked_group)
-
-            git_tabs.addTab(sequester_tab, "GitSequester")
-
-            # Release Manager tab
-            release_tab = QWidget()
-            release_layout = QVBoxLayout()
-            release_tab.setLayout(release_layout)
-
-            # Add release manager widget
-            self.release_manager = ReleaseManager()
-            release_layout.addWidget(self.release_manager)
-
-            git_tabs.addTab(release_tab, "ReleaseManager")
-
-            git_layout.addWidget(git_tabs)
-            self.main_layout.addWidget(git_group)
-            
-            # Update Git info if repo is selected
-            if self.git_repo_path.text():
-                self.update_git_info()
-        else:
-            # Show archive UI
-            self.show_archive_ui()
-            
-    def add_git_remote(self):
-        """Add or update Git remote"""
-        if not self.git_repo_path.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-            
-        url = self.git_url.text().strip()
-        if not url:
-            QMessageBox.warning(self, "Error", "Please enter a remote URL")
-            return
-            
-        try:
-            # Check if remote exists
-            result = subprocess.run(
-                ["git", "remote"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True
-            )
-            
-            if "origin" in result.stdout.split():
-                # Update existing remote
-                subprocess.run(
-                    ["git", "remote", "set-url", "origin", url],
-                    cwd=self.git_repo_path.text(),
-                    check=True
-                )
-                QMessageBox.information(self, "Success", "Updated remote 'origin'")
-            else:
-                # Add new remote
-                subprocess.run(
-                    ["git", "remote", "add", "origin", url],
-                    cwd=self.git_repo_path.text(),
-                    check=True
-                )
-                QMessageBox.information(self, "Success", "Added remote 'origin'")
-                
-            # Set up tracking if branch specified
-            if self.git_branch.text().strip():
-                subprocess.run(
-                    ["git", "branch", "--set-upstream-to=origin/" + self.git_branch.text().strip()],
-                    cwd=self.git_repo_path.text(),
-                    check=True
-                )
-                
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Failed to update Git remote: {e.stderr}")
-
-    def update_git_info(self):
-        """Update Git remote URL and branch info"""
-        try:
-            # Get remote URL
-            result = subprocess.run(
-                ["git", "remote", "get-url", "origin"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True
-            )
-            if result.returncode == 0:
-                self.git_url.setText(result.stdout.strip())
-                
-            # Get current branch
-            result = subprocess.run(
-                ["git", "branch", "--show-current"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True
-            )
-            if result.returncode == 0:
-                self.git_branch.setText(result.stdout.strip())
-                
-        except subprocess.CalledProcessError:
-            pass  # Ignore errors, might be a new repo
-
-    def select_git_storage(self):
-        """Select storage directory for git archives"""
-        start_dir = self.git_storage_path.text() or os.path.join(os.path.expanduser("~"), ".varchiver", "git_archives")
-            
-        storage_dir = QFileDialog.getExistingDirectory(
-            self, "Select Git Archive Storage Location",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if storage_dir:
-            self.git_storage_path.setText(storage_dir)
-            self._update_git_buttons()
-
-    def archive_git_state(self):
-        """Archive the current Git state"""
-        self.backup_git_files()  # Reuse existing functionality with new name
-
-    def restore_git_state(self):
-        """Restore a previously archived Git state"""
-        self.restore_git_files()  # Reuse existing functionality with new name
-
-    def _update_git_buttons(self):
-        """Update git operation buttons based on selected paths"""
-        has_repo = bool(self.git_repo_path.text())
-        has_storage = bool(self.git_storage_path.text())
-        
-        self.archive_git_button.setEnabled(has_repo)  # Only needs repo path
-        self.restore_git_button.setEnabled(has_storage)  # Only needs storage dir for browsing archives
-        
-        if has_repo:
-            self.git_status_label.setText("Ready for operations")
-        else:
-            self.git_status_label.setText("Select repository to begin")
-
-    def select_git_repo(self):
-        """Select repository directory"""
-        # Start from current repo path or release manager path
-        settings = QSettings("Varchiver", "ReleaseManager")
-        start_dir = self.git_repo_path.text() or settings.value("project_path") or QDir.homePath()
-        
-        repo_dir = QFileDialog.getExistingDirectory(
-            self, "Select Repository Directory",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if repo_dir:
-            self.git_repo_path.setText(repo_dir)
-            
-            # Update Git config tab
-            if hasattr(self, 'git_repo_path_edit'):
-                self.git_repo_path_edit.setText(repo_dir)
-                self.init_git_config_manager(Path(repo_dir))
-            
-            # Set default output location if not already set
-            if not self.git_output_path.text():
-                default_output = os.path.join(os.path.dirname(repo_dir), "git_backups")
-                self.git_output_path.setText(default_output)
-                # Create directory if it doesn't exist
-                os.makedirs(default_output, exist_ok=True)
-            
-            self._update_git_buttons()
-
-    def backup_git_files(self):
-        """Backup and remove git files from repository"""
-        if not self.git_output_path.text():
-            QMessageBox.warning(
-                self,
-                "Warning",
-                "Please select an output directory first"
-            )
-            return
-            
-        if not self.git_repo_path.text():
-            QMessageBox.warning(
-                self,
-                "Warning",
-                "Please select a repository directory first"
-            )
-            return
-            
-        self.git_error_text.setVisible(False)
-        self.git_status_label.setText("Processing repository...")
-            
-        # Generate backup filename
-        repo_name = os.path.basename(self.git_repo_path.text())
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = os.path.join(
-            self.git_output_path.text(),
-            f"git_backup_{repo_name}_{timestamp}.json"
-        )
-            
-        try:
-            self.git_progress_bar.setVisible(True)
-            self.git_progress_bar.setRange(0, 0)  # Indeterminate progress
-            
-            handler = GitConfigHandler(self.git_repo_path.text())
-            if handler.remove_git_files(backup_path=backup_file):
-                self.git_status_label.setText(
-                    f"Git files successfully backed up to:\n{backup_file}"
-                )
-                QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Git files backed up to {backup_file} and removed from repository"
-                )
-            else:
-                self.git_status_label.setText("Failed to backup and remove git files")
-                self.git_error_text.setVisible(True)
-                self.git_error_text.setText("Operation failed - check repository permissions")
-        except Exception as e:
-            self.git_status_label.setText("Error during backup")
-            self.git_error_text.setVisible(True)
-            self.git_error_text.setText(str(e))
-        finally:
-            self.git_progress_bar.hide()
-
-    def restore_git_files(self):
-        """Restore git files from backup"""
-        self.git_error_text.setVisible(False)
-        self.git_status_label.setText("Checking for backup files...")
-
-        # First check default backup location (output path)
-        default_backup = None
-        if self.git_output_path.text():
-            # Look for most recent backup in output directory
-            output_dir = self.git_output_path.text()
-            backups = [f for f in os.listdir(output_dir) if f.startswith('git_backup_') and f.endswith('.json')]
-            if backups:
-                # Sort by timestamp in filename (git_backup_reponame_YYYYMMDD_HHMMSS.json)
-                backups.sort(reverse=True)  # Most recent first
-                default_backup = os.path.join(output_dir, backups[0])
-    
-        # If no default backup found or not using default location, ask user
-        if not default_backup:
-            self.git_status_label.setText("Selecting backup file...")
-            backup_file, _ = QFileDialog.getOpenFileName(
-                self, "Select Git Backup File",
-                QDir.homePath(),
-                "JSON Files (*.json)"
-            )
-            if not backup_file:
-                self.git_status_label.setText("Operation cancelled")
-                return
-        else:
-            backup_file = default_backup
-            self.git_status_label.setText(f"Using latest backup: {os.path.basename(backup_file)}")
-    
-        # Use currently selected repo if available
-        repo_dir = self.git_repo_path.text()
-        if not repo_dir:
-            # Only ask for repo dir if none selected
-            repo_dir = QFileDialog.getExistingDirectory(
-                self, "Select Target Repository Directory",
-                QDir.homePath(),
-                QFileDialog.Option.ShowDirsOnly
-            )
-            if not repo_dir:
-                self.git_status_label.setText("Operation cancelled")
-                return
-            self.git_repo_path.setText(repo_dir)
-        
-        try:
-            self.git_status_label.setText("Restoring git files...")
-            self.git_progress_bar.setVisible(True)
-            self.git_progress_bar.setRange(0, 0)  # Indeterminate progress
-            
-            handler = GitConfigHandler(repo_dir)
-            if handler.restore_git_files(backup_file):
-                self.git_status_label.setText(
-                    f"Git files successfully restored to:\n{repo_dir}"
-                )
-                QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Git files restored to {repo_dir}"
-                )
-            else:
-                self.git_status_label.setText("Failed to restore git files")
-                self.git_error_text.setVisible(True)
-                self.git_error_text.setText("Operation failed - check directory permissions")
-        except Exception as e:
-            self.git_status_label.setText("Error during restoration")
-            self.git_error_text.setVisible(True)
-            self.git_error_text.setText(str(e))
-        finally:
-            self.git_progress_bar.hide()
-
-    def _prepare_archive(self, source_path, archive_path):
-        """Prepare archive based on mode"""
-        if self.mode_combo.currentText() == 'Dev Tools':
-            self.review_git_configs()
-            return
-            
-        if self.git_config_check.isChecked():
-            temp_dir = tempfile.mkdtemp(prefix='varchiver_git_')
-            try:
-                # Backup Git configs
-                config_paths = backup_git_configs(source_path, temp_dir)
-                if config_paths:
-                    self.status_label.setText(f"Found {len(config_paths)} Git repositories")
-                    
-                    # Add Git configs to archive
-                    for config_path in config_paths:
-                        rel_path = os.path.relpath(config_path, temp_dir)
-                        target_path = os.path.join(archive_path, '.git_configs', rel_path)
-                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                        shutil.copy2(config_path, target_path)
-            finally:
-                shutil.rmtree(temp_dir)
-
-    def _restore_git_configs(self, extract_path):
-        """Restore Git configurations after extraction if available."""
-        git_configs_dir = os.path.join(extract_path, '.git_configs')
-        if os.path.exists(git_configs_dir):
-            results = restore_git_configs(git_configs_dir, extract_path)
-            success_count = sum(1 for _, success in results if success)
-            if results:
-                self.status_label.setText(
-                    f"Restored {success_count}/{len(results)} Git configurations"
-                )
-            # Clean up Git config files
-            shutil.rmtree(git_configs_dir)
-
-    def _on_archive_complete(self):
-        """Handle archive operation completion."""
-        self.status_label.setText("Archive operation completed")
-        self.progress_bar.hide()
-        self._enable_controls(True)
-        
-        if hasattr(self, '_source_path') and hasattr(self, '_archive_path'):
-            self._prepare_archive(self._source_path, self._archive_path)
-
-    def _on_extract_complete(self):
-        """Handle extraction operation completion."""
-        if self.git_config_check.isChecked():
-            self._restore_git_configs(self._extract_path)
-        
-        self.status_label.setText("Extraction completed")
-        self.progress_bar.hide()
-        self._enable_controls(True)
-
-    def _get_mounted_devices(self):
-        """Get list of mounted storage devices"""
-        devices = []
-        
-        try:
-            # Add home directory
-            devices.append({
-                'path': os.path.expanduser('~'),
-                'label': 'Home'
-            })
-            
-            # Add root directory
-            devices.append({
-                'path': '/',
-                'label': 'Root'
-            })
-            
-            # Add /run/media/user devices
-            media_path = f"/run/media/{os.getenv('USER')}"
-            if os.path.exists(media_path):
-                for device in os.listdir(media_path):
-                    device_path = os.path.join(media_path, device)
-                    if os.path.ismount(device_path):
-                        devices.append({
-                            'path': device_path,
-                            'label': f"USB {device}"
-                        })
-            
-        except Exception as e:
-            print(f"Error getting mounted devices: {e}")
-        
-        return devices
-
-    def select_git_output(self):
-        """Select output directory for git backups"""
-        # Start from current output path if set, otherwise use repo parent dir
-        start_dir = self.git_output_path.text()
-        if not start_dir and self.git_repo_path.text():
-            start_dir = os.path.dirname(self.git_repo_path.text())
-        if not start_dir:
-            start_dir = QDir.homePath()
-            
-        output_dir = QFileDialog.getExistingDirectory(
-            self, "Select Output Directory for Git Backups",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if output_dir:
-            self.git_output_path.setText(output_dir)
-            self._update_git_buttons()
-
-    def select_git_repo(self):
-        """Select repository directory"""
-        # Start from current repo path or release manager path
-        settings = QSettings("Varchiver", "ReleaseManager")
-        start_dir = self.git_repo_path.text() or settings.value("project_path") or QDir.homePath()
-        
-        repo_dir = QFileDialog.getExistingDirectory(
-            self, "Select Repository Directory",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if repo_dir:
-            self.git_repo_path.setText(repo_dir)
-            
-            # Update Git config tab
-            if hasattr(self, 'git_repo_path_edit'):
-                self.git_repo_path_edit.setText(repo_dir)
-                self.init_git_config_manager(Path(repo_dir))
-            
-            # Set default output location if not already set
-            if not self.git_output_path.text():
-                default_output = os.path.join(os.path.dirname(repo_dir), "git_backups")
-                self.git_output_path.setText(default_output)
-                # Create directory if it doesn't exist
-                os.makedirs(default_output, exist_ok=True)
-            
-            self._update_git_buttons()
-
-    def _select_current_dir(self, dialog):
-        """Helper to select current directory in file dialog"""
-        current_dir = dialog.directory().absolutePath()
-        dialog.done(QDialog.DialogCode.Accepted)
-        dialog.setDirectory(current_dir)
-        dialog.selectFile(current_dir)
-
-    def _on_status(self, message):
-        """Update status label with message"""
-        self.status_label.setText(message)
-        self.status_label.show()
-
-    def _on_progress(self, value):
-        """Update progress bar"""
-        self.progress_bar.setValue(value)
-        self.progress_bar.show()
-
-    def _on_error(self, message, fatal=False):
-        """Handle error message"""
-        self.error_label.setText(f"Error: {message}")
-        self.copy_error_button.setVisible(True)
-        if fatal:
-            QMessageBox.critical(self, "Error", message)
-        self.progress_bar.setValue(0)  # Reset progress bar
-
-    def _on_archive_finished(self, archive_path):
-        """Handle archive completion"""
-        self.progress_bar.hide()
-        self.status_label.setText("Archive created successfully")
-        self.current_thread = None
-        QMessageBox.information(self, "Success", f"Archive created: {archive_path}")
-
-    def _on_index_entry(self, entry):
-        """Handle new index entry"""
-        # Add entry to tree view
-        if entry['is_dir']:
-            return
-        item = QTreeWidgetItem(self._tree)
-        item.setText(0, entry['name'])
-        item.setText(1, str(entry['size']))
-        item.setText(2, str(entry.get('compressed', 0)))
-        if entry['size'] > 0:
-            ratio = (entry.get('compressed', entry['size']) / entry['size']) * 100
-            item.setText(3, f"{ratio:.1f}%")
-
-    def _on_tree_item_double_clicked(self, item, column):
-        """Handle double-click on tree item"""
-        if item and item.parent():  # Only handle child items (files)
-            self.show_file_preview()
-
-    def _copy_to_clipboard(self, text):
-        """Copy text to clipboard and show brief notification"""
-        clipboard = QApplication.clipboard()
-        clipboard.setText(text)
-        
-        # Show brief success message in status label
-        self.status_label.setText("Address copied to clipboard!")
-        # Reset after 2 seconds
-        QTimer.singleShot(2000, lambda: self.status_label.setText(""))
-
-    def copy_error_to_clipboard(self):
-        """Copy error message to clipboard"""
-        clipboard = QApplication.clipboard()
-        clipboard.setText(self.error_label.text())
-
-    def show_archive_ui(self):
-        """Show archive-related UI elements"""
-        
-        if hasattr(self, 'archive_group'):
-            self.archive_group.show()
-        if hasattr(self, 'extract_group'):
-            self.extract_group.show()
-        if hasattr(self, 'browse_group'):
-            self.browse_group.show()
-        # Remove Git UI if it exists
-        self.remove_git_ui()
-
-    def hide_archive_ui(self):
-        """Hide archive-related UI elements"""
-        if hasattr(self, 'archive_group'):
-            self.archive_group.hide()
-        if hasattr(self, 'extract_group'):
-            self.extract_group.hide()
-        if hasattr(self, 'browse_group'):
-            self.browse_group.hide()
-
-    def remove_git_ui(self):
-        """Remove Git-related UI elements"""
-        # Find and remove the Git tools group box
-        for i in range(self.main_layout.count()):
-            item = self.main_layout.itemAt(i)
-            if item and item.widget():
-                if isinstance(item.widget(), QGroupBox) and item.widget().title() == "GitTools":
-                    widget = item.widget()
-                    self.main_layout.removeWidget(widget)
-                    widget.deleteLater()
-                    break
-
-    def clear_error(self):
-        """Clear error message"""
-        self.error_label.setText("")
-        self.error_label.setVisible(False)
-        self.copy_error_button.setVisible(False)
-
-    def clear_archive(self):
-        """Clear current archive"""
-        self.current_archive_label.setText("")
-        self.files_found_label.setText("")
-        self.clear_error()
-        self.hide_archive_ui()
-
     def show_release_manager(self):
-        """Switch to dev tools mode and show release manager tab"""
-        # Switch to dev tools mode if not already
-        if self.mode_combo.currentText() != "Dev Tools":
-            self.mode_combo.setCurrentText("Dev Tools")
-            
-        # Switch to release manager tab
-        for i in range(self.git_tabs.count()):
-            if self.git_tabs.tabText(i) == "ReleaseManager":
-                self.git_tabs.setCurrentIndex(i)
-                break
-
-    def init_ui(self):
-        """Initialize the user interface"""
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        """Show release manager dialog."""
+        if not hasattr(self, 'release_manager'):
+            self.release_manager = ReleaseManager(self)
+        self.release_manager.show()
         
-        # Add donation widget
-        donation_widget = QWidget()
-        donation_layout = QHBoxLayout()
-        donation_widget.setLayout(donation_layout)
-        
-        sol_label = QLabel("Free the source! $Instancer or SOL:")
-        sol_label.setStyleSheet("font-weight: bold;")
-        donation_layout.addWidget(sol_label)
-        sol_address = "4zn9C2pgnxQwHvmoKCnyoV1YLtYFX5qxSaTxE2T86JEq"
-        sol_input = QLineEdit(sol_address)
-        sol_input.setReadOnly(True)
-        sol_input.setMinimumWidth(400)
-        sol_input.setStyleSheet("""
-            QLineEdit {
-                background-color: transparent;
-                border: 1px solid #BDBDBD;
-                border-radius: 4px;
-                padding: 4px;
-            }
-        """)
-        donation_layout.addWidget(sol_input)
-        
-        copy_button = QPushButton("Copy")
-        copy_button.clicked.connect(lambda: self._copy_to_clipboard(sol_address))
-        donation_layout.addWidget(copy_button)
-        
-        donation_layout.addStretch()
-        layout.addWidget(donation_widget)
-        layout.addWidget(QLabel("Src repo: https://github.com/instancer-kirik/Varchiver"))
-        
-        # Add separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(separator)
-        
-        # Mode selector group
-        self.mode_group = QGroupBox("Operation Mode")
-        mode_layout = QVBoxLayout()
-        self.mode_group.setLayout(mode_layout)
-        
-        # Mode selector and buttons
-        mode_header = QHBoxLayout()
-        self.mode_combo = QComboBox()
-        self.mode_combo.addItems([
-            'Archive',           # Normal archiving with skip patterns
-            'Dev Tools'         # Development tools and utilities
-        ])
-        self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
-        mode_header.addWidget(self.mode_combo)
-        
-        # Theme toggle
-        self.theme_button = QPushButton()
-        self.theme_button.clicked.connect(self.toggle_theme)
-        mode_header.addWidget(self.theme_button)
-        
-        mode_layout.addLayout(mode_header)
-        layout.addWidget(self.mode_group)
+    def copy_error_to_clipboard(self):
+        """Copy error text to clipboard."""
+        if self.error_label.text():
+            clipboard = QApplication.clipboard()
+            clipboard.setText(self.error_label.text())
+            QMessageBox.information(self, "Error Copied", "Error details have been copied to clipboard")
 
-        # Initialize Git UI elements
-        self.git_repo_path = QLineEdit()
-        self.git_output_path = QLineEdit()
-        self.git_status_label = QLabel("Select repository to begin")
-        self.git_config_status = QLabel("Select a Git repository to begin")
-        self.git_error_text = QTextEdit()
-        self.git_progress_bar = QProgressBar()
-
-        # Status label for detailed progress
-        self.status_label = QLabel(" ")
-        self.status_label.setStyleSheet("""
-            QLabel {
-                color: #666666;
-                padding: 10px;
-                font-size: 12px;
-                background-color: #AACCCC;
-                border-radius: 4px;
-            }
-        """)
-        self.status_label.setWordWrap(True)
-        layout.addWidget(self.status_label)
-
-        # Progress bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
-        self.progress_bar.hide()
-        layout.addWidget(self.progress_bar)
-
-        # Error handling
-        self.error_label = QLabel('')
-        self.error_label.setWordWrap(True)
-        self.error_label.setStyleSheet("""
-            QLabel {
-                color: #ffffff;
-                background-color: #d32f2f;
-                padding: 8px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-        """)
-        layout.addWidget(self.error_label)
-        
-        # Start in Archive mode
-        self.on_mode_changed('Archive')
-
-    def add_gitattribute(self, pattern: str):
-        """Add a pattern to .gitattributes file."""
-        if not self.git_repo_path_edit.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-
-        repo_path = Path(self.git_repo_path_edit.text())
-        gitattributes_path = repo_path / '.gitattributes'
-
-        try:
-            # Create .gitattributes if it doesn't exist
-            if not gitattributes_path.exists():
-                gitattributes_path.touch()
-
-            # Read existing patterns
-            existing_patterns = set()
-            if gitattributes_path.exists():
-                with open(gitattributes_path, 'r') as f:
-                    existing_patterns = set(line.strip() for line in f.readlines())
-
-            # Add new pattern if it doesn't exist
-            if pattern not in existing_patterns:
-                with open(gitattributes_path, 'a') as f:
-                    if existing_patterns:  # Add newline if file is not empty
-                        f.write('\n')
-                    f.write(pattern + '\n')
-                QMessageBox.information(self, "Success", f"Added pattern to .gitattributes: {pattern}")
-            else:
-                QMessageBox.information(self, "Info", f"Pattern already exists in .gitattributes: {pattern}")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to update .gitattributes: {str(e)}")
-
-    def browse_git_repo(self):
-        """Browse for a Git repository."""
-        path = QFileDialog.getExistingDirectory(self, "Select Git Repository")
-        if path:
-            repo_path = Path(path)
-            if not (repo_path / '.git').exists():
-                QMessageBox.warning(self, "Error", "Selected directory is not a Git repository")
-                return
-            
-            self.git_repo_path_edit.setText(str(repo_path))
-            self.init_git_config_manager(repo_path)
-
-    def init_git_config_manager(self, repo_path: Path):
-        """Initialize the Git configuration manager for the selected repository."""
-        try:
-            # Clear existing manager
-            if hasattr(self, 'git_config_manager') and self.git_config_manager:
-                self.git_config_container.layout().removeWidget(self.git_config_manager)
-                self.git_config_manager.deleteLater()
-                self.git_config_manager = None
-
-            # Create new manager
-            self.git_config_manager = GitConfigManager(repo_path)
-            self.git_config_container.layout().addWidget(self.git_config_manager)
-            self.git_config_container.show()
-            
-            # Update status
-            self.git_config_status.setText(f"Managing Git configuration for: {repo_path}")
-            
-            # Refresh untracked files if available
-            if hasattr(self, 'untracked_list'):
-                self.refresh_untracked_files()
-            
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to initialize Git config manager: {str(e)}")
-            self.git_config_status.setText("Error initializing Git config manager")
-
-    def browse_aur_dir(self):
-        """Browse for AUR package directory"""
-        settings = QSettings("Varchiver", "ReleaseManager")
-        start_dir = self.aur_path.text() or settings.value("aur_path") or QDir.homePath()
-        
-        aur_dir = QFileDialog.getExistingDirectory(
-            self, "Select AUR Package Directory",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
-        )
-        if aur_dir:
-            self.aur_path.setText(aur_dir)
-            settings.setValue("aur_path", aur_dir)
-
-    def start_release_process(self):
-        """Start the release process with the selected task."""
-        if not self.git_repo_path_edit.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-
-        version = self.version_input.text()
-        if not version:
-            QMessageBox.warning(self, "Error", "Please enter a version number")
-            return
-
-        # Check AUR directory if needed
-        selected = self.task_combo.currentText()
-        if "Update AUR" in selected and not self.aur_path.text():
-            QMessageBox.warning(self, "Error", "Please select AUR package directory for AUR update")
-            return
-
-        # Save settings
-        settings = QSettings("Varchiver", "ReleaseManager")
-        settings.setValue("project_path", self.git_repo_path_edit.text())
-        settings.setValue("last_version", version)
-        settings.setValue("aur_path", self.aur_path.text())
-
-        # Get selected tasks based on combo selection
-        selected_tasks = []
-        if "Update Version" in selected:
-            selected_tasks.append('update_version')
-        if "Create Release" in selected:
-            selected_tasks.append('create_release')
-        if "Update AUR" in selected:
-            selected_tasks.append('update_aur')
-
-        # Start release process
-        self.release_start_button.setEnabled(False)
-        self.release_output.clear()
-        
-        self.release_thread = ReleaseThread(Path(self.git_repo_path_edit.text()), version, selected_tasks, self.release_output)
-        self.release_thread.finished.connect(self.on_release_complete)
-        self.release_thread.start()
-
-    def open_gitignore(self):
-        """Open .gitignore file in text editor"""
-        if not self.git_repo_path.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-
-        repo_path = Path(self.git_repo_path.text())
-        gitignore_path = repo_path / '.gitignore'
-
-        if not gitignore_path.exists():
-            # Create .gitignore if it doesn't exist
-            try:
-                gitignore_path.touch()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to create .gitignore: {str(e)}")
-                return
-
-        # Open dialog to edit .gitignore
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Edit .gitignore")
-        dialog.setMinimumWidth(600)
-        dialog.setMinimumHeight(400)
-
-        layout = QVBoxLayout()
-        dialog.setLayout(layout)
-
-        editor = QTextEdit()
-        try:
-            with open(gitignore_path, 'r') as f:
-                editor.setText(f.read())
-        except Exception as e:
-            QMessageBox.critical(dialog, "Error", f"Failed to read .gitignore: {str(e)}")
-            return
-
-        layout.addWidget(editor)
-
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save | 
-            QDialogButtonBox.StandardButton.Cancel
-        )
-
-        def save_gitignore():
-            try:
-                with open(gitignore_path, 'w') as f:
-                    f.write(editor.toPlainText())
-                dialog.accept()
-            except Exception as e:
-                QMessageBox.critical(dialog, "Error", f"Failed to save .gitignore: {str(e)}")
-
-        buttons.accepted.connect(save_gitignore)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-
-        dialog.exec()
-
-    def refresh_untracked_files(self):
-        """Refresh the list of untracked files"""
-        if not self.git_repo_path.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-
-        try:
-            # Run git ls-files command
-            result = subprocess.run(
-                ["git", "ls-files", "--others", "--exclude-standard"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True,
-                check=True
-            )
-
-            # Clear and update list
-            self.untracked_list.clear()
-            if result.stdout:
-                files = result.stdout.strip().split('\n')
-                self.untracked_list.addItems(files)
-            else:
-                self.untracked_list.addItem("No untracked files found")
-
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Failed to get untracked files: {e.stderr}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to get untracked files: {str(e)}")
-
-    def _setup_release_manager(self):
-        """Set up the release manager tab"""
-        self.release_thread = None
-        self.release_manager = ReleaseManager(self.project_dir)
-        self.release_manager.output.connect(self._handle_release_output)
-        self.release_manager.error.connect(self._handle_release_error)
-        self.release_manager.progress.connect(self._handle_release_progress)
-        self.release_manager.dialog_signal.connect(self._handle_release_dialog)
-        return self.release_manager
-        
-    def _handle_release_dialog(self, title, message, options):
-        """Handle dialog requests from the release thread"""
-        dialog = QMessageBox(self)
-        dialog.setWindowTitle(title)
-        dialog.setText(message)
-        dialog.setIcon(QMessageBox.Icon.Question)
-        
-        # Add buttons for each option
-        buttons = {}
-        for option in options:
-            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
-            buttons[button] = option
-            
-        dialog.setDefaultButton(dialog.addButton(QMessageBox.StandardButton.Cancel))
-        
-        # Show dialog and get response
-        dialog.exec()
-        clicked = dialog.clickedButton()
-        
-        if clicked in buttons:
-            response = buttons[clicked]
-            if self.release_thread:
-                self.release_thread.handle_dialog_response(response)
+    def on_mode_changed(self, mode: str):
+        """Handle mode selection changes."""
+        if mode == "Dev Tools":
+            self.show_git_ui()
+            self.archive_group.hide()
         else:
-            # Cancel was clicked
-            if self.release_thread:
-                self.release_thread.handle_dialog_response("Cancel")
+            self.hide_git_ui()
+            self.archive_group.show()
+            
+    def show_git_ui(self):
+        """Show Git-related UI elements"""
+        self.git_widget.setVisible(True)
+        
+    def hide_git_ui(self):
+        """Hide Git-related UI elements"""
+        self.git_widget.setVisible(False)
+        
+    def on_repository_changed(self, repo_path: str):
+        """Handle repository path change."""
+        # Update UI or perform necessary actions when repository changes
+        pass
+        
+    def on_sequester_path_changed(self, sequester_path: str):
+        """Handle sequester path change."""
+        # Update UI or perform necessary actions when sequester path changes
+        pass
+        
+    def on_artifacts_path_changed(self, artifacts_path: str):
+        """Handle artifacts path change."""
+        # Update UI or perform necessary actions when artifacts path changes
+        pass
 
-    def _populate_tree(self, entries):
-        """Populate tree view with archive or directory contents"""
-        self._tree.clear()
-        
-        if not entries:
-            return
-            
-        # If entries is a list of paths (directory mode)
-        if isinstance(entries[0], (str, Path)):
-            for path in entries:
-                self.display_filesystem_item(path)
-            return
-            
-        # Handle archive entries
-        for entry in entries:
-            item = QTreeWidgetItem(self._tree)
-            
-            # Set name
-            item.setText(0, entry.get('name', ''))
-            
-            # Set size
-            size = entry.get('size', 0)
-            if isinstance(size, (int, float)):
-                size_str = self._format_size(size)
-            else:
-                size_str = str(size)
-            item.setText(1, size_str)
-            
-            # Set modified time
-            mtime = entry.get('mtime', '')
-            if mtime:
-                if isinstance(mtime, (int, float)):
-                    mtime_str = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
-                else:
-                    mtime_str = str(mtime)
-                item.setText(2, mtime_str)
-            
-            # Set compression ratio
-            compressed_size = entry.get('compressed_size', size)
-            if size > 0 and compressed_size is not None:
-                ratio = (compressed_size / size) * 100
-                item.setText(3, f"{ratio:.1f}%")
-            
-            # Set icon based on type
-            if entry.get('is_dir', False):
-                item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon))
-            else:
-                item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+    def _on_tree_item_double_clicked(self, item: QTreeWidgetItem, column: int):
+        """Handle double click on tree item."""
+        try:
+            path = item.data(0, Qt.ItemDataRole.UserRole)
+            if not path:
+                return
                 
-        # Update files found label
-        self.files_found_label.setText(f"Files found: {len(entries)}")
-        
-    def _format_size(self, size):
-        """Format size in bytes to human readable format"""
-        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-            if size < 1024:
-                return f"{size:.1f} {unit}"
-            size /= 1024
-        return f"{size:.1f} PB"
+            if os.path.isfile(path):
+                # Show file preview dialog
+                dialog = FilePreviewDialog(self, [path])
+                dialog.exec()
+            elif os.path.isdir(path):
+                # Toggle expand/collapse
+                item.setExpanded(not item.isExpanded())
+        except Exception as e:
+            self.handle_error(f"Error handling double click: {str(e)}")
 
 def main():
     app = QApplication(sys.argv)

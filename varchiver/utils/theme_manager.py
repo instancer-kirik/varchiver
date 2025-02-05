@@ -48,6 +48,10 @@ class ThemeManager:
         self.config_file = os.path.join(self.config_dir, 'theme.json')
         self.dark_mode = self._load_theme_preference()
     
+    def is_dark_theme(self) -> bool:
+        """Return whether dark theme is currently active."""
+        return self.dark_mode
+    
     def _load_theme_preference(self) -> bool:
         """Load theme preference from config file."""
         try:
