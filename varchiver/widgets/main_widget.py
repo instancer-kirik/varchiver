@@ -1269,11 +1269,23 @@ class MainWidget(QWidget):
             self.tree_view.setEnabled(enabled)
 
     def show_release_manager(self):
-        """Show release manager dialog."""
-        if not hasattr(self, 'release_manager'):
-            self.release_manager = ReleaseManager(self)
-        self.release_manager.show()
-        
+        """Show the release manager tab."""
+        # Switch to Dev Tools mode if not already
+        if self.mode_combo.currentText() != 'Dev Tools':
+            self.mode_combo.setCurrentText('Dev Tools')
+            
+        # Show Git widget if hidden
+        if not self.git_widget.isVisible():
+            self.git_widget.setVisible(True)
+            
+        # Find the release manager tab and select it
+        tab_widget = self.git_widget.findChild(QTabWidget)
+        if tab_widget:
+            for i in range(tab_widget.count()):
+                if tab_widget.tabText(i) == "Release Manager":
+                    tab_widget.setCurrentIndex(i)
+                    break
+
     def copy_error_to_clipboard(self):
         """Copy error text to clipboard."""
         if self.error_label.text():

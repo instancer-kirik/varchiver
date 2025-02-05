@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QTextEdit, QFormLayout, QComboBox, QListWidget, QProgressBar,
     QDialog, QDialogButtonBox
 )
-from PyQt6.QtCore import pyqtSignal, QSettings, QDir
+from PyQt6.QtCore import pyqtSignal, QSettings, QDir, Qt
 from datetime import datetime
 
 from ..utils.git_manager import GitManager
@@ -32,13 +32,15 @@ class GitWidget(QWidget):
         
         # Initialize paths with defaults/saved settings
         self.default_repo_path = self.settings.value("project_path") or str(Path.home() / "Code")
-        self.default_artifacts_path = self.settings.value("artifacts_path") or str(Path.home() / "Artifacts")
+        self.default_storage_path = self.settings.value("git_storage_path") or str(Path.home() / ".varchiver" / "git_archives")
         self.default_git_url = self.settings.value("git_url") or "https://github.com/username/repo.git"
+        self.default_aur_url = self.settings.value("aur_url") or "ssh://aur@aur.archlinux.org/package-name.git"
         
         # Initialize UI elements
         self.git_repo_path = QLineEdit(self.default_repo_path)
-        self.git_output_path = QLineEdit(self.default_artifacts_path)
+        self.git_storage_path = QLineEdit(self.default_storage_path)
         self.git_url = QLineEdit(self.default_git_url)
+        self.aur_url = QLineEdit(self.default_aur_url)
         self.git_branch = QLineEdit()
         self.git_branch.setPlaceholderText("main")
         self.git_error_text = QLabel()
@@ -62,14 +64,36 @@ class GitWidget(QWidget):
         # Git URL and remote controls
         url_layout = QHBoxLayout()
         url_layout.addWidget(self.git_url)
+        
+        remote_btn_layout = QHBoxLayout()
+        init_repo_btn = QPushButton("Initialize Git")
+        init_repo_btn.clicked.connect(self.init_git_repo)
+        remote_btn_layout.addWidget(init_repo_btn)
+        
         add_remote_btn = QPushButton("Add/Update Remote")
         add_remote_btn.clicked.connect(self.add_git_remote)
-        url_layout.addWidget(add_remote_btn)
+        remote_btn_layout.addWidget(add_remote_btn)
+        
+        url_layout.addLayout(remote_btn_layout)
         paths_layout.addRow("Git URL:", url_layout)
         
-        # Branch selection
+        # AUR URL and controls
+        aur_layout = QHBoxLayout()
+        aur_layout.addWidget(self.aur_url)
+        
+        # Add buttons for AUR URL
+        aur_url_btn = QPushButton("Generate URL")
+        aur_url_btn.clicked.connect(self.generate_aur_url)
+        aur_layout.addWidget(aur_url_btn)
+        
+        paths_layout.addRow("AUR URL:", aur_layout)
+        
+        # Branch selection with create option
         branch_layout = QHBoxLayout()
         branch_layout.addWidget(self.git_branch)
+        create_branch_btn = QPushButton("Create Branch")
+        create_branch_btn.clicked.connect(self.create_branch)
+        branch_layout.addWidget(create_branch_btn)
         paths_layout.addRow("Branch:", branch_layout)
         
         # Repository path selection
@@ -80,13 +104,13 @@ class GitWidget(QWidget):
         repo_layout.addWidget(browse_repo_btn)
         paths_layout.addRow("Local Path:", repo_layout)
         
-        # Artifacts path selection
-        artifacts_layout = QHBoxLayout()
-        artifacts_layout.addWidget(self.git_output_path)
-        browse_output_btn = QPushButton("Browse")
-        browse_output_btn.clicked.connect(self.select_git_output)
-        artifacts_layout.addWidget(browse_output_btn)
-        paths_layout.addRow("Artifacts:", artifacts_layout)
+        # Storage location (combines artifacts and git storage)
+        storage_layout = QHBoxLayout()
+        storage_layout.addWidget(self.git_storage_path)
+        storage_browse = QPushButton("Browse")
+        storage_browse.clicked.connect(self.select_git_storage)
+        storage_layout.addWidget(storage_browse)
+        paths_layout.addRow("Storage Path:", storage_layout)
         
         paths_group.setLayout(paths_layout)
         layout.addWidget(paths_group)
@@ -207,11 +231,19 @@ class GitWidget(QWidget):
         aur_label = QLabel("AUR Package:")
         self.aur_path = QLineEdit()
         self.aur_path.setText(self.settings.value("aur_path", ""))
+        
+        aur_btn_layout = QHBoxLayout()
         aur_browse = QPushButton("Browse")
         aur_browse.clicked.connect(self.browse_aur_dir)
+        aur_btn_layout.addWidget(aur_browse)
+        
+        aur_create = QPushButton("Create New")
+        aur_create.clicked.connect(self.create_aur_package)
+        aur_btn_layout.addWidget(aur_create)
+        
         aur_layout.addWidget(aur_label)
         aur_layout.addWidget(self.aur_path)
-        aur_layout.addWidget(aur_browse)
+        aur_layout.addLayout(aur_btn_layout)
         release_layout.addLayout(aur_layout)
         
         # Release buttons
@@ -253,16 +285,203 @@ class GitWidget(QWidget):
             self.git_repo_path.text() or str(Path.home())
         )
         if repo_dir:
+            # Reset UI state before loading new repo
+            self._reset_ui_state()
+            
             if self.git_manager.set_repository(repo_dir):
                 self.git_repo_path.setText(repo_dir)
                 self.repo_changed.emit(repo_dir)
                 self.settings.setValue("project_path", repo_dir)
+                
+                # Initialize Git config manager
                 self.init_git_config_manager(Path(repo_dir))
-                self.update_git_info()
+                
+                # Try to infer repository information
+                self._infer_repository_info(Path(repo_dir))
+                
+                # Update UI state
                 self._update_git_buttons()
+                self.refresh_untracked_files()
             else:
                 QMessageBox.warning(self, "Error", "Selected directory is not a Git repository")
+                
+    def _reset_ui_state(self):
+        """Reset UI state when switching repositories."""
+        # Clear version input
+        self.version_input.clear()
+        
+        # Clear branch input (will be inferred if exists)
+        self.git_branch.clear()
+        
+        # Clear URL (will be inferred if exists)
+        self.git_url.setText(self.default_git_url)
+        
+        # Clear AUR info and reset to defaults
+        self.aur_url.clear()  # Clear completely instead of setting default
+        self.aur_path.clear()
+        self.settings.remove("aur_url")  # Remove from settings to force re-detection
+        self.settings.remove("aur_path")
+        
+        # Clear error and status
+        self.git_error_text.clear()
+        self.git_error_text.setVisible(False)
+        self.git_status_label.clear()
+        
+        # Clear release output
+        if hasattr(self, 'release_output'):
+            self.release_output.clear()
             
+    def _infer_repository_info(self, repo_path: Path):
+        """Try to infer repository information from the selected directory."""
+        try:
+            # Try to get remote URL
+            result = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                self.git_url.setText(result.stdout.strip())
+            
+            # Try to get current branch
+            result = subprocess.run(
+                ["git", "branch", "--show-current"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                branch = result.stdout.strip()
+                # For AUR repositories, always use master
+                if "aur.archlinux.org" in self.git_url.text():
+                    branch = "master"
+                self.git_branch.setText(branch)
+            else:
+                # Try to get default branch
+                result = subprocess.run(
+                    ["git", "symbolic-ref", "HEAD"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode == 0:
+                    branch = result.stdout.strip().replace('refs/heads/', '')
+                    # For AUR repositories, always use master
+                    if "aur.archlinux.org" in self.git_url.text():
+                        branch = "master"
+                    self.git_branch.setText(branch)
+                else:
+                    # Default to master for AUR, main for others
+                    if "aur.archlinux.org" in self.git_url.text():
+                        self.git_branch.setText("master")
+                    else:
+                        self.git_branch.setText("main")
+            
+            # Try to get version from package files
+            version = self._infer_version(repo_path)
+            if version:
+                self.version_input.setText(version)
+            
+            # Check for corresponding AUR package
+            repo_name = repo_path.name
+            aur_base = repo_path.parent / "aur-packages"
+            potential_aur_paths = [
+                aur_base / repo_name,
+                aur_base / f"{repo_name}-git",
+                aur_base / f"{repo_name}-bin",
+                Path.home() / "Code" / "aur-packages" / repo_name,
+                Path.home() / "Code" / "aur-packages" / f"{repo_name}-git",
+                Path.home() / "Code" / "aur-packages" / f"{repo_name}-bin"
+            ]
+            
+            for aur_path in potential_aur_paths:
+                if aur_path.exists() and (aur_path / ".git").exists():
+                    # Found AUR package directory
+                    self.aur_path.setText(str(aur_path))
+                    self.settings.setValue("aur_path", str(aur_path))
+                    
+                    # Try to get AUR remote URL
+                    try:
+                        result = subprocess.run(
+                            ["git", "remote", "get-url", "origin"],
+                            cwd=aur_path,
+                            capture_output=True,
+                            text=True,
+                            check=True
+                        )
+                        aur_url = result.stdout.strip()
+                        if "aur.archlinux.org" in aur_url:
+                            self.aur_url.setText(aur_url)
+                            self.settings.setValue("aur_url", aur_url)
+                    except subprocess.CalledProcessError:
+                        pass
+                    break
+            
+            # Check Git status
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            if result.stdout.strip():
+                self.git_status_label.setText("Repository has uncommitted changes")
+                self.git_status_label.setStyleSheet("color: #FFA500;")  # Orange for warning
+            else:
+                self.git_status_label.setText("Repository is clean")
+                self.git_status_label.setStyleSheet("color: #4CAF50;")  # Green for good
+                
+        except subprocess.CalledProcessError:
+            self.git_status_label.setText("New repository - no commits yet")
+            self.git_status_label.setStyleSheet("color: #666666;")  # Gray for info
+            
+    def _infer_version(self, repo_path: Path) -> str:
+        """Try to infer version from package files."""
+        try:
+            # First check src directory for original version
+            src_version_path = repo_path / "src" / f"{repo_path.name}-"
+            if src_version_path.parent.exists():
+                # Find directories matching the pattern
+                version_dirs = [d for d in src_version_path.parent.glob(f"{repo_path.name}-*") if d.is_dir()]
+                if version_dirs:
+                    # Get the latest version directory
+                    latest_dir = sorted(version_dirs)[-1]
+                    version = latest_dir.name.replace(f"{repo_path.name}-", "")
+                    return version
+            
+            # Check common version files
+            version_files = [
+                (repo_path / "PKGBUILD", r'pkgver=([0-9][0-9a-z.-]*)'),
+                (repo_path / "pyproject.toml", r'version\s*=\s*["\']([^"\']+)["\']'),
+                (repo_path / "package.json", r'"version":\s*"([^"]+)"'),
+                (repo_path / "Cargo.toml", r'version\s*=\s*"([^"]+)"')
+            ]
+            
+            import re
+            for file_path, pattern in version_files:
+                if file_path.exists():
+                    content = file_path.read_text()
+                    match = re.search(pattern, content)
+                    if match:
+                        return match.group(1)
+            
+            # Try to get latest git tag as fallback
+            result = subprocess.run(
+                ["git", "describe", "--tags", "--abbrev=0"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                return result.stdout.strip().lstrip('v')
+                
+        except Exception as e:
+            print(f"Version inference error: {e}")
+            
+        return ""
+
     def select_git_output(self):
         """Open dialog to select output directory."""
         output_dir = QFileDialog.getExistingDirectory(
@@ -278,6 +497,58 @@ class GitWidget(QWidget):
             else:
                 QMessageBox.warning(self, "Error", "Failed to set artifacts directory")
 
+    def init_git_repo(self):
+        """Initialize a new Git repository."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a directory first")
+            return
+            
+        try:
+            repo_path = self.git_repo_path.text()
+            
+            # Initialize Git repository if not already initialized
+            if not os.path.exists(os.path.join(repo_path, '.git')):
+                subprocess.run(
+                    ["git", "init"],
+                    cwd=repo_path,
+                    check=True
+                )
+                QMessageBox.information(self, "Success", "Git repository initialized")
+                
+                # Update UI state
+                self._update_git_buttons()
+                self.update_git_info()
+            else:
+                QMessageBox.information(self, "Info", "Git repository already initialized")
+                
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Failed to initialize Git repository: {e.stderr}")
+            
+    def create_branch(self):
+        """Create a new Git branch."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a Git repository first")
+            return
+            
+        branch_name = self.git_branch.text().strip()
+        if not branch_name:
+            QMessageBox.warning(self, "Error", "Please enter a branch name")
+            return
+            
+        try:
+            # Create and checkout new branch
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name],
+                cwd=self.git_repo_path.text(),
+                check=True
+            )
+            
+            QMessageBox.information(self, "Success", f"Created and switched to branch '{branch_name}'")
+            self.update_git_info()
+            
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Failed to create branch: {e.stderr}")
+            
     def add_git_remote(self):
         """Add or update Git remote."""
         if not self.git_repo_path.text():
@@ -316,12 +587,28 @@ class GitWidget(QWidget):
                 QMessageBox.information(self, "Success", "Added remote 'origin'")
                 
             # Set up tracking if branch specified
-            if self.git_branch.text().strip():
-                subprocess.run(
-                    ["git", "branch", "--set-upstream-to=origin/" + self.git_branch.text().strip()],
-                    cwd=self.git_repo_path.text(),
-                    check=True
-                )
+            branch = self.git_branch.text().strip()
+            if branch:
+                try:
+                    # Try to set upstream tracking
+                    subprocess.run(
+                        ["git", "branch", "--set-upstream-to=origin/" + branch, branch],
+                        cwd=self.git_repo_path.text(),
+                        check=True
+                    )
+                except subprocess.CalledProcessError:
+                    # If upstream doesn't exist, push and set upstream
+                    if QMessageBox.question(
+                        self,
+                        "Push Branch?",
+                        f"Branch '{branch}' doesn't exist on remote. Would you like to push it?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                    ) == QMessageBox.StandardButton.Yes:
+                        subprocess.run(
+                            ["git", "push", "-u", "origin", branch],
+                            cwd=self.git_repo_path.text(),
+                            check=True
+                        )
                 
             # Save URL in settings
             self.settings.setValue("git_url", url)
@@ -460,67 +747,154 @@ class GitWidget(QWidget):
 
     def browse_aur_dir(self):
         """Browse for AUR package directory."""
-        start_dir = self.aur_path.text() or self.settings.value("aur_path") or QDir.homePath()
+        repo_name = Path(self.git_repo_path.text()).name if self.git_repo_path.text() else ""
+        if not repo_name:
+            QMessageBox.warning(self, "Error", "Please select a repository first")
+            return
+            
+        # Check for existing AUR path first
+        start_dir = self.aur_path.text() or self.settings.value("aur_path")
         
+        # If no existing path, suggest creating in aur-packages
+        if not start_dir and repo_name:
+            suggested_paths = [
+                Path(self.git_repo_path.text()).parent / "aur-packages",
+                Path.home() / "Code" / "aur-packages"
+            ]
+            
+            for path in suggested_paths:
+                if path.exists():
+                    start_dir = str(path)
+                    break
+                    
+            if not start_dir:
+                # Ask user if they want to create aur-packages directory
+                reply = QMessageBox.question(
+                    self,
+                    "Create AUR Directory?",
+                    "No AUR packages directory found. Would you like to create one?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    parent_dir = Path(self.git_repo_path.text()).parent
+                    aur_dir = parent_dir / "aur-packages"
+                    try:
+                        aur_dir.mkdir(parents=True, exist_ok=True)
+                        start_dir = str(aur_dir)
+                    except Exception as e:
+                        QMessageBox.critical(self, "Error", f"Failed to create directory: {e}")
+                        return
+                else:
+                    start_dir = QDir.homePath()
+        
+        if not start_dir:
+            start_dir = QDir.homePath()
+            
         aur_dir = QFileDialog.getExistingDirectory(
             self, "Select AUR Package Directory",
             start_dir,
             QFileDialog.Option.ShowDirsOnly
         )
+        
         if aur_dir:
+            # Check if selected directory is for AUR package
+            aur_path = Path(aur_dir)
+            if not (aur_path / ".git").exists():
+                # Ask to create new AUR package
+                reply = QMessageBox.question(
+                    self,
+                    "Initialize AUR Package?",
+                    "Selected directory is not a Git repository. Would you like to initialize it as an AUR package?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    try:
+                        # Initialize Git repository
+                        import subprocess
+                        subprocess.run(["git", "init"], cwd=aur_dir, check=True)
+                        
+                        # Set up AUR remote
+                        package_name = repo_name.lower()
+                        aur_remote = f"ssh://aur@aur.archlinux.org/{package_name}.git"
+                        
+                        # Ask user to confirm/modify package name
+                        from PyQt6.QtWidgets import QInputDialog
+                        package_name, ok = QInputDialog.getText(
+                            self,
+                            "AUR Package Name",
+                            "Enter AUR package name:",
+                            text=package_name
+                        )
+                        
+                        if ok and package_name:
+                            aur_remote = f"ssh://aur@aur.archlinux.org/{package_name}.git"
+                            subprocess.run(
+                                ["git", "remote", "add", "origin", aur_remote],
+                                cwd=aur_dir,
+                                check=True
+                            )
+                            
+                            # Update UI
+                            self.aur_url.setText(aur_remote)
+                            self.settings.setValue("aur_url", aur_remote)
+                            
+                    except subprocess.CalledProcessError as e:
+                        QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e.stderr}")
+                        return
+                    except Exception as e:
+                        QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e}")
+                        return
+            
             self.aur_path.setText(aur_dir)
             self.settings.setValue("aur_path", aur_dir)
 
     def start_release_process(self):
         """Start the release process."""
-        if not self.git_repo_path.text():
-            QMessageBox.warning(self, "Error", "Please select a Git repository first")
-            return
-
-        version = self.version_input.text().strip()
-        if not version:
-            QMessageBox.warning(self, "Error", "Please enter a version number")
-            return
-
-        selected = self.task_combo.currentText()
-        if "Update AUR" in selected and not self.aur_path.text():
-            QMessageBox.warning(self, "Error", "Please select AUR package directory for AUR update")
-            return
-
-        # Save settings
-        self.settings.setValue("project_path", self.git_repo_path.text())
-        self.settings.setValue("last_version", version)
-        self.settings.setValue("aur_path", self.aur_path.text())
-
-        # Get selected tasks
-        tasks = []
-        if selected == "All Tasks" or "Update Version" in selected:
-            tasks.append('update_version')
-        if selected == "All Tasks" or "Create Release" in selected:
-            tasks.append('create_release')
-        if selected == "All Tasks" or "Update AUR" in selected:
-            tasks.append('update_aur')
-
-        # Start release process
-        self.release_start_button.setEnabled(False)
-        self.release_output.clear()
-        
         try:
-            if not self.release_manager:
-                self.release_manager = ReleaseManager()
+            # Get current repository path
+            repo_path = Path(self.git_repo_path.text())
+            if not repo_path.exists():
+                raise RuntimeError("Repository path not found")
+
+            # Get version
+            version = self.version_input.text().strip()
+            if not version:
+                raise RuntimeError("Version number required")
+
+            # Get AUR path if available
+            aur_path = self.aur_path.text().strip()
+
+            # Initialize release manager if not exists
+            if not hasattr(self, 'release_manager') or self.release_manager is None:
+                self.release_manager = ReleaseManager(parent=self)
+                self.release_manager.setWindowTitle("Release Manager")
+                self.release_manager.setWindowFlags(self.release_manager.windowFlags() | Qt.WindowType.Window)
+
+            # Configure release manager with current repository and version
+            self.release_manager.project_dir = repo_path
+            self.release_manager.version_input.setText(version)
             
-            self.release_manager.start_release(
-                Path(self.git_repo_path.text()),
-                version,
-                tasks,
-                self.aur_path.text() if 'update_aur' in tasks else None
-            )
-            
-            self.release_output.append(f"Started release process for version {version}")
-            
+            # Determine tasks based on configuration
+            tasks = ["update_version", "build", "create_release"]
+            if aur_path:
+                tasks.append("update_aur")
+                self.release_manager.aur_path.setText(aur_path)
+
+            # Set tasks in combo box
+            task_index = 0  # Default to all tasks
+            if not aur_path:
+                task_index = 1  # Skip AUR update
+            self.release_manager.task_combo.setCurrentIndex(task_index)
+
+            # Show the release manager window
+            self.release_manager.show()
+            self.release_manager.raise_()
+            self.release_manager.activateWindow()
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to start release process: {str(e)}")
-            self.release_start_button.setEnabled(True)
 
     def _update_git_buttons(self):
         """Update Git button states."""
@@ -633,4 +1007,130 @@ class GitWidget(QWidget):
         self._update_backup_ui(False)
         self.git_error_text.setText(f"Backup failed: {error_msg}")
         self.git_error_text.setVisible(True)
-        QMessageBox.critical(self, "Error", f"Backup failed: {error_msg}") 
+        QMessageBox.critical(self, "Error", f"Backup failed: {error_msg}")
+
+    def select_storage_path(self):
+        """Open dialog to select storage location."""
+        storage_dir = QFileDialog.getExistingDirectory(
+            self,
+            "Select Storage Location",
+            self.git_storage_path.text() or str(Path.home())
+        )
+        if storage_dir:
+            self.git_storage_path.setText(storage_dir)
+            self.settings.setValue("git_storage_path", storage_dir)
+            
+            # Create repo-specific subdirectory
+            if self.git_repo_path.text():
+                repo_name = Path(self.git_repo_path.text()).name
+                repo_storage = Path(storage_dir) / repo_name
+                repo_storage.mkdir(parents=True, exist_ok=True)
+                
+                # Update manager paths
+                self.git_manager.set_output_path(repo_storage)
+                self.sequester_path_changed.emit(str(repo_storage))
+                self.artifacts_path_changed.emit(str(repo_storage))
+
+    def generate_aur_url(self):
+        """Generate AUR URL based on repository name."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a repository first")
+            return
+            
+        repo_name = Path(self.git_repo_path.text()).name.lower()
+        
+        # Ask user to confirm/modify package name
+        from PyQt6.QtWidgets import QInputDialog
+        package_name, ok = QInputDialog.getText(
+            self,
+            "AUR Package Name",
+            "Enter AUR package name:",
+            text=repo_name
+        )
+        
+        if ok and package_name:
+            aur_url = f"ssh://aur@aur.archlinux.org/{package_name}.git"
+            self.aur_url.setText(aur_url)
+            self.settings.setValue("aur_url", aur_url)
+
+    def create_aur_package(self):
+        """Create a new AUR package directory."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a repository first")
+            return
+            
+        repo_name = Path(self.git_repo_path.text()).name
+        
+        # Suggest aur-packages directory locations
+        suggested_paths = [
+            Path(self.git_repo_path.text()).parent / "aur-packages",
+            Path.home() / "Code" / "aur-packages"
+        ]
+        
+        # Find or create aur-packages directory
+        aur_base = None
+        for path in suggested_paths:
+            if path.exists():
+                aur_base = path
+                break
+                
+        if not aur_base:
+            reply = QMessageBox.question(
+                self,
+                "Create AUR Directory?",
+                "No AUR packages directory found. Would you like to create one?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                aur_base = suggested_paths[0]  # Use first suggestion
+                try:
+                    aur_base.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to create directory: {e}")
+                    return
+            else:
+                return
+                
+        # Get package name from user
+        from PyQt6.QtWidgets import QInputDialog
+        package_name, ok = QInputDialog.getText(
+            self,
+            "AUR Package Name",
+            "Enter AUR package name:",
+            text=repo_name.lower()
+        )
+        
+        if ok and package_name:
+            # Create package directory
+            aur_path = aur_base / package_name
+            try:
+                aur_path.mkdir(parents=True, exist_ok=True)
+                
+                # Initialize Git repository
+                subprocess.run(["git", "init"], cwd=aur_path, check=True)
+                
+                # Set up AUR remote
+                aur_url = f"ssh://aur@aur.archlinux.org/{package_name}.git"
+                subprocess.run(
+                    ["git", "remote", "add", "origin", aur_url],
+                    cwd=aur_path,
+                    check=True
+                )
+                
+                # Update UI
+                self.aur_path.setText(str(aur_path))
+                self.aur_url.setText(aur_url)
+                self.settings.setValue("aur_path", str(aur_path))
+                self.settings.setValue("aur_url", aur_url)
+                
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Created AUR package directory: {aur_path}\nRemote URL: {aur_url}"
+                )
+                
+            except subprocess.CalledProcessError as e:
+                QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e.stderr}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to create AUR package: {e}") 

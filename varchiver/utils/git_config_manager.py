@@ -246,10 +246,95 @@ class TemplateDialog(QDialog):
 class GitConfigManager(QWidget):
     """Widget for managing Git configuration."""
     
+    # Common ignore pattern groups
+    IGNORE_PATTERNS = {
+        "build": [
+            "build/",
+            "dist/",
+            "*.o",
+            "*.pyc",
+            "__pycache__/",
+            "*.so",
+            "*.dylib",
+            "*.dll",
+            "*.exe",
+            "*.out",
+            "*.app"
+        ],
+        "ide": [
+            ".idea/",
+            ".vscode/",
+            "*.swp",
+            "*.swo",
+            ".project",
+            ".classpath",
+            ".settings/",
+            "*.sublime-workspace",
+            "*.sublime-project",
+            ".vs/",
+            "*.user",
+            "*.suo"
+        ],
+        "env": [
+            ".env",
+            ".env.local",
+            ".env.*",
+            "*.env",
+            ".venv/",
+            "venv/",
+            "ENV/",
+            "env.bak/",
+            "venv.bak/"
+        ],
+        "logs": [
+            "*.log",
+            "logs/",
+            "npm-debug.log*",
+            "yarn-debug.log*",
+            "yarn-error.log*",
+            "pip-log.txt",
+            "pip-delete-this-directory.txt"
+        ]
+    }
+    
+    # Common attribute patterns
+    ATTRIBUTE_PATTERNS = {
+        "text_auto": [
+            "* text=auto",
+            "*.txt text",
+            "*.md text",
+            "*.rst text"
+        ],
+        "eol_lf": [
+            "* text eol=lf",
+            "*.sh text eol=lf",
+            "*.py text eol=lf",
+            "*.pl text eol=lf",
+            "*.rb text eol=lf"
+        ],
+        "eol_crlf": [
+            "* text eol=crlf",
+            "*.bat text eol=crlf",
+            "*.cmd text eol=crlf",
+            "*.ps1 text eol=crlf"
+        ],
+        "binary": [
+            "*.png binary",
+            "*.jpg binary",
+            "*.gif binary",
+            "*.ico binary",
+            "*.zip binary",
+            "*.pdf binary",
+            "*.woff binary",
+            "*.woff2 binary"
+        ]
+    }
+    
     def __init__(self, repo_path: Path, parent=None):
         super().__init__(parent)
         self.repo_path = repo_path
         self.settings = QSettings("Varchiver", "GitManager")
+        self._is_loading = False  # Flag to prevent save during loading
         self.init_ui()
         
     def init_ui(self):
@@ -267,17 +352,25 @@ class GitConfigManager(QWidget):
         settings_group = QGroupBox("Common Settings")
         settings_layout = QGridLayout()
         
-        # Auto CRLF
+        # Auto CRLF with tri-state
         self.auto_crlf = QCheckBox("Auto CRLF")
+        self.auto_crlf.setTristate(True)
         self.auto_crlf.stateChanged.connect(lambda state: self.toggle_setting(
-            "core.autocrlf", "true" if state == Qt.CheckState.Checked else "false"
+            "core.autocrlf",
+            "true" if state == Qt.CheckState.Checked else
+            "input" if state == Qt.CheckState.PartiallyChecked else
+            "false"
         ))
         settings_layout.addWidget(self.auto_crlf, 0, 0)
         
-        # Safe CRLF
+        # Safe CRLF with tri-state
         self.safe_crlf = QCheckBox("Safe CRLF")
+        self.safe_crlf.setTristate(True)
         self.safe_crlf.stateChanged.connect(lambda state: self.toggle_setting(
-            "core.safecrlf", "true" if state == Qt.CheckState.Checked else "false"
+            "core.safecrlf",
+            "true" if state == Qt.CheckState.Checked else
+            "warn" if state == Qt.CheckState.PartiallyChecked else
+            "false"
         ))
         settings_layout.addWidget(self.safe_crlf, 0, 1)
         
@@ -324,22 +417,50 @@ class GitConfigManager(QWidget):
         attr_group = QGroupBox("Common Attributes")
         attr_layout = QGridLayout()
         
-        # Text auto
-        self.text_auto = QCheckBox("text=auto")
-        self.text_auto.stateChanged.connect(lambda state: self.toggle_attribute(
-            "*", "text=auto" if state == Qt.CheckState.Checked else "-text=auto"
-        ))
-        attr_layout.addWidget(self.text_auto, 0, 0)
+        # Text handling group
+        text_group = QGroupBox("Text Handling")
+        text_layout = QVBoxLayout()
         
-        # EOL handling
-        eol_label = QLabel("EOL:")
-        self.eol_combo = QComboBox()
-        self.eol_combo.addItems(["", "lf", "crlf"])
-        self.eol_combo.currentTextChanged.connect(lambda text: self.toggle_attribute(
-            "*", f"eol={text}" if text else "-eol"
+        self.text_auto = QCheckBox("text=auto (All Files)")
+        self.text_auto.stateChanged.connect(lambda state: self.toggle_attribute_group(
+            "text_auto" if state == Qt.CheckState.Checked else None
         ))
-        attr_layout.addWidget(eol_label, 0, 1)
-        attr_layout.addWidget(self.eol_combo, 0, 2)
+        text_layout.addWidget(self.text_auto)
+        
+        # EOL handling group
+        eol_group = QGroupBox("EOL Handling")
+        eol_layout = QVBoxLayout()
+        
+        self.eol_lf = QCheckBox("LF (Unix)")
+        self.eol_lf.stateChanged.connect(lambda state: self.toggle_attribute_group(
+            "eol_lf" if state == Qt.CheckState.Checked else None
+        ))
+        eol_layout.addWidget(self.eol_lf)
+        
+        self.eol_crlf = QCheckBox("CRLF (Windows)")
+        self.eol_crlf.stateChanged.connect(lambda state: self.toggle_attribute_group(
+            "eol_crlf" if state == Qt.CheckState.Checked else None
+        ))
+        eol_layout.addWidget(self.eol_crlf)
+        
+        eol_group.setLayout(eol_layout)
+        text_layout.addWidget(eol_group)
+        
+        text_group.setLayout(text_layout)
+        attr_layout.addWidget(text_group, 0, 0)
+        
+        # Binary files group
+        binary_group = QGroupBox("Binary Files")
+        binary_layout = QVBoxLayout()
+        
+        self.binary_files = QCheckBox("Common Binary Files")
+        self.binary_files.stateChanged.connect(lambda state: self.toggle_attribute_group(
+            "binary" if state == Qt.CheckState.Checked else None
+        ))
+        binary_layout.addWidget(self.binary_files)
+        
+        binary_group.setLayout(binary_layout)
+        attr_layout.addWidget(binary_group, 0, 1)
         
         attr_group.setLayout(attr_layout)
         attributes_layout.addWidget(attr_group)
@@ -369,37 +490,61 @@ class GitConfigManager(QWidget):
         ignore_tab = QWidget()
         ignore_layout = QVBoxLayout(ignore_tab)
         
-        # Common ignore patterns
+        # Common patterns
         ignore_group = QGroupBox("Common Patterns")
         ignore_layout_grid = QGridLayout()
         
-        # Build artifacts
+        # Build artifacts with nested options
+        build_group = QGroupBox("Build")
+        build_layout = QVBoxLayout()
+        
         self.ignore_build = QCheckBox("Build Artifacts")
-        self.ignore_build.stateChanged.connect(lambda state: self.toggle_ignore(
-            ["build/", "dist/", "*.o", "*.pyc", "__pycache__/"] if state == Qt.CheckState.Checked else []
+        self.ignore_build.stateChanged.connect(lambda state: self.toggle_ignore_group(
+            "build" if state == Qt.CheckState.Checked else None
         ))
-        ignore_layout_grid.addWidget(self.ignore_build, 0, 0)
+        build_layout.addWidget(self.ignore_build)
         
-        # IDE files
+        build_group.setLayout(build_layout)
+        ignore_layout_grid.addWidget(build_group, 0, 0)
+        
+        # IDE files with nested options
+        ide_group = QGroupBox("IDE")
+        ide_layout = QVBoxLayout()
+        
         self.ignore_ide = QCheckBox("IDE Files")
-        self.ignore_ide.stateChanged.connect(lambda state: self.toggle_ignore(
-            [".idea/", ".vscode/", "*.swp", "*.swo"] if state == Qt.CheckState.Checked else []
+        self.ignore_ide.stateChanged.connect(lambda state: self.toggle_ignore_group(
+            "ide" if state == Qt.CheckState.Checked else None
         ))
-        ignore_layout_grid.addWidget(self.ignore_ide, 0, 1)
+        ide_layout.addWidget(self.ignore_ide)
         
-        # Environment files
+        ide_group.setLayout(ide_layout)
+        ignore_layout_grid.addWidget(ide_group, 0, 1)
+        
+        # Environment files with nested options
+        env_group = QGroupBox("Environment")
+        env_layout = QVBoxLayout()
+        
         self.ignore_env = QCheckBox("Environment Files")
-        self.ignore_env.stateChanged.connect(lambda state: self.toggle_ignore(
-            [".env", ".env.local", "*.env"] if state == Qt.CheckState.Checked else []
+        self.ignore_env.stateChanged.connect(lambda state: self.toggle_ignore_group(
+            "env" if state == Qt.CheckState.Checked else None
         ))
-        ignore_layout_grid.addWidget(self.ignore_env, 1, 0)
+        env_layout.addWidget(self.ignore_env)
         
-        # Log files
+        env_group.setLayout(env_layout)
+        ignore_layout_grid.addWidget(env_group, 1, 0)
+        
+        # Log files with nested options
+        log_group = QGroupBox("Logs")
+        log_layout = QVBoxLayout()
+        
         self.ignore_logs = QCheckBox("Log Files")
-        self.ignore_logs.stateChanged.connect(lambda state: self.toggle_ignore(
-            ["*.log", "logs/", "npm-debug.log*"] if state == Qt.CheckState.Checked else []
+        self.ignore_logs.stateChanged.connect(lambda state: self.toggle_ignore_group(
+            "logs" if state == Qt.CheckState.Checked else None
         ))
-        ignore_layout_grid.addWidget(self.ignore_logs, 1, 1)
+        log_layout.addWidget(self.ignore_logs)
+        
+        log_group.setLayout(log_layout)
+        ignore_layout_grid.addWidget(log_group, 1, 1)
         
         ignore_group.setLayout(ignore_layout_grid)
         ignore_layout.addWidget(ignore_group)
@@ -432,46 +577,66 @@ class GitConfigManager(QWidget):
         self.load_attributes()
         self.load_ignore()
         
-    def toggle_setting(self, key: str, value: str):
+    def toggle_setting(self, key: str, value: str | None):
         """Toggle a Git config setting."""
         try:
-            subprocess.run(
-                ["git", "config", "--local", key, value],
-                cwd=self.repo_path,
-                check=True
-            )
+            if value is None:
+                # Remove setting
+                subprocess.run(
+                    ["git", "config", "--local", "--unset", key],
+                    cwd=self.repo_path,
+                    check=False  # Don't error if key doesn't exist
+                )
+            else:
+                subprocess.run(
+                    ["git", "config", "--local", key, value],
+                    cwd=self.repo_path,
+                    check=True
+                )
             self.load_config()  # Refresh to show changes
         except subprocess.CalledProcessError as e:
             QMessageBox.warning(self, "Error", f"Failed to set {key}: {e.stderr}")
             
-    def toggle_attribute(self, pattern: str, attribute: str):
-        """Toggle a Git attribute."""
-        current = self.attributes_editor.toPlainText().splitlines()
-        
-        # Remove existing attribute for pattern
-        current = [line for line in current if not line.startswith(pattern)]
-        
-        # Add new attribute if not removing
-        if not attribute.startswith("-"):
-            current.append(f"{pattern} {attribute}")
+    def toggle_attribute_group(self, group: str | None):
+        """Toggle a group of Git attributes."""
+        if group is None:
+            # Remove all patterns from group
+            patterns = self.ATTRIBUTE_PATTERNS.get(group, [])
+            current = self.attributes_editor.toPlainText().splitlines()
+            current = [line for line in current if not any(
+                pattern in line for pattern in patterns
+            )]
+        else:
+            # Add all patterns from group
+            patterns = self.ATTRIBUTE_PATTERNS.get(group, [])
+            current = self.attributes_editor.toPlainText().splitlines()
+            current.extend(patterns)
             
-        self.attributes_editor.setPlainText('\n'.join(current))
+        self.attributes_editor.setPlainText('\n'.join(sorted(set(current))))
         self.save_attributes()
         
-    def toggle_ignore(self, patterns: list[str]):
-        """Toggle Git ignore patterns."""
-        current = set(self.ignore_editor.toPlainText().splitlines())
-        
-        if patterns:
-            # Add patterns
-            current.update(patterns)
-        else:
-            # Remove patterns
+    def toggle_ignore_group(self, group: str | None):
+        """Toggle a group of Git ignore patterns."""
+        if self._is_loading:
+            return
+            
+        if group is None:
+            # Remove all patterns from group
+            patterns = self.IGNORE_PATTERNS.get(group, [])
+            current = set(self.ignore_editor.toPlainText().splitlines())
             current.difference_update(patterns)
+        else:
+            # Add all patterns from group
+            patterns = self.IGNORE_PATTERNS.get(group, [])
+            current = set(self.ignore_editor.toPlainText().splitlines())
+            current.update(patterns)
             
         self.ignore_editor.setPlainText('\n'.join(sorted(current)))
-        self.save_ignore()
         
+        # Only save if not loading and content has changed
+        if not self._is_loading:
+            self.save_ignore(show_message=False)  # Don't show message for toggle updates
+            
     def load_template(self, template_type: str):
         """Load a template for gitignore or gitattributes."""
         template = TemplateDialog.get_template(template_type, self)
@@ -486,8 +651,9 @@ class GitConfigManager(QWidget):
                 self.save_attributes()
 
     def load_config(self):
-        """Load Git configuration from repository."""
+        """Load Git configuration and update UI state."""
         try:
+            # Load config content
             result = subprocess.run(
                 ["git", "config", "--list", "--local"],
                 cwd=self.repo_path,
@@ -496,6 +662,34 @@ class GitConfigManager(QWidget):
                 check=True
             )
             self.config_editor.setPlainText(result.stdout)
+            
+            # Update toggle states
+            config = dict(
+                line.split('=', 1)
+                for line in result.stdout.splitlines()
+                if '=' in line
+            )
+            
+            # Auto CRLF state
+            if 'core.autocrlf' in config:
+                value = config['core.autocrlf'].lower()
+                self.auto_crlf.setCheckState(
+                    Qt.CheckState.Checked if value == 'true' else
+                    Qt.CheckState.PartiallyChecked if value == 'input' else
+                    Qt.CheckState.Unchecked
+                )
+            
+            # Safe CRLF state
+            if 'core.safecrlf' in config:
+                value = config['core.safecrlf'].lower()
+                self.safe_crlf.setCheckState(
+                    Qt.CheckState.Checked if value == 'true' else
+                    Qt.CheckState.PartiallyChecked if value == 'warn' else
+                    Qt.CheckState.Unchecked
+                )
+            
+            # ... update other toggle states ...
+            
         except subprocess.CalledProcessError as e:
             QMessageBox.warning(self, "Error", f"Failed to load Git config: {e.stderr}")
             
@@ -530,13 +724,47 @@ class GitConfigManager(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to save Git config: {e.stderr}")
             
     def load_attributes(self):
-        """Load Git attributes from repository."""
+        """Load Git attributes and update UI state."""
         attributes_path = self.repo_path / '.gitattributes'
         try:
             if attributes_path.exists():
-                self.attributes_editor.setPlainText(attributes_path.read_text())
+                content = attributes_path.read_text()
+                self.attributes_editor.setPlainText(content)
+                
+                # Update toggle states
+                lines = content.splitlines()
+                
+                # Text auto state
+                text_auto_patterns = set(self.ATTRIBUTE_PATTERNS['text_auto'])
+                self.text_auto.setChecked(
+                    any(pattern in lines for pattern in text_auto_patterns)
+                )
+                
+                # EOL states
+                eol_lf_patterns = set(self.ATTRIBUTE_PATTERNS['eol_lf'])
+                self.eol_lf.setChecked(
+                    any(pattern in lines for pattern in eol_lf_patterns)
+                )
+                
+                eol_crlf_patterns = set(self.ATTRIBUTE_PATTERNS['eol_crlf'])
+                self.eol_crlf.setChecked(
+                    any(pattern in lines for pattern in eol_crlf_patterns)
+                )
+                
+                # Binary files state
+                binary_patterns = set(self.ATTRIBUTE_PATTERNS['binary'])
+                self.binary_files.setChecked(
+                    any(pattern in lines for pattern in binary_patterns)
+                )
+                
             else:
                 self.attributes_editor.clear()
+                # Reset toggle states
+                self.text_auto.setChecked(False)
+                self.eol_lf.setChecked(False)
+                self.eol_crlf.setChecked(False)
+                self.binary_files.setChecked(False)
+                
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load .gitattributes: {str(e)}")
             
@@ -560,24 +788,64 @@ class GitConfigManager(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to save .gitattributes: {str(e)}")
             
     def load_ignore(self):
-        """Load Git ignore patterns from repository."""
-        ignore_path = self.repo_path / '.gitignore'
+        """Load Git ignore patterns and update UI state."""
+        self._is_loading = True
         try:
-            if ignore_path.exists():
-                self.ignore_editor.setPlainText(ignore_path.read_text())
-            else:
-                self.ignore_editor.clear()
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load .gitignore: {str(e)}")
+            ignore_path = self.repo_path / '.gitignore'
+            try:
+                if ignore_path.exists():
+                    content = ignore_path.read_text()
+                    self.ignore_editor.setPlainText(content)
+                    
+                    # Update toggle states
+                    lines = content.splitlines()
+                    
+                    # Build artifacts state
+                    build_patterns = set(self.IGNORE_PATTERNS['build'])
+                    self.ignore_build.setChecked(
+                        any(pattern in lines for pattern in build_patterns)
+                    )
+                    
+                    # IDE files state
+                    ide_patterns = set(self.IGNORE_PATTERNS['ide'])
+                    self.ignore_ide.setChecked(
+                        any(pattern in lines for pattern in ide_patterns)
+                    )
+                    
+                    # Environment files state
+                    env_patterns = set(self.IGNORE_PATTERNS['env'])
+                    self.ignore_env.setChecked(
+                        any(pattern in lines for pattern in env_patterns)
+                    )
+                    
+                    # Log files state
+                    log_patterns = set(self.IGNORE_PATTERNS['logs'])
+                    self.ignore_logs.setChecked(
+                        any(pattern in lines for pattern in log_patterns)
+                    )
+                    
+                else:
+                    self.ignore_editor.clear()
+                    # Reset toggle states
+                    self.ignore_build.setChecked(False)
+                    self.ignore_ide.setChecked(False)
+                    self.ignore_env.setChecked(False)
+                    self.ignore_logs.setChecked(False)
+                    
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Failed to load .gitignore: {str(e)}")
+        finally:
+            self._is_loading = False
             
-    def save_ignore(self):
+    def save_ignore(self, show_message: bool = True):
         """Save Git ignore patterns to repository."""
         ignore_path = self.repo_path / '.gitignore'
         try:
             content = self.ignore_editor.toPlainText()
             if content.strip():
                 ignore_path.write_text(content)
-                QMessageBox.information(self, "Success", "Git ignore patterns saved")
+                if show_message:
+                    QMessageBox.information(self, "Success", "Git ignore patterns saved")
             elif ignore_path.exists():
                 if QMessageBox.question(
                     self,
@@ -585,6 +853,7 @@ class GitConfigManager(QWidget):
                     "The .gitignore file is empty. Would you like to delete it?"
                 ) == QMessageBox.StandardButton.Yes:
                     ignore_path.unlink()
-                    QMessageBox.information(self, "Success", ".gitignore has been deleted")
+                    if show_message:
+                        QMessageBox.information(self, "Success", ".gitignore has been deleted")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save .gitignore: {str(e)}") 
