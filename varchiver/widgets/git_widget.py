@@ -13,10 +13,13 @@ from PyQt6.QtCore import pyqtSignal, QSettings, QDir, Qt
 from PyQt6.QtGui import QMovie, QTextCursor
 from datetime import datetime
 import re
+from typing import List, Dict
 
 from ..utils.git_manager import GitManager
 from ..utils.git_config_manager import GitConfigManager
 from ..utils.release_manager import ReleaseManager
+from .git_submodule_widget import GitSubmoduleWidget
+from .git_sequester import GitSequester
 
 class GitWidget(QWidget):
     """Widget for managing Git repository functionality."""
@@ -43,6 +46,7 @@ class GitWidget(QWidget):
         self.git_storage_path = QLineEdit(self.default_storage_path)
         self.git_url = QLineEdit(self.default_git_url)
         self.aur_url = QLineEdit(self.default_aur_url)
+        self.aur_path = QLineEdit()  # Initialize with empty text
         self.git_branch = QLineEdit()
         self.git_branch.setPlaceholderText("main")
         self.git_error_text = QLabel()
@@ -59,9 +63,33 @@ class GitWidget(QWidget):
         """Initialize the Git UI components."""
         layout = QVBoxLayout(self)
         
-        # Common paths group at the top
-        paths_group = QGroupBox("Repository Settings")
-        paths_layout = QFormLayout()
+        # Repository path group with status indicator
+        repo_group = QGroupBox("Repository Settings")
+        repo_layout = QFormLayout()
+        
+        # Repository path with status indicator
+        repo_path_layout = QHBoxLayout()
+        repo_path_layout.addWidget(self.git_repo_path)
+        
+        self.repo_status_indicator = QLabel()
+        self.repo_status_indicator.setFixedSize(16, 16)
+        self.repo_status_indicator.setStyleSheet("""
+            QLabel {
+                border: 1px solid #666;
+                border-radius: 8px;
+                background: #f44336;  /* Red by default */
+            }
+            QLabel[valid="true"] {
+                background: #4caf50;  /* Green when valid */
+            }
+        """)
+        repo_path_layout.addWidget(self.repo_status_indicator)
+        
+        browse_repo_btn = QPushButton("Browse")
+        browse_repo_btn.clicked.connect(self.select_git_repo)
+        repo_path_layout.addWidget(browse_repo_btn)
+        
+        repo_layout.addRow("Local Path:", repo_path_layout)
         
         # Git URL and remote controls
         url_layout = QHBoxLayout()
@@ -77,7 +105,7 @@ class GitWidget(QWidget):
         remote_btn_layout.addWidget(add_remote_btn)
         
         url_layout.addLayout(remote_btn_layout)
-        paths_layout.addRow("Git URL:", url_layout)
+        repo_layout.addRow("Git URL:", url_layout)
         
         # AUR URL and controls
         aur_layout = QHBoxLayout()
@@ -88,7 +116,7 @@ class GitWidget(QWidget):
         aur_url_btn.clicked.connect(self.generate_aur_url)
         aur_layout.addWidget(aur_url_btn)
         
-        paths_layout.addRow("AUR URL:", aur_layout)
+        repo_layout.addRow("AUR URL:", aur_layout)
         
         # Branch selection with create option
         branch_layout = QHBoxLayout()
@@ -96,15 +124,7 @@ class GitWidget(QWidget):
         create_branch_btn = QPushButton("Create Branch")
         create_branch_btn.clicked.connect(self.create_branch)
         branch_layout.addWidget(create_branch_btn)
-        paths_layout.addRow("Branch:", branch_layout)
-        
-        # Repository path selection
-        repo_layout = QHBoxLayout()
-        repo_layout.addWidget(self.git_repo_path)
-        browse_repo_btn = QPushButton("Browse")
-        browse_repo_btn.clicked.connect(self.select_git_repo)
-        repo_layout.addWidget(browse_repo_btn)
-        paths_layout.addRow("Local Path:", repo_layout)
+        repo_layout.addRow("Branch:", branch_layout)
         
         # Storage location (combines artifacts and git storage)
         storage_layout = QHBoxLayout()
@@ -112,13 +132,19 @@ class GitWidget(QWidget):
         storage_browse = QPushButton("Browse")
         storage_browse.clicked.connect(self.select_git_storage)
         storage_layout.addWidget(storage_browse)
-        paths_layout.addRow("Storage Path:", storage_layout)
+        repo_layout.addRow("Storage Path:", storage_layout)
         
-        paths_group.setLayout(paths_layout)
-        layout.addWidget(paths_group)
+        # Add repository info display
+        self.repo_info = QTextEdit()
+        self.repo_info.setReadOnly(True)
+        self.repo_info.setMaximumHeight(100)
+        repo_layout.addRow("Repository Info:", self.repo_info)
+        
+        repo_group.setLayout(repo_layout)
+        layout.addWidget(repo_group)
         
         # Create tab widget
-        tab_widget = QTabWidget()
+        self.tab_widget = QTabWidget()
         
         # Git Config Manager tab
         config_tab = QWidget()
@@ -135,152 +161,55 @@ class GitWidget(QWidget):
         gitignore_btn.clicked.connect(self.open_gitignore)
         config_layout.addWidget(gitignore_btn)
         
-        tab_widget.addTab(config_tab, "Git Config")
+        self.tab_widget.addTab(config_tab, "Git Config")
         
         # Git Sequester tab
         sequester_tab = QWidget()
         sequester_layout = QVBoxLayout(sequester_tab)
         
-        # Storage location
-        storage_group = QGroupBox("Storage Location")
-        storage_layout = QHBoxLayout()
-        self.git_storage_path = QLineEdit(self.settings.value("git_storage_path") or 
-                                        os.path.join(os.path.expanduser("~"), ".varchiver", "git_archives"))
-        storage_layout.addWidget(self.git_storage_path)
-        storage_browse = QPushButton("Browse")
-        storage_browse.clicked.connect(self.select_git_storage)
-        storage_layout.addWidget(storage_browse)
-        storage_group.setLayout(storage_layout)
-        sequester_layout.addWidget(storage_group)
+        # Initialize GitSequester widget
+        self.sequester_widget = GitSequester(str(self.git_repo_path.text()))
+        self.sequester_widget.set_storage_path(str(self.git_storage_path.text()))
+        sequester_layout.addWidget(self.sequester_widget)
         
-        # Sequester operations
-        sequester_buttons = QHBoxLayout()
-        backup_btn = QPushButton("Backup Git Files")
-        backup_btn.clicked.connect(self.backup_git_files)
-        sequester_buttons.addWidget(backup_btn)
+        self.tab_widget.addTab(sequester_tab, "Git Sequester")
         
-        restore_btn = QPushButton("Restore Git Files")
-        restore_btn.clicked.connect(self.restore_git_files)
-        sequester_buttons.addWidget(restore_btn)
+        # Git Submodules tab
+        submodules_tab = QWidget()
+        submodules_layout = QVBoxLayout(submodules_tab)
+        submodules_tab.setLayout(submodules_layout)
         
-        archive_btn = QPushButton("Archive State")
-        archive_btn.clicked.connect(self.archive_git_state)
-        sequester_buttons.addWidget(archive_btn)
+        # Create placeholder for submodule widget
+        self.submodule_widget = None
+        self.submodules_layout = submodules_layout  # Store reference for later
         
-        restore_state_btn = QPushButton("Restore State")
-        restore_state_btn.clicked.connect(self.restore_git_state)
-        sequester_buttons.addWidget(restore_state_btn)
+        self.tab_widget.addTab(submodules_tab, "Git Submodules")
         
-        sequester_layout.addLayout(sequester_buttons)
-        
-        # Untracked files section
-        untracked_group = QGroupBox("Untracked Files")
-        untracked_layout = QVBoxLayout()
-        
-        refresh_btn = QPushButton("Refresh Untracked Files")
-        refresh_btn.clicked.connect(self.refresh_untracked_files)
-        untracked_layout.addWidget(refresh_btn)
-        
-        self.untracked_list = QListWidget()
-        self.untracked_list.setMinimumHeight(200)
-        untracked_layout.addWidget(self.untracked_list)
-        
-        untracked_group.setLayout(untracked_layout)
-        sequester_layout.addWidget(untracked_group)
-        
-        # Sequester status and progress
-        self.sequester_status = QTextEdit()
-        self.sequester_status.setPlaceholderText("Operation log will appear here...")
-        self.sequester_status.setReadOnly(True)
-        sequester_layout.addWidget(self.sequester_status)
-        
-        self.sequester_progress = QProgressBar()
-        self.sequester_progress.hide()
-        sequester_layout.addWidget(self.sequester_progress)
-        
-        tab_widget.addTab(sequester_tab, "Git Sequester")
+        # Connect storage path changes
+        self.git_storage_path.textChanged.connect(
+            lambda path: self.sequester_widget.set_storage_path(path) if self.sequester_widget else None
+        )
         
         # Release Manager tab
         release_tab = QWidget()
         release_layout = QVBoxLayout(release_tab)
         
-        # Version input with infer button
-        version_layout = QHBoxLayout()
-        version_label = QLabel("Version:")
-        self.version_input = QLineEdit()
-        self.version_input.setPlaceholderText("1.0.0")
-        self.version_input.setText(self.settings.value("last_version", ""))
-        infer_version_btn = QPushButton("Infer")
-        infer_version_btn.clicked.connect(self.infer_version)
-        version_layout.addWidget(version_label)
-        version_layout.addWidget(self.version_input)
-        version_layout.addWidget(infer_version_btn)
-        release_layout.addLayout(version_layout)
+        # Create ReleaseManager instance
+        self.release_manager_widget = ReleaseManager()
+        release_layout.addWidget(self.release_manager_widget)
         
-        # Task selection
-        task_layout = QHBoxLayout()
-        task_label = QLabel("Task:")
-        self.task_combo = QComboBox()
-        self.task_combo.addItems([
-            "All Tasks",
-            "Update Version + Build + Create Release",
-            "Build + Create Release",
-            "Create Release Only",
-            "Update AUR Only"
-        ])
-        task_layout.addWidget(task_label)
-        task_layout.addWidget(self.task_combo)
-        release_layout.addLayout(task_layout)
+        self.tab_widget.addTab(release_tab, "Release Manager")
         
-        # AUR package directory
-        aur_layout = QHBoxLayout()
-        aur_label = QLabel("AUR Package:")
-        self.aur_path = QLineEdit()
-        self.aur_path.setText(self.settings.value("aur_path", ""))
+        # Connect signals from ReleaseManager
+        self.release_manager_widget.progress.connect(self.update_release_progress)
+        self.release_manager_widget.error.connect(self.handle_release_error)
+        self.release_manager_widget.finished.connect(self.release_finished)
+        self.release_manager_widget.dialog_signal.connect(self.handle_release_dialog)
         
-        aur_btn_layout = QHBoxLayout()
-        aur_browse = QPushButton("Browse")
-        aur_browse.clicked.connect(self.browse_aur_dir)
-        aur_btn_layout.addWidget(aur_browse)
+        # Update project directory when git repo changes
+        self.git_repo_path.textChanged.connect(self._update_release_manager_path)
         
-        aur_create = QPushButton("Create New")
-        aur_create.clicked.connect(self.create_aur_package)
-        aur_btn_layout.addWidget(aur_create)
-        
-        aur_layout.addWidget(aur_label)
-        aur_layout.addWidget(self.aur_path)
-        aur_layout.addLayout(aur_btn_layout)
-        release_layout.addLayout(aur_layout)
-        
-        # Release buttons and progress
-        release_buttons = QHBoxLayout()
-        self.release_start_button = QPushButton("Start Release Process")
-        self.release_start_button.clicked.connect(self.start_release_process)
-        release_buttons.addWidget(self.release_start_button)
-        
-        # Add loading spinner
-        self.loading_label = QLabel()
-        self.loading_movie = QMovie(":/icons/loading.gif")
-        self.loading_label.setMovie(self.loading_movie)
-        self.loading_label.hide()
-        release_buttons.addWidget(self.loading_label)
-        
-        release_layout.addLayout(release_buttons)
-        
-        # Progress bar
-        self.release_progress = QProgressBar()
-        self.release_progress.hide()
-        release_layout.addWidget(self.release_progress)
-        
-        # Release log
-        self.release_output = QTextEdit()
-        self.release_output.setPlaceholderText("Release process log will appear here...")
-        self.release_output.setReadOnly(True)
-        release_layout.addWidget(self.release_output)
-        
-        tab_widget.addTab(release_tab, "Release Manager")
-        
-        layout.addWidget(tab_widget)
+        layout.addWidget(self.tab_widget)
         
         # Status and error display at the bottom
         self.git_status_label.setStyleSheet("color: #666666;")
@@ -295,39 +224,54 @@ class GitWidget(QWidget):
             self.init_git_config_manager(Path(self.git_repo_path.text()))
             self.update_git_info()
         
+    def _init_submodule_widget(self, repo_path: Path):
+        """Initialize or update the submodule widget."""
+        if not repo_path or not repo_path.exists():
+            return
+            
+        # Remove existing widget if any
+        if self.submodule_widget:
+            self.submodules_layout.removeWidget(self.submodule_widget)
+            self.submodule_widget.deleteLater()
+            
+        # Create new widget
+        self.submodule_widget = GitSubmoduleWidget(repo_path)
+        self.submodules_layout.addWidget(self.submodule_widget)
+        self.submodule_widget.refresh_submodules()
+
     def select_git_repo(self):
         """Open dialog to select Git repository."""
         repo_dir = QFileDialog.getExistingDirectory(
             self,
-            "Select Repository Directory",
+            "Select Git Repository",
             self.git_repo_path.text() or str(Path.home())
         )
         if repo_dir:
-            # Reset UI state before loading new repo
-            self._reset_ui_state()
+            repo_path = Path(repo_dir)
+            self.git_repo_path.setText(str(repo_path))
+            # Set default storage path based on repository
+            default_storage = repo_path.parent / ".varchiver" / "git_archives"
+            self.git_storage_path.setText(str(default_storage))
             
-            if self.git_manager.set_repository(repo_dir):
-                self.git_repo_path.setText(repo_dir)
-                self.repo_changed.emit(repo_dir)
-                self.settings.setValue("project_path", repo_dir)
+            # Update repository info and status
+            self._infer_repository_info(repo_path)
+            self.update_repo_status()
+            
+            # Update release manager
+            if hasattr(self, 'release_manager_widget'):
+                self.release_manager_widget.project_dir_input.setText(str(repo_path))
+                self.release_manager_widget.project_dir = repo_path
+                # Set task preset to "Full Release (All Tasks)"
+                self.release_manager_widget.task_preset.setCurrentIndex(0)
+                self.release_manager_widget.update_task_selection(0)
                 
-                # Initialize Git config manager
-                self.init_git_config_manager(Path(repo_dir))
-                
-                # Try to infer repository information
-                self._infer_repository_info(Path(repo_dir))
-                
-                # Update UI state
-                self._update_git_buttons()
-                self.refresh_untracked_files()
-            else:
-                QMessageBox.warning(self, "Error", "Selected directory is not a Git repository")
-                
+                # Try to infer version for release manager
+                version = self._infer_version(repo_path)
+                if version and hasattr(self.release_manager_widget, 'version_input'):
+                    self.release_manager_widget.version_input.setText(version)
+
     def _reset_ui_state(self):
         """Reset UI state when switching repositories."""
-        # Clear version input
-        self.version_input.clear()
-        
         # Clear branch input (will be inferred if exists)
         self.git_branch.clear()
         
@@ -367,39 +311,15 @@ class GitWidget(QWidget):
                 ["git", "branch", "--show-current"],
                 cwd=repo_path,
                 capture_output=True,
-                text=True
+                text=True,
+                check=True
             )
-            if result.returncode == 0:
+            if result.returncode == 0 and result.stdout.strip():
                 branch = result.stdout.strip()
                 # For AUR repositories, always use master
                 if "aur.archlinux.org" in self.git_url.text():
                     branch = "master"
                 self.git_branch.setText(branch)
-            else:
-                # Try to get default branch
-                result = subprocess.run(
-                    ["git", "symbolic-ref", "HEAD"],
-                    cwd=repo_path,
-                    capture_output=True,
-                    text=True
-                )
-                if result.returncode == 0:
-                    branch = result.stdout.strip().replace('refs/heads/', '')
-                    # For AUR repositories, always use master
-                    if "aur.archlinux.org" in self.git_url.text():
-                        branch = "master"
-                    self.git_branch.setText(branch)
-                else:
-                    # Default to master for AUR, main for others
-                    if "aur.archlinux.org" in self.git_url.text():
-                        self.git_branch.setText("master")
-                    else:
-                        self.git_branch.setText("main")
-            
-            # Try to get version from package files
-            version = self._infer_version(repo_path)
-            if version:
-                self.version_input.setText(version)
             
             # Check for corresponding AUR package
             repo_name = repo_path.name
@@ -413,6 +333,13 @@ class GitWidget(QWidget):
                 Path.home() / "Code" / "aur-packages" / f"{repo_name}-bin"
             ]
             
+            # Clear AUR info by default
+            self.aur_path.clear()
+            self.aur_url.clear()
+            self.settings.remove("aur_url")
+            self.settings.remove("aur_path")
+            
+            # Try to find AUR package
             for aur_path in potential_aur_paths:
                 if aur_path.exists() and (aur_path / ".git").exists():
                     # Found AUR package directory
@@ -767,26 +694,8 @@ class GitWidget(QWidget):
         if not self.git_repo_path.text():
             return
 
-        try:
-            result = subprocess.run(
-                ["git", "ls-files", "--others", "--exclude-standard"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True,
-                check=True
-            )
-
-            self.untracked_list.clear()
-            if result.stdout:
-                files = result.stdout.strip().split('\n')
-                self.untracked_list.addItems(files)
-            else:
-                self.untracked_list.addItem("No untracked files found")
-
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Failed to get untracked files: {e.stderr}")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to get untracked files: {str(e)}")
+        if hasattr(self, 'sequester_widget') and self.sequester_widget:
+            self.sequester_widget.refresh_untracked_files()
 
     def browse_aur_dir(self):
         """Browse for AUR package directory."""
@@ -893,142 +802,27 @@ class GitWidget(QWidget):
             self.aur_path.setText(aur_dir)
             self.settings.setValue("aur_path", aur_dir)
 
-    def start_release_process(self):
-        """Start the release process."""
-        if not self.git_repo_path.text():
-            QMessageBox.critical(self, "Error", "No Git repository selected")
-            return
-            
-        version = self.version_input.text().strip()
-        if not version:
-            QMessageBox.critical(self, "Error", "Version number required")
-            return
-            
-        # Check if version tag already exists
-        try:
-            result = subprocess.run(
-                ["git", "tag", "-l", f"v{version}"],
-                cwd=self.git_repo_path.text(),
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            if result.stdout.strip():
-                # Tag exists, ask to increment
-                reply = QMessageBox.question(
-                    self,
-                    "Version Exists",
-                    f"Version v{version} already exists. Would you like to increment the version?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No
-                )
-                if reply == QMessageBox.StandardButton.Yes:
-                    # Simple increment of last number
-                    parts = version.split('.')
-                    if len(parts) > 0 and parts[-1].isdigit():
-                        parts[-1] = str(int(parts[-1]) + 1)
-                        version = '.'.join(parts)
-                        self.version_input.setText(version)
-                    return
-                else:
-                    return
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Failed to check version tag: {e}")
-            return
-            
-        # Get selected tasks based on combo box selection
-        task_index = self.task_combo.currentIndex()
-        tasks = []
-        if task_index == 0:  # All Tasks
-            tasks = ["update_version", "build", "create_release", "update_aur"]
-        elif task_index == 1:  # Update Version + Build + Create Release
-            tasks = ["update_version", "build", "create_release"]
-        elif task_index == 2:  # Build + Create Release
-            tasks = ["build", "create_release"]
-        elif task_index == 3:  # Create Release Only
-            tasks = ["create_release"]
-        elif task_index == 4:  # Update AUR Only
-            tasks = ["update_aur"]
-            
-        # Check if AUR path is needed and provided
-        if "update_aur" in tasks and not self.aur_path.text().strip():
-            QMessageBox.critical(self, "Error", "AUR package path required for AUR update")
-            return
-            
-        # Show loading spinner and disable start button
-        self.loading_label.show()
-        self.loading_movie.start()
-        self.release_start_button.setEnabled(False)
-        self.release_progress.show()
-        self.release_progress.setRange(0, 0)  # Indeterminate progress
-        
-        try:
-            # Create ReleaseManager instance
-            self.release_manager = ReleaseManager(parent=self)
-            self.release_manager.project_dir = Path(self.git_repo_path.text())
-            
-            # Connect signals
-            self.release_manager.progress.connect(self.update_release_progress)
-            self.release_manager.error.connect(self.handle_release_error)
-            self.release_manager.finished.connect(self.release_finished)
-            self.release_manager.dialog_signal.connect(self.handle_release_dialog)
-            
-            # Start release thread
-            self.release_manager.start_release(
-                version,
-                tasks,
-                self.release_output,
-                use_aur="update_aur" in tasks,
-                aur_dir=Path(self.aur_path.text().strip()) if self.aur_path.text().strip() else None
-            )
-            
-        except Exception as e:
-            self.handle_release_error(str(e))
-            
     def update_release_progress(self, message: str):
-        """Update release progress output."""
-        self.release_output.append(message)
-        cursor = self.release_output.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        self.release_output.setTextCursor(cursor)
-        
+        """Update release progress in ReleaseManager."""
+        if hasattr(self, 'release_manager_widget'):
+            self.release_manager_widget.progress.emit(message)
+            
     def handle_release_error(self, error_msg: str):
-        """Handle release process errors."""
-        QMessageBox.critical(self, "Error", f"Failed to start release process: {error_msg}")
-        self.release_finished(False)
+        """Handle release errors from ReleaseManager."""
+        QMessageBox.critical(self, "Error", f"Release failed: {error_msg}")
         
-    def handle_release_dialog(self, title: str, message: str, options: list):
-        """Handle dialog requests from release process."""
-        dialog = QMessageBox(self)
-        dialog.setWindowTitle(title)
-        dialog.setText(message)
-        dialog.setIcon(QMessageBox.Icon.Question)
-        
-        # Create buttons for each option
-        buttons = {}
-        for option in options:
-            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
-            buttons[button] = option
-            
-        dialog.exec()
-        clicked = dialog.clickedButton()
-        
-        if clicked in buttons and self.release_manager:
-            self.release_manager.handle_dialog_response(buttons[clicked])
-            
     def release_finished(self, success: bool):
-        """Handle release process completion."""
-        # Hide loading spinner and progress bar
-        self.loading_label.hide()
-        self.loading_movie.stop()
-        self.release_start_button.setEnabled(True)
-        self.release_progress.hide()
-        
+        """Handle release completion from ReleaseManager."""
         if success:
             QMessageBox.information(self, "Success", "Release process completed successfully!")
-            # Save successful version
-            self.settings.setValue("last_version", self.version_input.text().strip())
-        
+            
+    def handle_release_dialog(self, title: str, message: str, options: list):
+        """Handle dialog requests from ReleaseManager."""
+        if hasattr(self, 'release_manager_widget'):
+            self.release_manager_widget.handle_dialog_response(
+                self.release_manager_widget.dialog_signal.emit(title, message, options)
+            )
+
     def infer_version(self):
         """Infer version from repository."""
         if not self.git_repo_path.text():
@@ -1279,3 +1073,166 @@ class GitWidget(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e.stderr}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to create AUR package: {e}") 
+
+    def update_repo_status(self):
+        """Update repository status indicator and info."""
+        repo_path = Path(self.git_repo_path.text())
+        is_valid = False
+        info_text = []
+        
+        try:
+            # Check if it's a Git repository
+            git_dir = repo_path / '.git'
+            is_valid = (git_dir.is_dir() or 
+                       (git_dir.is_file() and 'gitdir:' in git_dir.read_text()))
+            
+            if is_valid:
+                # Get repository type
+                if git_dir.is_file():
+                    info_text.append("Type: Git Submodule")
+                else:
+                    info_text.append("Type: Git Repository")
+                
+                # Get and set remote URL
+                try:
+                    result = subprocess.run(
+                        ['git', 'remote', 'get-url', 'origin'],
+                        cwd=repo_path,
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    remote_url = result.stdout.strip()
+                    self.git_url.setText(remote_url)
+                    
+                    # If this is varchiver, try to detect AUR package
+                    if repo_path.name == "varchiver":
+                        # Set AUR URL
+                        aur_url = "ssh://aur@aur.archlinux.org/varchiver.git"
+                        self.aur_url.setText(aur_url)
+                        
+                        # Try to find AUR package directory
+                        possible_aur_paths = [
+                            Path.home() / "Code" / "aur-packages" / "varchiver",
+                            Path.home() / "aur-packages" / "varchiver",
+                            repo_path.parent / "aur-packages" / "varchiver"
+                        ]
+                        
+                        for aur_path in possible_aur_paths:
+                            if aur_path.exists() and (aur_path / '.git').exists():
+                                self.aur_path.setText(str(aur_path))
+                                info_text.append(f"\nAUR Package: {aur_path}")
+                                break
+                
+                except subprocess.CalledProcessError:
+                    pass
+                
+                # Get current branch
+                try:
+                    result = subprocess.run(
+                        ['git', 'branch', '--show-current'],
+                        cwd=repo_path,
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    current_branch = result.stdout.strip()
+                    if current_branch:  # Only update if we got a valid branch name
+                        self.git_branch.setText(current_branch)
+                        info_text.append(f"Branch: {current_branch}")
+                except subprocess.CalledProcessError:
+                    pass
+                
+                # Check for nested repositories
+                nested_repos = self._find_nested_repos(repo_path)
+                if nested_repos:
+                    info_text.append("\nNested Repositories:")
+                    for repo in nested_repos:
+                        info_text.append(f"- {repo.relative_to(repo_path)}")
+                
+                # Check for submodules
+                submodules = self._get_submodules(repo_path)
+                if submodules:
+                    info_text.append("\nSubmodules:")
+                    for name, data in submodules.items():
+                        status = "✓" if data['initialized'] else "✗"
+                        info_text.append(f"- {name} [{status}]")
+        
+        except Exception as e:
+            info_text.append(f"Error: {str(e)}")
+        
+        # Update UI
+        self.repo_status_indicator.setProperty("valid", is_valid)
+        self.repo_status_indicator.style().unpolish(self.repo_status_indicator)
+        self.repo_status_indicator.style().polish(self.repo_status_indicator)
+        
+        self.repo_info.setText("\n".join(info_text))
+
+    def _find_nested_repos(self, root_path: Path) -> List[Path]:
+        """Find all nested Git repositories."""
+        nested_repos = []
+        
+        for root, dirs, _ in os.walk(root_path):
+            root_path = Path(root)
+            
+            # Skip the root repository itself
+            if root_path == root_path:
+                continue
+            
+            # Skip .git directories
+            if '.git' in dirs:
+                dirs.remove('.git')
+            
+            # Check each directory for a Git repository
+            for dir_name in dirs[:]:  # Copy list as we'll modify it
+                dir_path = root_path / dir_name
+                git_dir = dir_path / '.git'
+                
+                # Check if it's a Git repository
+                if git_dir.is_dir() or (git_dir.is_file() and 'gitdir:' in git_dir.read_text()):
+                    nested_repos.append(dir_path)
+                    # Don't descend into Git repositories
+                    dirs.remove(dir_name)
+        
+        return nested_repos
+
+    def _get_submodules(self, repo_path: Path) -> Dict[str, Dict]:
+        """Get information about Git submodules."""
+        submodules = {}
+        gitmodules_path = repo_path / '.gitmodules'
+        
+        if gitmodules_path.exists():
+            try:
+                # Parse .gitmodules file
+                import configparser
+                config = configparser.ConfigParser()
+                config.read(gitmodules_path)
+                
+                for section in config.sections():
+                    if section.startswith('submodule'):
+                        name = section.split('"')[1]
+                        path = config.get(section, 'path')
+                        submodule_path = repo_path / path
+                        
+                        # Get submodule status
+                        initialized = False
+                        if submodule_path.exists():
+                            git_file = submodule_path / '.git'
+                            initialized = git_file.exists()
+                        
+                        submodules[name] = {
+                            'path': path,
+                            'url': config.get(section, 'url'),
+                            'initialized': initialized,
+                            'branch': config.get(section, 'branch', fallback=None)
+                        }
+            
+            except Exception as e:
+                print(f"Error reading .gitmodules: {e}")
+        
+        return submodules 
+
+    def _update_release_manager_path(self):
+        """Update release manager's project directory when git repo changes."""
+        if hasattr(self, 'release_manager_widget'):
+            self.release_manager_widget.project_dir = Path(self.git_repo_path.text()) if self.git_repo_path.text() else None 

@@ -16,6 +16,7 @@ dependencies = [
     "pyqt6-sip>=13.8.0",
     "psutil>=6.1.0",
     "pyinstaller>=6.11.1",
+    "requests>=2.32.3",
 ]
 
 [project.optional-dependencies]

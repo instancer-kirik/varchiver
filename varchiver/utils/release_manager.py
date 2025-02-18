@@ -2,7 +2,7 @@ print("Loading release_manager module")
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                             QLineEdit, QLabel, QComboBox, QProgressBar, QMessageBox, QDialog,
-                            QFileDialog, QGroupBox, QFormLayout, QTextEdit, QApplication)
+                            QFileDialog, QGroupBox, QFormLayout, QTextEdit, QApplication, QCheckBox)
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, QSettings, pyqtSlot, QDir, QMetaObject, Qt, Q_ARG
 from PyQt6.QtGui import QTextCursor
 import subprocess
@@ -12,6 +12,8 @@ from pathlib import Path
 import time
 from typing import List, Optional
 from .project_constants import PROJECT_CONFIGS
+import shutil
+import requests
 
 print("Imports completed in release_manager module")
 
@@ -23,7 +25,7 @@ class ReleaseThread(QThread):
     dialog_signal = pyqtSignal(str, str, list)  # For user interaction dialogs
     
     def __init__(self, project_dir: Path, version: str, tasks: List[str], output_widget: QTextEdit, 
-                 use_aur: bool = False, aur_dir: Optional[Path] = None):
+                 use_aur: bool = False, aur_dir: Optional[Path] = None, build_appimage: bool = False):
         super().__init__()
         # Initialize basic attributes
         self.project_dir = project_dir
@@ -32,6 +34,7 @@ class ReleaseThread(QThread):
         self.output_widget = output_widget
         self.use_aur = use_aur
         self.aur_dir = aur_dir
+        self.build_appimage = build_appimage
         
         # Dialog control
         self.wait_for_dialog = False
@@ -79,17 +82,20 @@ class ReleaseThread(QThread):
             return None
 
     def output_message(self, message: str):
-        """Thread-safe message output"""
+        """Thread-safe message output."""
         try:
-            # Emit progress signal for UI updates
-            self.progress.emit(message)
-            
-            # Write to log file if available
+            # Write to log file first
             if self.log_file:
                 with open(self.log_file, 'a') as f:
                     f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+            
+            # Update UI via signal
+            if hasattr(self, 'output_widget') and self.output_widget:
+                self.progress.emit(message)
+                
         except Exception as e:
             print(f"Error in output_message: {e}")
+            # Don't try to emit signal here to avoid potential recursion
 
     def handle_dialog_response(self, response):
         """Handle dialog response in a thread-safe way"""
@@ -101,87 +107,39 @@ class ReleaseThread(QThread):
         try:
             self.output_message(f"Starting release process for version {self.version}")
             
-            # First check for unpushed commits
-            self.output_message("Checking for unpushed commits...")
-            try:
-                # Get the current branch
-                branch_result = self._run_command(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-                current_branch = branch_result.stdout.strip()
-                
-                # Check for unpushed commits
-                unpushed = self._run_command(
-                    ["git", "log", f"origin/{current_branch}..{current_branch}", "--oneline"],
-                    check=False
-                )
-                
-                if unpushed.stdout.strip():
-                    self.output_message("\nWARNING: There are unpushed commits:")
-                    self.output_message(unpushed.stdout)
-                    
-                    # Show dialog and wait for response
-                    self.wait_for_dialog = True
-                    self.dialog_signal.emit(
-                        "Unpushed Commits",
-                        "There are unpushed commits. Choose an action:\n\n" +
-                        "1. Push commits\n" +
-                        "2. Reset to remote\n" +
-                        "3. Cancel release",
-                        ["Push", "Reset", "Cancel"]
-                    )
-                    
-                    # Wait for response with timeout
-                    start_time = time.time()
-                    while self.wait_for_dialog:
-                        if time.time() - start_time > 60:  # 1 minute timeout
-                            self.output_message("Dialog timed out")
-                            return False
-                        self.msleep(100)
-                        QApplication.processEvents()
-                    
-                    # Handle response
-                    if self.dialog_response == "Cancel":
-                        self.output_message("Release cancelled by user")
-                        self.finished.emit(False)
-                        return False
-                    
-                    try:
-                        if self.dialog_response == "Push":
-                            self._run_command(["git", "push", "origin", current_branch])
-                            self.output_message("Pushed commits successfully")
-                        elif self.dialog_response == "Reset":
-                            self._run_command(["git", "fetch", "origin"])
-                            self._run_command(["git", "reset", "--hard", f"origin/{current_branch}"])
-                            self.output_message("Reset to remote successfully")
-                    except Exception as e:
-                        self.output_message(f"Failed to handle unpushed commits: {e}")
-                        return False
-            except Exception as e:
-                self.output_message(f"Error checking unpushed commits: {e}")
-                return False
-            
-            # Check Git status first
-            if not self._handle_git_status():
-                return  # Git status handling failed or was cancelled
+            # Always check for unpushed commits first if check_changes is in tasks
+            if "check_changes" in self.tasks:
+                if not self._handle_git_status():
+                    return  # Git status handling failed or was cancelled
             
             try:
                 # Update version files if needed
                 if 'update_version' in self.tasks:
                     self._update_version_files()
-                    self._commit_version_changes()
+                    self._commit_version_changes(self.version)
                 
-                # Build packages
+                # Build source package first (required for both GitHub release and AUR)
+                if 'build_packages' in self.tasks:
+                    self.output_message("\nBuilding source package...")
                 self._build_packages()
+                
+                # Build AppImage if requested
+                if 'build_appimage' in self.tasks:
+                    self.output_message("\nBuilding AppImage...")
+                    self._build_appimage()
                 
                 # Create GitHub release if requested
                 if 'create_release' in self.tasks:
+                    self.output_message("\nCreating GitHub release...")
                     self._check_github_authentication()
                     self._create_github_release()
                     
-                # Update AUR if requested
+                # Update AUR if requested (needs source package)
                 if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
+                    self.output_message("\nUpdating AUR package...")
                     self._update_aur()
                 
-                self.output_message("Release process completed successfully!")
+                self.output_message("\nRelease process completed successfully!")
                 self.finished.emit(True)
                 
             except Exception as e:
@@ -314,42 +272,94 @@ class ReleaseThread(QThread):
             self.output_message(f"Error checking Git status: {e}")
             raise
 
-    def _commit_version_changes(self):
-        """Commit version number changes."""
+    def _commit_version_changes(self, version: str) -> bool:
+        """Commit version changes to repository."""
         try:
-            # Check if there are changes to commit
-            status_result = self._run_command(["git", "status", "--porcelain"])
-            if status_result.stdout.strip():
-                self.output_message("Committing version changes...")
+            # Check if there are any changes to commit
+            result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                cwd=self.project_dir,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            # Parse status output
+            status_lines = result.stdout.splitlines()
+            modified_files = [line[3:] for line in status_lines if line.startswith(' M') or line.startswith('M ')]
+            untracked_files = [line[3:] for line in status_lines if line.startswith('??')]
+            
+            if not modified_files and not untracked_files:
+                self.output_message("No changes to commit")
+                return True
+            
+            # Handle untracked files
+            if untracked_files:
+                self.output_message(f"\nUntracked files found:")
+                for file in untracked_files:
+                    self.output_message(f"- {file}")
                 
-                # Add changed files
-                if not isinstance(self.version_files, list):
-                    self.version_files = [str(f) for f in self.version_files]
+                # Ask user what to do with untracked files
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Icon.Question)
+                msg.setText("Untracked files found")
+                msg.setInformativeText("What would you like to do with the untracked files?")
+                ignore_btn = msg.addButton("Ignore", QMessageBox.ButtonRole.RejectRole)
+                add_btn = msg.addButton("Add to Git", QMessageBox.ButtonRole.AcceptRole)
+                cancel_btn = msg.addButton("Cancel Release", QMessageBox.ButtonRole.DestructiveRole)
+                msg.exec()
                 
-                # Make sure all files exist before adding
-                files_to_add = []
-                for file_path in self.version_files:
-                    if (self.project_dir / file_path).exists():
-                        files_to_add.append(file_path)
-                    else:
-                        self.output_message(f"Warning: File not found: {file_path}")
-                
-                if not files_to_add:
-                    raise Exception("No version files found to commit")
-                
-                self._run_command(["git", "add"] + files_to_add)
+                if msg.clickedButton() == add_btn:
+                    # Add untracked files
+                    for file in untracked_files:
+                        subprocess.run(
+                            ['git', 'add', file],
+                            cwd=self.project_dir,
+                            check=True
+                        )
+                    self.output_message("Added untracked files to Git")
+                elif msg.clickedButton() == cancel_btn:
+                    raise Exception("Release cancelled by user")
+                # If ignore_btn, continue without adding untracked files
+            
+            # Check if there are modified files to commit
+            result = subprocess.run(
+                ['git', 'status', '--porcelain', '--untracked-files=no'],
+                cwd=self.project_dir,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            if result.stdout.strip():
+                # Add modified files
+                subprocess.run(
+                    ['git', 'add', 'pyproject.toml', 'PKGBUILD'],
+                    cwd=self.project_dir,
+                    check=True
+                )
                 
                 # Commit changes
-                commit_msg = f"Release v{self.version}"
-                self._run_command(["git", "commit", "-m", commit_msg])
+                try:
+                    subprocess.run(
+                        ['git', 'commit', '-m', f'Release v{version}'],
+                        cwd=self.project_dir,
+                        check=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    self.output_message(f"Committed version changes for v{version}")
+                except subprocess.CalledProcessError as e:
+                    if "nothing to commit" in e.stderr:
+                        self.output_message("No changes to commit")
+                        return True
+                    raise
                 
-                self.output_message(f"Committed version changes for v{self.version}")
-            else:
-                self.output_message("No version changes to commit")
+            return True
 
         except Exception as e:
             self.output_message(f"Warning: Failed to commit version changes: {str(e)}")
-            raise
+            return False
 
     def _update_version_files(self):
         self.progress.emit("Updating version in files...")
@@ -374,131 +384,147 @@ class ReleaseThread(QThread):
                         regex_pattern = pattern.replace("*", r"[^\"']*")
                         self._update_file_version(file_path, regex_pattern, pattern.replace("*", self.version))
 
-    def _build_packages(self):
-        """Build packages in a dedicated dist directory"""
-        self.output_message("Starting package build process...")
-        
-        # First check if PKGBUILD exists
-        pkgbuild_path = self.project_dir / "PKGBUILD"
-        if not pkgbuild_path.exists():
-            raise Exception("PKGBUILD not found in project directory")
-            
-        # Create dist directory first
-        dist_dir = self.project_dir / "dist"
-        dist_dir.mkdir(exist_ok=True, parents=True)
-        
-        # Clean up previous build artifacts
-        self.output_message("Cleaning up previous build artifacts...")
-        for d in ["pkg", "src"]:
-            build_dir = self.project_dir / d
-            if build_dir.exists():
-                try:
-                    import shutil
-                    shutil.rmtree(build_dir)
-                    self.output_message(f"Cleaned up {d} directory")
-                except Exception as e:
-                    self.output_message(f"Warning: Could not clean {d} directory: {e}")
-        
-        # Update PKGBUILD version
-        self.output_message(f"Updating PKGBUILD version to {self.version}")
-        with open(pkgbuild_path, 'r') as f:
-            pkgbuild_content = f.read()
-        
-        # First find the current version
-        current_version = re.search(r'^pkgver=([0-9.]+)', pkgbuild_content, re.MULTILINE)
-        if current_version:
-            self.output_message(f"Current version in PKGBUILD: {current_version.group(1)}")
-        else:
-            self.output_message("Warning: Could not find current version in PKGBUILD")
-        
-        # Update version and reset pkgrel
-        pkgbuild_content = re.sub(
-            r'^pkgver=.*$',
-            f'pkgver={self.version}',
-            pkgbuild_content,
-            flags=re.MULTILINE
-        )
-        pkgbuild_content = re.sub(
-            r'^pkgrel=.*$',
-            'pkgrel=1',
-            pkgbuild_content,
-            flags=re.MULTILINE
-        )
-        
-        # Create source archive
-        self.output_message("Creating source archive...")
-        archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
-        archive_path = dist_dir / archive_name
-        
-        # Create source archive using git archive
-        self._run_command([
-            "git", "archive",
-            "--format=tar.gz",
-            f"--prefix={self.project_dir.name}-{self.version}/",
-            "-o", str(archive_path),
-            "HEAD"
-        ])
-
-        # Update source URL to use local archive during build
-        pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("{archive_name}")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-        
-        # Copy source archive to build directory
-        self._run_command(["cp", str(archive_path), "."])
-        
-        # Calculate SHA256 of local archive
-        sha256_result = self._run_command(["sha256sum", str(archive_path)])
-        local_sha256 = sha256_result.stdout.split()[0]
-        
-        # Update SHA256 in PKGBUILD
-        pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, local_sha256)
-        
-        # Write updated PKGBUILD
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
-        # Build package
-        self.output_message("Starting makepkg process...")
+    def _build_packages(self) -> bool:
+        """Build distribution packages."""
         try:
-            env = os.environ.copy()
-            env["PKGDEST"] = str(dist_dir)
+            # Create dist directory if it doesn't exist
+            dist_dir = self.project_dir / 'dist'
+            dist_dir.mkdir(exist_ok=True)
             
-            # Copy resources before building
-            src_resources = self.project_dir / "varchiver" / "resources"
-            if src_resources.exists():
-                dst_resources = self.project_dir / "src" / f"{self.project_dir.name}-{self.version}" / "varchiver" / "resources"
-                dst_resources.parent.mkdir(parents=True, exist_ok=True)
-                if dst_resources.exists():
-                    shutil.rmtree(dst_resources)
-                shutil.copytree(src_resources, dst_resources)
-                self.output_message("Copied resources directory")
+            # Build source distribution (required for AUR)
+            self.output_message("\nBuilding source distribution...")
+            version = self._get_version()
+            archive_name = f"{self.project_dir.name}-{version}"
+            archive_file = f"{archive_name}.tar.gz"
             
-            result = self._run_command(
-                ["makepkg", "-f"],
-                env=env,
-                timeout=300  # 5 minutes timeout
+            subprocess.run(
+                ['git', 'archive', '--format=tar.gz',
+                 f'--prefix={archive_name}/', '-o',
+                 str(dist_dir / archive_file), 'HEAD'],
+                cwd=self.project_dir,
+                check=True
             )
             
-            self.output_message("\nBuild output:")
-            self.output_message(result.stdout)
+            # Copy archive to current directory for makepkg
+            shutil.copy2(dist_dir / archive_file, archive_file)
             
-            if result.stderr.strip():
-                self.output_message("\nBuild warnings:")
-                self.output_message(result.stderr)
-                
-        except subprocess.TimeoutExpired:
-            raise Exception("Build process timed out")
-        except subprocess.CalledProcessError as e:
-            raise Exception(f"Build failed with error code {e.returncode}")
+            # Get SHA256 sum
+            result = subprocess.run(
+                ['sha256sum', str(dist_dir / archive_file)],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            local_sha256 = result.stdout.split()[0]
             
-        # Verify build artifacts
-        package_file = next(dist_dir.glob("*.pkg.tar.zst"), None)
-        if not package_file:
-            raise Exception("No package file found after build")
+            # Update PKGBUILD
+            self._update_pkgbuild(version, local_sha256)
+            
+            # Run makepkg
+            self.output_message("Starting makepkg process...")
+            subprocess.run(['makepkg', '-f'], check=True)
+            
+            # Build AppImage if requested
+            if self.build_appimage:
+                self.output_message("\nBuilding AppImage...")
+                try:
+                    self._build_appimage()
+                except Exception as e:
+                    self.output_message(f"Warning: AppImage build failed: {str(e)}")
+            
+            return True
+            
+        except Exception as e:
+            self.output_message(f"Error during build: {str(e)}")
+            return False
+
+    def _build_appimage(self):
+        """Build AppImage package."""
+        try:
+            # Create AppImage build directory
+            appimage_dir = self.project_dir / 'build' / 'AppDir'
+            appimage_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create basic AppDir structure
+            (appimage_dir / 'usr' / 'bin').mkdir(parents=True, exist_ok=True)
+            (appimage_dir / 'usr' / 'lib').mkdir(parents=True, exist_ok=True)
+            
+            # Copy application files
+            package_name = self.project_dir.name.replace('-', '_')
+            src_dir = self.project_dir / package_name
+            if src_dir.exists():
+                shutil.copytree(
+                    src_dir,
+                    appimage_dir / 'usr' / 'lib' / 'python3' / 'site-packages' / package_name,
+                    dirs_exist_ok=True
+                )
+            
+            # Create entry point script
+            entry_point = appimage_dir / 'usr' / 'bin' / package_name
+            entry_point.write_text(f"""#!/usr/bin/env python3
+import sys
+import os
+
+# Add application to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib/python3/site-packages'))
+
+from {package_name}.main import main
+if __name__ == '__main__':
+    sys.exit(main())
+""")
+            entry_point.chmod(0o755)
+            
+            # Create desktop file
+            desktop_file = appimage_dir / f"{package_name}.desktop"
+            desktop_file.write_text(f"""[Desktop Entry]
+Name={package_name}
+Exec={package_name}
+Icon={package_name}
+Type=Application
+Categories=Utility;
+""")
+            
+            # Copy icon if exists
+            icon_path = self.project_dir / 'resources' / f"{package_name}.png"
+            if icon_path.exists():
+                shutil.copy2(icon_path, appimage_dir / f"{package_name}.png")
+            
+            # Create AppRun
+            apprun = appimage_dir / 'AppRun'
+            apprun.write_text("""#!/bin/sh
+HERE="$(dirname "$(readlink -f "${0}")")"
+export PYTHONPATH="$HERE/usr/lib/python3/site-packages:$PYTHONPATH"
+export PATH="$HERE/usr/bin:$PATH"
+exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{}" "$@"
+""".format(package_name))
+            apprun.chmod(0o755)
+            
+            # Download AppImage tools if needed
+            tools_dir = self.project_dir / 'build' / 'tools'
+            tools_dir.mkdir(exist_ok=True)
+            
+            if not (tools_dir / 'appimagetool').exists():
+                self.output_message("Downloading appimagetool...")
+                url = "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+                response = requests.get(url)
+                appimagetool = tools_dir / 'appimagetool'
+                appimagetool.write_bytes(response.content)
+                appimagetool.chmod(0o755)
+            
+            # Build AppImage
+            version = self._get_version()
+            output_file = self.project_dir / 'dist' / f"{package_name}-{version}-x86_64.AppImage"
+            
+            subprocess.run([
+                str(tools_dir / 'appimagetool'),
+                str(appimage_dir),
+                str(output_file)
+            ], check=True)
+            
+            self.output_message(f"AppImage created: {output_file}")
+            
+        except Exception as e:
+            raise Exception(f"AppImage build failed: {str(e)}")
 
     def _verify_release_assets(self, version, max_retries=20, retry_delay=15):
         """Verify release assets with retries"""
@@ -604,21 +630,7 @@ class ReleaseThread(QThread):
         
         # Create GitHub release
         self.progress.emit("Creating GitHub release...")
-        release_notes = f"Release {tag}\n\nPackage files:\n"
-        
-        # Add only current version files to release notes
-        if dist_dir.exists():
-            release_notes += "\nAvailable packages:\n"
-            current_files = [f for f in dist_dir.glob('*') if f.is_file() and str(self.version) in f.name]
-            for file in current_files:
-                if file.name.endswith('.AppImage'):
-                    release_notes += f"- {file.name} (Portable Linux AppImage)\n"
-                elif file.name.endswith('.tar.gz'):
-                    release_notes += f"- {file.name} (Source archive)\n"
-                elif file.name.endswith('.pkg.tar.zst'):
-                    release_notes += f"- {file.name} (Arch Linux package)\n"
-                else:
-                    release_notes += f"- {file.name}\n"
+        release_notes = self._create_release_notes(self.version)
         
         # Create the release using gh cli, including only current version files
         self._run_command([
@@ -841,8 +853,60 @@ class ReleaseThread(QThread):
             flags=re.MULTILINE | re.DOTALL
         )
 
+    def _create_release_notes(self, version: str) -> str:
+        """Create release notes for the new version."""
+        try:
+            # Get commits since last tag
+            last_tag = self._get_last_tag()
+            if last_tag:
+                result = subprocess.run(
+                    ['git', 'log', f'{last_tag}..HEAD', '--oneline'],
+                    cwd=self.project_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                commits = result.stdout.strip()
+            else:
+                result = subprocess.run(
+                    ['git', 'log', '--oneline'],
+                    cwd=self.project_dir,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                commits = result.stdout.strip()
+            
+            # Format release notes
+            notes = [
+                f"# Release v{version}",
+                "",
+                "## Changes",
+                commits if commits else "No changes recorded",
+                "",
+                "## Support Development",
+                "If you find this project useful, consider supporting its development:",
+                "",
+                "Varchiver - ETH: `0xaF462Cef9E8913a9Cb7B6f0bA0DDf5d733Eae57a`",
+                "",
+                "Released Project: PLACEHOLDER",
+                "",
+                "## Installation",
+                "Available on the AUR:",
+                "",
+                "```bash",
+                f"yay -S {self.project_dir.name}",
+                "```"
+            ]
+            
+            return "\n".join(notes)
+            
+        except Exception as e:
+            self.output_message(f"Warning: Failed to create release notes: {str(e)}")
+            return f"Release v{version}"
 
-class ReleaseManager(QObject):
+
+class ReleaseManager(QWidget):
     """Manages the release process."""
     
     # Signals
@@ -855,7 +919,184 @@ class ReleaseManager(QObject):
         super().__init__(parent)
         self.project_dir = None
         self.release_thread = None
+        self.init_ui()
+
+    def browse_project_dir(self):
+        """Open dialog to select project directory."""
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select Project Directory",
+            self.project_dir_input.text() or str(Path.home())
+        )
+        if dir_path:
+            self.project_dir_input.setText(dir_path)
+            self.project_dir = Path(dir_path)
+            
+    def cancel_release(self):
+        """Cancel the release process."""
+        if self.release_thread and self.release_thread.isRunning():
+            self.release_thread.terminate()
+            self.release_thread.wait()
+            self.output_display.append("Release process cancelled.")
+
+    def init_ui(self):
+        """Initialize the UI components."""
+        layout = QVBoxLayout()
         
+        # Project directory selection
+        project_dir_layout = QHBoxLayout()
+        self.project_dir_label = QLabel("Project Directory:")
+        self.project_dir_input = QLineEdit()
+        self.project_dir_button = QPushButton("Browse")
+        self.project_dir_button.clicked.connect(self.browse_project_dir)
+        project_dir_layout.addWidget(self.project_dir_label)
+        project_dir_layout.addWidget(self.project_dir_input)
+        project_dir_layout.addWidget(self.project_dir_button)
+        layout.addLayout(project_dir_layout)
+        
+        # Version input
+        version_layout = QHBoxLayout()
+        self.version_label = QLabel("Version:")
+        self.version_input = QLineEdit()
+        version_layout.addWidget(self.version_label)
+        version_layout.addWidget(self.version_input)
+        layout.addLayout(version_layout)
+        
+        # Task selection group
+        task_group = QGroupBox("Release Tasks")
+        task_layout = QVBoxLayout()
+        
+        # Core tasks
+        self.check_changes_cb = QCheckBox("Check for unpushed changes")
+        self.update_version_cb = QCheckBox("Update version numbers")
+        self.build_packages_cb = QCheckBox("Build source package")
+        self.build_appimage_cb = QCheckBox("Build AppImage")
+        self.create_release_cb = QCheckBox("Create GitHub release")
+        self.update_aur_cb = QCheckBox("Update AUR package")
+        
+        # Add tasks to layout
+        task_layout.addWidget(self.check_changes_cb)
+        task_layout.addWidget(self.update_version_cb)
+        task_layout.addWidget(self.build_packages_cb)
+        task_layout.addWidget(self.build_appimage_cb)
+        task_layout.addWidget(self.create_release_cb)
+        task_layout.addWidget(self.update_aur_cb)
+        
+        # Task presets
+        preset_layout = QHBoxLayout()
+        preset_label = QLabel("Task Preset:")
+        self.task_preset = QComboBox()
+        self.task_preset.addItems([
+            "Full Release (All Tasks)",
+            "Full Release (No AUR)",
+            "Build + Release (Source + AppImage)",
+            "Build + Release (Source Only)",
+            "Create Release Only",
+            "Update AUR Only"
+        ])
+        self.task_preset.currentIndexChanged.connect(self.update_task_selection)
+        preset_layout.addWidget(preset_label)
+        preset_layout.addWidget(self.task_preset)
+        task_layout.addLayout(preset_layout)
+        
+        task_group.setLayout(task_layout)
+        layout.addWidget(task_group)
+        
+        # Output display
+        self.output_display = QTextEdit()
+        self.output_display.setReadOnly(True)
+        layout.addWidget(self.output_display)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        self.start_button = QPushButton("Start Release")
+        self.start_button.clicked.connect(self.start_release_process)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.cancel_release)
+        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.cancel_button)
+        layout.addLayout(button_layout)
+        
+        self.setLayout(layout)
+        
+        # Set initial state to "Full Release (All Tasks)"
+        self.task_preset.setCurrentIndex(0)
+        self.update_task_selection(0)
+
+    def update_task_selection(self, index):
+        """Update task checkboxes based on preset selection."""
+        # Clear all checkboxes first
+        self.check_changes_cb.setChecked(False)
+        self.update_version_cb.setChecked(False)
+        self.build_packages_cb.setChecked(False)
+        self.build_appimage_cb.setChecked(False)
+        self.create_release_cb.setChecked(False)
+        self.update_aur_cb.setChecked(False)
+        
+        # Set checkboxes based on preset
+        if index == 0:  # Full Release (All Tasks)
+            self.check_changes_cb.setChecked(True)
+            self.update_version_cb.setChecked(True)
+            self.build_packages_cb.setChecked(True)
+            self.build_appimage_cb.setChecked(True)
+            self.create_release_cb.setChecked(True)
+            self.update_aur_cb.setChecked(True)
+        elif index == 1:  # Full Release (No AUR)
+            self.check_changes_cb.setChecked(True)
+            self.update_version_cb.setChecked(True)
+            self.build_packages_cb.setChecked(True)
+            self.build_appimage_cb.setChecked(True)
+            self.create_release_cb.setChecked(True)
+        elif index == 2:  # Build + Release (Source + AppImage)
+            self.check_changes_cb.setChecked(True)
+            self.build_packages_cb.setChecked(True)
+            self.build_appimage_cb.setChecked(True)
+            self.create_release_cb.setChecked(True)
+        elif index == 3:  # Build + Release (Source Only)
+            self.check_changes_cb.setChecked(True)
+            self.build_packages_cb.setChecked(True)
+            self.create_release_cb.setChecked(True)
+        elif index == 4:  # Create Release Only
+            self.check_changes_cb.setChecked(True)
+            self.create_release_cb.setChecked(True)
+        elif index == 5:  # Update AUR Only
+            self.check_changes_cb.setChecked(True)
+            self.update_aur_cb.setChecked(True)
+            
+    def start_release_process(self):
+        """Start the release process with selected tasks."""
+        if not self.project_dir_input.text():
+            QMessageBox.critical(self, "Error", "Project directory is required")
+            return
+            
+        version = self.version_input.text().strip()
+        if not version:
+            QMessageBox.critical(self, "Error", "Version number is required")
+            return
+            
+        # Collect selected tasks
+        tasks = []
+        if self.check_changes_cb.isChecked():
+            tasks.append("check_changes")
+        if self.update_version_cb.isChecked():
+            tasks.append("update_version")
+        if self.build_packages_cb.isChecked():
+            tasks.append("build_packages")
+        if self.build_appimage_cb.isChecked():
+            tasks.append("build_appimage")
+        if self.create_release_cb.isChecked():
+            tasks.append("create_release")
+        if self.update_aur_cb.isChecked():
+            tasks.append("update_aur")
+            
+        # Start the release process
+        self.start_release(
+            version,
+            tasks,
+            self.output_display,
+            use_aur="update_aur" in tasks
+        )
+
     def start_release(self, version: str, tasks: list, output_widget: QTextEdit,
                      use_aur: bool = False, aur_dir: Optional[Path] = None):
         """Start the release process."""
@@ -866,22 +1107,56 @@ class ReleaseManager(QObject):
         self.release_thread = ReleaseThread(
             self.project_dir,
             version,
-            tasks,
+            tasks,  # Use the tasks list passed from start_release_process
             output_widget,
             use_aur=use_aur,
-            aur_dir=aur_dir
+            aur_dir=aur_dir,
+            build_appimage='build_appimage' in tasks  # Pass AppImage flag based on task selection
         )
         
-        # Connect signals
-        self.release_thread.progress.connect(self.progress)
-        self.release_thread.error.connect(self.error)
-        self.release_thread.finished.connect(self.finished)
-        self.release_thread.dialog_signal.connect(self.dialog_signal)
+        # Connect signals to different slot names to avoid recursion
+        self.release_thread.progress.connect(self._on_release_progress)
+        self.release_thread.error.connect(self._on_release_error)
+        self.release_thread.finished.connect(self._on_release_finished)
+        self.release_thread.dialog_signal.connect(self._on_release_dialog)
         
         # Start thread
         self.release_thread.start()
         
-    def handle_dialog_response(self, response: str):
-        """Handle dialog response from UI."""
-        if self.release_thread:
-            self.release_thread.handle_dialog_response(response)
+    def _on_release_progress(self, message: str):
+        """Handle progress updates from release thread."""
+        if hasattr(self, 'output_display') and self.output_display:
+            self.output_display.append(message)
+            # Scroll to bottom
+            cursor = self.output_display.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            self.output_display.setTextCursor(cursor)
+        
+    def _on_release_error(self, error_msg: str):
+        """Handle errors from release thread."""
+        QMessageBox.critical(self, "Error", error_msg)
+        
+    def _on_release_finished(self, success: bool):
+        """Handle release thread completion."""
+        if success:
+            QMessageBox.information(self, "Success", "Release process completed successfully!")
+        
+    def _on_release_dialog(self, title: str, message: str, options: list):
+        """Handle dialog requests from release thread."""
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(title)
+        dialog.setText(message)
+        dialog.setIcon(QMessageBox.Icon.Question)
+        
+        # Create buttons for each option
+        buttons = {}
+        for option in options:
+            button = dialog.addButton(option, QMessageBox.ButtonRole.ActionRole)
+            buttons[button] = option
+            
+        dialog.exec()
+        clicked = dialog.clickedButton()
+        
+        if clicked in buttons and self.release_thread:
+            self.release_thread.handle_dialog_response(buttons[clicked])
+            

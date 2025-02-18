@@ -29,7 +29,7 @@ class GitConfigHighlighter(QSyntaxHighlighter):
         
         self.comment_format = QTextCharFormat()
         self.comment_format.setForeground(QColor("#95A5A6"))  # Gray
-        
+
     def highlightBlock(self, text):
         """Apply syntax highlighting to the given block of text."""
         # Highlight comments
@@ -336,7 +336,7 @@ class GitConfigManager(QWidget):
         self.settings = QSettings("Varchiver", "GitManager")
         self._is_loading = False  # Flag to prevent save during loading
         self.init_ui()
-        
+
     def init_ui(self):
         """Initialize the UI components."""
         layout = QVBoxLayout(self)
@@ -584,13 +584,13 @@ class GitConfigManager(QWidget):
                 # Remove setting
                 subprocess.run(
                     ["git", "config", "--local", "--unset", key],
-                    cwd=self.repo_path,
+                cwd=self.repo_path,
                     check=False  # Don't error if key doesn't exist
                 )
             else:
                 subprocess.run(
                     ["git", "config", "--local", key, value],
-                    cwd=self.repo_path,
+                cwd=self.repo_path,
                     check=True
                 )
             self.load_config()  # Refresh to show changes
@@ -618,8 +618,8 @@ class GitConfigManager(QWidget):
     def toggle_ignore_group(self, group: str | None):
         """Toggle a group of Git ignore patterns."""
         if self._is_loading:
-            return
-            
+                return
+                
         if group is None:
             # Remove all patterns from group
             patterns = self.IGNORE_PATTERNS.get(group, [])
@@ -714,7 +714,7 @@ class GitConfigManager(QWidget):
                     
                     subprocess.run(
                         ["git", "config", "--local", key, value],
-                        cwd=self.repo_path,
+                cwd=self.repo_path,
                         check=True
                     )
                     
@@ -764,7 +764,7 @@ class GitConfigManager(QWidget):
                 self.eol_lf.setChecked(False)
                 self.eol_crlf.setChecked(False)
                 self.binary_files.setChecked(False)
-                
+            
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to load .gitattributes: {str(e)}")
             

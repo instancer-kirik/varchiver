@@ -65,7 +65,7 @@ class MainWidget(QWidget):
         
         # Initialize UI
         self.setup_ui()
-        
+
     def setup_ui(self):
         """Initialize the UI components."""
         main_layout = QVBoxLayout(self)
@@ -133,18 +133,18 @@ class MainWidget(QWidget):
         
         # Extract buttons
         extract_button_section = QHBoxLayout()
-        
+
         # Queue Extract button
         self.queue_extract_button = QPushButton("Queue Extract")
         self.queue_extract_button.clicked.connect(lambda: self.extract_archive_dialog(queue=True))
         extract_button_section.addWidget(self.queue_extract_button)
-        
+
         # Start Extract button
         self.start_extract_button = QPushButton("Start Extract")
         self.start_extract_button.clicked.connect(self.process_extraction_queue)
         self.start_extract_button.setEnabled(False)
         extract_button_section.addWidget(self.start_extract_button)
-        
+
         extract_button_section.addStretch()
         toolbar.addLayout(extract_button_section)
         
@@ -200,7 +200,7 @@ class MainWidget(QWidget):
         # Options group
         options_group = QGroupBox("Options")
         options_layout = QFormLayout(options_group)
-        
+
         # Compression level slider
         compression_layout = QHBoxLayout()
         
@@ -284,7 +284,7 @@ class MainWidget(QWidget):
         """)
         
         collision_layout.addWidget(self.collision_combo)
-        
+     
         # Add to options layout
         options_layout.addRow("", collision_group)
         
@@ -1176,7 +1176,7 @@ class MainWidget(QWidget):
             
         # Re-enable UI elements
         self.setEnabled(True)
-
+    
     def toggle_theme(self):
         """Toggle between light and dark theme."""
         self.theme_manager.toggle_theme()
