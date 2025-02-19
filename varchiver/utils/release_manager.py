@@ -515,26 +515,46 @@ Type=Application
 Categories=Utility;
 """.format(package_name))
             
-            # Create default icon if it doesn't exist
-            icon_path = appimage_dir / f"{package_name}.png"
-            if not icon_path.exists():
-                self.output_message("Creating default application icon...")
-                # Create a simple colored square as default icon (256x256)
+            # Create icons in multiple sizes
+            icon_sizes = [16, 32, 48, 64, 128, 256]
+            icons_dir = appimage_dir / "usr" / "share" / "icons" / "hicolor"
+            
+            for size in icon_sizes:
+                size_dir = icons_dir / f"{size}x{size}" / "apps"
+                size_dir.mkdir(parents=True, exist_ok=True)
+                icon_path = size_dir / f"{package_name}.png"
+                
                 try:
                     # Create a new image with a blue background
-                    img = Image.new('RGB', (256, 256), color='#2196F3')
+                    img = Image.new('RGB', (size, size), color='#2196F3')
                     draw = ImageDraw.Draw(img)
                     
                     # Draw a darker blue border
-                    draw.rectangle([0, 0, 255, 255], outline='#1976D2', width=8)
+                    border_width = max(1, size // 32)  # Scale border width with icon size
+                    draw.rectangle([0, 0, size-1, size-1], outline='#1976D2', width=border_width)
                     
                     # Save the icon
                     img.save(str(icon_path))
-                    self.output_message("Created default icon at: " + str(icon_path))
-                except ImportError:
-                    self.output_message("Warning: PIL not available, creating empty icon file")
-                    # Create an empty file as fallback
-                    icon_path.touch()
+                    self.output_message(f"Created {size}x{size} icon at: {icon_path}")
+                except Exception as e:
+                    self.output_message(f"Warning: Failed to create {size}x{size} icon: {e}")
+            
+            # Create symlink for the main icon
+            main_icon = appimage_dir / f"{package_name}.png"
+            if not main_icon.exists():
+                largest_icon = icons_dir / "256x256" / "apps" / f"{package_name}.png"
+                if largest_icon.exists():
+                    try:
+                        main_icon.symlink_to(largest_icon)
+                        self.output_message(f"Created symlink for main icon at: {main_icon}")
+                    except Exception as e:
+                        self.output_message(f"Warning: Failed to create icon symlink: {e}")
+                        # If symlink fails, copy the file instead
+                        try:
+                            shutil.copy2(largest_icon, main_icon)
+                            self.output_message(f"Copied main icon to: {main_icon}")
+                        except Exception as e:
+                            self.output_message(f"Warning: Failed to copy icon: {e}")
             
             # Create AppRun
             apprun = appimage_dir / 'AppRun'
