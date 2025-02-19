@@ -529,27 +529,46 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
 """.format(package_name))
             apprun.chmod(0o755)
             
-            # Download AppImage tools if needed
+            # Download and set up AppImage tools
             tools_dir = self.project_dir / 'build' / 'tools'
             tools_dir.mkdir(exist_ok=True)
             
-            if not (tools_dir / 'appimagetool').exists():
+            appimagetool = tools_dir / 'appimagetool'
+            if not appimagetool.exists():
                 self.output_message("Downloading appimagetool...")
                 url = "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
                 response = requests.get(url)
-                appimagetool = tools_dir / 'appimagetool'
                 appimagetool.write_bytes(response.content)
                 appimagetool.chmod(0o755)
+                
+                # Initialize the AppImage tool
+                try:
+                    subprocess.run([str(appimagetool), '--appimage-extract-and-run', '--version'], check=True)
+                except subprocess.CalledProcessError:
+                    # If direct execution fails, try extracting
+                    self.output_message("Initializing appimagetool...")
+                    subprocess.run([str(appimagetool), '--appimage-extract'], cwd=tools_dir, check=True)
+                    # Use the extracted version
+                    appimagetool = tools_dir / 'squashfs-root' / 'AppRun'
             
             # Build AppImage
             version = self._get_version()
             output_file = self.project_dir / 'dist' / f"{package_name}-{version}-x86_64.AppImage"
             
-            subprocess.run([
-                str(tools_dir / 'appimagetool'),
-                str(appimage_dir),
-                str(output_file)
-            ], check=True)
+            # Ensure python3 is in the AppDir
+            python_dir = appimage_dir / 'usr' / 'bin'
+            if not (python_dir / 'python3').exists():
+                os.symlink('/usr/bin/python3', python_dir / 'python3')
+            
+            self.output_message("Building AppImage...")
+            result = subprocess.run(
+                [str(appimagetool), '--appimage-extract-and-run', str(appimage_dir), str(output_file)],
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode != 0:
+                raise Exception(f"AppImage build failed: {result.stderr}")
             
             self.output_message(f"AppImage created: {output_file}")
             
@@ -934,6 +953,38 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         except Exception as e:
             self.output_message(f"Warning: Failed to create release notes: {str(e)}")
             return f"Release v{version}"
+
+    def _update_pkgbuild(self, version: str, sha256: str):
+        """Update PKGBUILD with new version and SHA256."""
+        try:
+            pkgbuild_path = self.project_dir / "PKGBUILD"
+            if not pkgbuild_path.exists():
+                raise Exception("PKGBUILD not found")
+                
+            content = pkgbuild_path.read_text()
+            
+            # Update version
+            content = re.sub(
+                r'^pkgver=.*$',
+                f'pkgver={version}',
+                content,
+                flags=re.MULTILINE
+            )
+            
+            # Update SHA256
+            content = re.sub(
+                r'sha256sums=\([^)]*\)',
+                f'sha256sums=("{sha256}")',
+                content,
+                flags=re.MULTILINE | re.DOTALL
+            )
+            
+            # Write updated content
+            pkgbuild_path.write_text(content)
+            self.output_message(f"Updated PKGBUILD with version {version} and SHA256")
+            
+        except Exception as e:
+            raise Exception(f"Failed to update PKGBUILD: {str(e)}")
 
 
 class ReleaseManager(QWidget):
