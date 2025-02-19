@@ -561,10 +561,15 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
                 os.symlink('/usr/bin/python3', python_dir / 'python3')
             
             self.output_message("Building AppImage...")
+            # Set up environment with ARCH variable
+            env = os.environ.copy()
+            env['ARCH'] = 'x86_64'  # Set architecture explicitly
+            
             result = subprocess.run(
                 [str(appimagetool), '--appimage-extract-and-run', str(appimage_dir), str(output_file)],
                 capture_output=True,
-                text=True
+                text=True,
+                env=env  # Pass the environment with ARCH set
             )
             
             if result.returncode != 0:

@@ -99,6 +99,14 @@ class GitWidget(QWidget):
         browse_repo_btn.clicked.connect(self.select_git_repo)
         repo_path_layout.addWidget(browse_repo_btn)
         
+        # Add quick access button for varchiver
+        varchiver_btn = QPushButton("varchiver/")
+        varchiver_btn.setToolTip("Quick access to varchiver project")
+        varchiver_btn.clicked.connect(self.select_varchiver_project)
+        repo_path_layout.addWidget(varchiver_btn)
+        
+        repo_layout.addRow("Local Path:", repo_path_layout)
+        
         # Commit message input
         commit_layout = QHBoxLayout()
         self.commit_message = QLineEdit()
@@ -107,7 +115,7 @@ class GitWidget(QWidget):
         commit_btn.clicked.connect(self.commit_changes)
         commit_layout.addWidget(self.commit_message)
         commit_layout.addWidget(commit_btn)
-        repo_layout.addRow("Local Path:", repo_path_layout)
+        repo_layout.addRow("Branch:", commit_layout)
         
         # Git URL and remote controls
         url_layout = QHBoxLayout()
@@ -1322,3 +1330,45 @@ class GitWidget(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to commit changes: {e.stderr}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error during commit: {str(e)}") 
+
+    def select_varchiver_project(self):
+        """Quick access to select the varchiver project."""
+        # Common locations to check for varchiver
+        possible_paths = [
+            Path.home() / "Code" / "varchiver",
+            Path.home() / "Projects" / "varchiver",
+            Path.home() / "git" / "varchiver",
+            Path("/opt/varchiver"),
+        ]
+        
+        for path in possible_paths:
+            if path.exists() and (path / '.git').exists():
+                self.git_repo_path.setText(str(path))
+                # Set default storage path based on repository
+                default_storage = path.parent / ".varchiver" / "git_archives"
+                self.git_storage_path.setText(str(default_storage))
+                
+                # Update repository info and status
+                self._infer_repository_info(path)
+                self.update_repo_status()
+                
+                # Update release manager
+                if hasattr(self, 'release_manager_widget'):
+                    self.release_manager_widget.project_dir_input.setText(str(path))
+                    self.release_manager_widget.project_dir = path
+                    # Set task preset to "Full Release (All Tasks)"
+                    self.release_manager_widget.task_preset.setCurrentIndex(0)
+                    self.release_manager_widget.update_task_selection(0)
+                    
+                    # Try to infer version for release manager
+                    version = self._infer_version(path)
+                    if version and hasattr(self.release_manager_widget, 'version_input'):
+                        self.release_manager_widget.version_input.setText(version)
+                return
+                
+        # If not found, show error
+        QMessageBox.warning(
+            self,
+            "Project Not Found",
+            "Could not find varchiver project in common locations.\nPlease use Browse to locate it manually."
+        ) 
