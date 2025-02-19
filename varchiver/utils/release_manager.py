@@ -14,6 +14,7 @@ from typing import List, Optional
 from .project_constants import PROJECT_CONFIGS
 import shutil
 import requests
+from PIL import Image, ImageDraw
 
 print("Imports completed in release_manager module")
 
@@ -514,10 +515,26 @@ Type=Application
 Categories=Utility;
 """.format(package_name))
             
-            # Copy icon if exists
-            icon_path = self.project_dir / 'resources' / f"{package_name}.png"
-            if icon_path.exists():
-                shutil.copy2(icon_path, appimage_dir / f"{package_name}.png")
+            # Create default icon if it doesn't exist
+            icon_path = appimage_dir / f"{package_name}.png"
+            if not icon_path.exists():
+                self.output_message("Creating default application icon...")
+                # Create a simple colored square as default icon (256x256)
+                try:
+                    # Create a new image with a blue background
+                    img = Image.new('RGB', (256, 256), color='#2196F3')
+                    draw = ImageDraw.Draw(img)
+                    
+                    # Draw a darker blue border
+                    draw.rectangle([0, 0, 255, 255], outline='#1976D2', width=8)
+                    
+                    # Save the icon
+                    img.save(str(icon_path))
+                    self.output_message("Created default icon at: " + str(icon_path))
+                except ImportError:
+                    self.output_message("Warning: PIL not available, creating empty icon file")
+                    # Create an empty file as fallback
+                    icon_path.touch()
             
             # Create AppRun
             apprun = appimage_dir / 'AppRun'
