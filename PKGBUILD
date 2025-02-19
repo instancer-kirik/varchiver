@@ -28,7 +28,7 @@ optdepends=(
     'python-rarfile: for RAR archive support'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("3aabb9fc0775f01625a5df0d45397dc7b8f8296962bde1aed3f546a3929a20c6")  # Will be updated by release manager
+sha256sums=("982c07dc744fec9d5f8b2436457014c72ef979e7377e25235cbfff2e2efebd85")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
