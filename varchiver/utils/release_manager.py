@@ -438,6 +438,36 @@ class ReleaseThread(QThread):
             self.output_message(f"Error during build: {str(e)}")
             return False
 
+    def _get_version(self) -> str:
+        """Get version from PKGBUILD or other version files."""
+        try:
+            # First try PKGBUILD
+            pkgbuild = self.project_dir / "PKGBUILD"
+            if pkgbuild.exists():
+                content = pkgbuild.read_text()
+                match = re.search(r'pkgver=([0-9][0-9a-z.-]*)', content)
+                if match:
+                    return match.group(1)
+            
+            # Try other common version files
+            version_files = [
+                (self.project_dir / "pyproject.toml", r'version\s*=\s*["\']([^"\']+)["\']'),
+                (self.project_dir / "package.json", r'"version":\s*"([^"]+)"'),
+                (self.project_dir / "Cargo.toml", r'version\s*=\s*"([^"]+)"')
+            ]
+            
+            for file_path, pattern in version_files:
+                if file_path.exists():
+                    content = file_path.read_text()
+                    match = re.search(pattern, content)
+                    if match:
+                        return match.group(1)
+            
+            raise Exception("Could not determine version from any source files")
+            
+        except Exception as e:
+            raise Exception(f"Error getting version: {str(e)}")
+
     def _build_appimage(self):
         """Build AppImage package."""
         try:
@@ -461,28 +491,28 @@ class ReleaseThread(QThread):
             
             # Create entry point script
             entry_point = appimage_dir / 'usr' / 'bin' / package_name
-            entry_point.write_text(f"""#!/usr/bin/env python3
+            entry_point.write_text("""#!/usr/bin/env python3
 import sys
 import os
 
 # Add application to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'lib/python3/site-packages'))
 
-from {package_name}.main import main
+from {0}.main import main
 if __name__ == '__main__':
     sys.exit(main())
-""")
+""".format(package_name))
             entry_point.chmod(0o755)
             
             # Create desktop file
             desktop_file = appimage_dir / f"{package_name}.desktop"
-            desktop_file.write_text(f"""[Desktop Entry]
-Name={package_name}
-Exec={package_name}
-Icon={package_name}
+            desktop_file.write_text("""[Desktop Entry]
+Name={0}
+Exec={0}
+Icon={0}
 Type=Application
 Categories=Utility;
-""")
+""".format(package_name))
             
             # Copy icon if exists
             icon_path = self.project_dir / 'resources' / f"{package_name}.png"
@@ -495,7 +525,7 @@ Categories=Utility;
 HERE="$(dirname "$(readlink -f "${0}")")"
 export PYTHONPATH="$HERE/usr/lib/python3/site-packages:$PYTHONPATH"
 export PATH="$HERE/usr/bin:$PATH"
-exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{}" "$@"
+exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
 """.format(package_name))
             apprun.chmod(0o755)
             
