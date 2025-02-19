@@ -15,6 +15,7 @@ from .project_constants import PROJECT_CONFIGS
 import shutil
 import requests
 from PIL import Image, ImageDraw
+import signal
 
 print("Imports completed in release_manager module")
 
@@ -36,6 +37,11 @@ class ReleaseThread(QThread):
         self.use_aur = use_aur
         self.aur_dir = aur_dir
         self.build_appimage = build_appimage
+        self.should_stop = False
+        
+        # Set up signal handling
+        signal.signal(signal.SIGINT, self._handle_interrupt)
+        signal.signal(signal.SIGTERM, self._handle_interrupt)
         
         # Dialog control
         self.wait_for_dialog = False
@@ -103,11 +109,22 @@ class ReleaseThread(QThread):
         self.dialog_response = response
         self.wait_for_dialog = False
 
+    def _handle_interrupt(self, signum, frame):
+        """Handle interrupt signals gracefully."""
+        self.output_message("\nReceived interrupt signal. Cleaning up...")
+        self.should_stop = True
+        self.finished.emit(False)
+
     def run(self):
         """Main release process with improved error handling"""
         try:
             self.output_message(f"Starting release process for version {self.version}")
             
+            # Check for interruption
+            if self.should_stop:
+                self.output_message("Release process cancelled.")
+                return
+                
             # Always check for unpushed commits first if check_changes is in tasks
             if "check_changes" in self.tasks:
                 if not self._handle_git_status():
@@ -119,21 +136,37 @@ class ReleaseThread(QThread):
                     self._update_version_files()
                     self._commit_version_changes(self.version)
                 
+                if self.should_stop:
+                    self.output_message("Release process cancelled.")
+                    return
+                    
                 # Build source package first (required for both GitHub release and AUR)
                 if 'build_packages' in self.tasks:
                     self.output_message("\nBuilding source package...")
-                self._build_packages()
+                    self._build_packages()
                 
+                if self.should_stop:
+                    self.output_message("Release process cancelled.")
+                    return
+                    
                 # Build AppImage if requested
                 if 'build_appimage' in self.tasks:
                     self.output_message("\nBuilding AppImage...")
                     self._build_appimage()
                 
+                if self.should_stop:
+                    self.output_message("Release process cancelled.")
+                    return
+                    
                 # Create GitHub release if requested
                 if 'create_release' in self.tasks:
                     self.output_message("\nCreating GitHub release...")
                     self._check_github_authentication()
                     self._create_github_release()
+                    
+                if self.should_stop:
+                    self.output_message("Release process cancelled.")
+                    return
                     
                 # Update AUR if requested (needs source package)
                 if 'update_aur' in self.tasks and self.use_aur and self.aur_dir:
@@ -363,27 +396,50 @@ class ReleaseThread(QThread):
             return False
 
     def _update_version_files(self):
+        """Update version in files."""
         self.progress.emit("Updating version in files...")
         
-        for file_pattern in self.version_files:
-            file_pattern = file_pattern.strip()
-            if not file_pattern:
-                continue
-                
-            # Handle absolute and relative paths correctly
-            if Path(file_pattern).is_absolute():
-                glob_pattern = file_pattern
-            else:
-                glob_pattern = str(self.project_dir / file_pattern)
-                
-            for file_path in Path(self.project_dir).glob(file_pattern):
-                for pattern in self.version_patterns:
-                    pattern = pattern.strip()
-                    if not pattern:
-                        continue
-                    if "*" in pattern:
-                        regex_pattern = pattern.replace("*", r"[^\"']*")
-                        self._update_file_version(file_path, regex_pattern, pattern.replace("*", self.version))
+        try:
+            # Update PKGBUILD
+            pkgbuild = self.project_dir / "PKGBUILD"
+            if pkgbuild.exists():
+                content = pkgbuild.read_text()
+                content = re.sub(
+                    r'^pkgver=.*$',
+                    f'pkgver={self.version}',
+                    content,
+                    flags=re.MULTILINE
+                )
+                pkgbuild.write_text(content)
+                self.output_message(f"Updated version in PKGBUILD to {self.version}")
+
+            # Update pyproject.toml if it exists
+            pyproject = self.project_dir / "pyproject.toml"
+            if pyproject.exists():
+                content = pyproject.read_text()
+                content = re.sub(
+                    r'version\s*=\s*"[^"]*"',
+                    f'version = "{self.version}"',
+                    content
+                )
+                pyproject.write_text(content)
+                self.output_message(f"Updated version in pyproject.toml to {self.version}")
+
+            # Update project_constants.py
+            constants = self.project_dir / "varchiver" / "utils" / "project_constants.py"
+            if constants.exists():
+                content = constants.read_text()
+                content = re.sub(
+                    r"'version':\s*'[^']*'",
+                    f"'version': '{self.version}'",
+                    content
+                )
+                constants.write_text(content)
+                self.output_message(f"Updated version in project_constants.py to {self.version}")
+
+        except Exception as e:
+            self.output_message(f"Error updating version files: {str(e)}")
+            raise
 
     def _build_packages(self) -> bool:
         """Build distribution packages."""
@@ -1027,6 +1083,23 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
             
         except Exception as e:
             raise Exception(f"Failed to update PKGBUILD: {str(e)}")
+
+    def _get_last_tag(self) -> str:
+        """Get the last tag from git history."""
+        try:
+            result = subprocess.run(
+                ['git', 'describe', '--tags', '--abbrev=0'],
+                cwd=self.project_dir,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+            return None
+        except Exception as e:
+            self.output_message(f"Warning: Failed to get last tag: {str(e)}")
+            return None
 
 
 class ReleaseManager(QWidget):
