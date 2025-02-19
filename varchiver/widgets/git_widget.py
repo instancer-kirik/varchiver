@@ -63,6 +63,16 @@ class GitWidget(QWidget):
         """Initialize the Git UI components."""
         layout = QVBoxLayout(self)
         
+        # Add compact view toggle button in the top-right
+        compact_layout = QHBoxLayout()
+        compact_layout.addStretch()
+        self.compact_btn = QPushButton("Compact")
+        self.compact_btn.setCheckable(True)
+        self.compact_btn.clicked.connect(self.toggle_compact_view)
+        self.compact_btn.setFixedWidth(70)
+        compact_layout.addWidget(self.compact_btn)
+        layout.addLayout(compact_layout)
+        
         # Repository path group with status indicator
         repo_group = QGroupBox("Repository Settings")
         repo_layout = QFormLayout()
@@ -89,6 +99,14 @@ class GitWidget(QWidget):
         browse_repo_btn.clicked.connect(self.select_git_repo)
         repo_path_layout.addWidget(browse_repo_btn)
         
+        # Commit message input
+        commit_layout = QHBoxLayout()
+        self.commit_message = QLineEdit()
+        self.commit_message.setPlaceholderText("Enter commit message...")
+        commit_btn = QPushButton("Commit")
+        commit_btn.clicked.connect(self.commit_changes)
+        commit_layout.addWidget(self.commit_message)
+        commit_layout.addWidget(commit_btn)
         repo_layout.addRow("Local Path:", repo_path_layout)
         
         # Git URL and remote controls
@@ -1236,3 +1254,71 @@ class GitWidget(QWidget):
         """Update release manager's project directory when git repo changes."""
         if hasattr(self, 'release_manager_widget'):
             self.release_manager_widget.project_dir = Path(self.git_repo_path.text()) if self.git_repo_path.text() else None 
+
+    def toggle_compact_view(self, checked: bool):
+        """Toggle between compact and normal view."""
+        layout = self.layout()
+        if checked:
+            layout.setSpacing(2)
+            layout.setContentsMargins(2, 2, 2, 2)
+        else:
+            layout.setSpacing(6)
+            layout.setContentsMargins(6, 6, 6, 6)
+        self.adjustSize()
+
+    def commit_changes(self):
+        """Commit changes with the entered message."""
+        if not self.git_repo_path.text():
+            QMessageBox.warning(self, "Error", "Please select a Git repository first")
+            return
+            
+        message = self.commit_message.text().strip()
+        if not message:
+            QMessageBox.warning(self, "Error", "Please enter a commit message")
+            return
+            
+        try:
+            # Check if there are changes to commit
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=self.git_repo_path.text(),
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            if not result.stdout.strip():
+                QMessageBox.information(self, "Info", "No changes to commit")
+                return
+                
+            # Show changes to be committed
+            changes = result.stdout.strip()
+            reply = QMessageBox.question(
+                self,
+                "Confirm Commit",
+                f"The following changes will be committed:\n\n{changes}\n\nProceed?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Add all changes and commit
+                subprocess.run(
+                    ["git", "add", "-A"],
+                    cwd=self.git_repo_path.text(),
+                    check=True
+                )
+                
+                subprocess.run(
+                    ["git", "commit", "-m", message],
+                    cwd=self.git_repo_path.text(),
+                    check=True
+                )
+                
+                QMessageBox.information(self, "Success", "Changes committed successfully")
+                self.commit_message.clear()
+                self.update_repo_status()
+                
+        except subprocess.CalledProcessError as e:
+            QMessageBox.critical(self, "Error", f"Failed to commit changes: {e.stderr}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error during commit: {str(e)}") 

@@ -942,6 +942,17 @@ class ReleaseManager(QWidget):
     def init_ui(self):
         """Initialize the UI components."""
         layout = QVBoxLayout()
+        layout.setSpacing(10)  # Default spacing
+        
+        # Add compact view toggle button in the top-right
+        compact_layout = QHBoxLayout()
+        compact_layout.addStretch()
+        self.compact_btn = QPushButton("Compact View")
+        self.compact_btn.setCheckable(True)
+        self.compact_btn.clicked.connect(self.toggle_compact_view)
+        self.compact_btn.setFixedWidth(100)
+        compact_layout.addWidget(self.compact_btn)
+        layout.addLayout(compact_layout)
         
         # Project directory selection
         project_dir_layout = QHBoxLayout()
@@ -965,6 +976,7 @@ class ReleaseManager(QWidget):
         # Task selection group
         task_group = QGroupBox("Release Tasks")
         task_layout = QVBoxLayout()
+        task_layout.setSpacing(6)  # Tighter spacing for checkboxes
         
         # Core tasks
         self.check_changes_cb = QCheckBox("Check for unpushed changes")
@@ -1022,6 +1034,41 @@ class ReleaseManager(QWidget):
         # Set initial state to "Full Release (All Tasks)"
         self.task_preset.setCurrentIndex(0)
         self.update_task_selection(0)
+        
+    def toggle_compact_view(self, checked: bool):
+        """Toggle between compact and normal view."""
+        layout = self.layout()
+        if checked:
+            # Compact view
+            layout.setSpacing(4)
+            layout.setContentsMargins(4, 4, 4, 4)
+            for i in range(layout.count()):
+                item = layout.itemAt(i)
+                if isinstance(item, QHBoxLayout):
+                    item.setSpacing(4)
+                elif isinstance(item, QVBoxLayout):
+                    item.setSpacing(4)
+                widget = item.widget()
+                if isinstance(widget, QGroupBox):
+                    widget.layout().setSpacing(2)
+                    widget.layout().setContentsMargins(4, 4, 4, 4)
+        else:
+            # Normal view
+            layout.setSpacing(10)
+            layout.setContentsMargins(11, 11, 11, 11)
+            for i in range(layout.count()):
+                item = layout.itemAt(i)
+                if isinstance(item, QHBoxLayout):
+                    item.setSpacing(10)
+                elif isinstance(item, QVBoxLayout):
+                    item.setSpacing(10)
+                widget = item.widget()
+                if isinstance(widget, QGroupBox):
+                    widget.layout().setSpacing(6)
+                    widget.layout().setContentsMargins(11, 11, 11, 11)
+        
+        # Update window size
+        self.adjustSize()
 
     def update_task_selection(self, index):
         """Update task checkboxes based on preset selection."""

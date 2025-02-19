@@ -1305,6 +1305,15 @@ class MainWidget(QWidget):
     def show_git_ui(self):
         """Show Git-related UI elements"""
         self.git_widget.setVisible(True)
+        # Set a reasonable maximum height (e.g., 60% of screen height)
+        screen = QApplication.primaryScreen().geometry()
+        max_height = int(screen.height() * 0.6)  # Reduced from 80% to 60%
+        self.git_widget.setMaximumHeight(max_height)
+        # Set a reasonable default height
+        default_height = int(screen.height() * 0.4)  # Start at 40% screen height
+        self.resize(self.width(), default_height)
+        # Adjust window size to fit content within constraints
+        self.adjustSize()
         
     def hide_git_ui(self):
         """Hide Git-related UI elements"""
