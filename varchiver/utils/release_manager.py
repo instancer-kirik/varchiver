@@ -466,14 +466,6 @@ class ReleaseThread(QThread):
                 ['git', 'config', 'core.eol', 'lf'],
                 cwd=self.project_dir
             )
-            self._run_command(
-                ['git', 'add', '.'],
-                cwd=self.project_dir
-            )
-            self._run_command(
-                ['git', 'commit', '--allow-empty', '-m', 'Normalize line endings'],
-                cwd=self.project_dir
-            )
             
             # Create archive with normalized attributes
             self._run_command(
@@ -485,28 +477,59 @@ class ReleaseThread(QThread):
                 cwd=self.project_dir
             )
             
-            # Calculate SHA256 of the local file
-            result = subprocess.run(
-                ['sha256sum', str(archive_path)],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            local_sha256 = result.stdout.split()[0]
+            # Wait for GitHub release to be available and get its SHA256
+            self.output_message("Waiting for GitHub release to be available...")
+            max_retries = 10
+            github_sha256 = None
+            
+            for attempt in range(max_retries):
+                try:
+                    time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
+                    release_url = f"{self.url}/archive/v{version}.tar.gz"
+                    
+                    # Download and calculate SHA256 in one go
+                    sha256_result = self._run_command([
+                        "bash", "-c",
+                        f"curl -L {release_url} | sha256sum"
+                    ], timeout=60)
+                    github_sha256 = sha256_result.stdout.split()[0]
+                    
+                    if not re.match(r'^[a-f0-9]{64}$', github_sha256):
+                        raise Exception(f"Invalid SHA256 sum calculated: {github_sha256}")
+                    
+                    # Verify the SHA256
+                    verify_result = self._run_command([
+                        "bash", "-c",
+                        f"curl -L {release_url} | sha256sum -c --status <(echo {github_sha256}  -)"
+                    ], check=False)
+                    
+                    if verify_result.returncode == 0:
+                        self.output_message(f"GitHub release SHA256 verified: {github_sha256}")
+                        break
+                    else:
+                        raise Exception("SHA256 verification failed")
+                        
+                except Exception as e:
+                    self.output_message(f"Attempt {attempt + 1} failed: {e}")
+                    if attempt == max_retries - 1:
+                        raise Exception("Failed to get GitHub release SHA256 after multiple attempts")
+            
+            if not github_sha256:
+                raise Exception("Failed to get GitHub release SHA256")
+            
+            # Update PKGBUILD with the GitHub SHA256
+            self._update_pkgbuild(version, github_sha256)
             
             # Copy archive to current directory for makepkg
             shutil.copy2(archive_path, archive_file)
-            
-            # Update PKGBUILD with the SHA256
-            self._update_pkgbuild(version, local_sha256)
             
             # Run makepkg to build the package
             self.output_message("Starting makepkg process...")
             subprocess.run(['makepkg', '-f', '--skipchecksums'], check=True)
             
-            # Store the local archive and hash for later GitHub release
+            # Store the local archive and hash for later use
             self.local_archive = archive_path
-            self.local_sha256 = local_sha256
+            self.local_sha256 = github_sha256
             
             return True
             
@@ -795,27 +818,40 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
             self.progress.emit("Pushing git tag...")
             self._run_command(['git', 'push', 'origin', tag])
         except Exception as e:
-            if 'already exists' not in str(e):
-                raise
+            self.output_message(f"Warning: Failed to create/push tag: {e}")
+            
+        # Create release notes
+        release_notes = self._create_release_notes(self.version)
+        notes_file = self.project_dir / "release_notes.md"
+        notes_file.write_text(release_notes)
         
         # Create GitHub release
-        self.progress.emit("Creating GitHub release...")
-        release_notes = self._create_release_notes(self.version)
+        self.output_message("Creating GitHub release...")
+        release_cmd = [
+            "gh", "release", "create", tag,
+            "--title", f"Release {tag}",
+            "--notes-file", str(notes_file),
+            str(archive_path)  # Add source archive
+        ]
         
-        # Create the release using gh cli, including only current version files
-        self._run_command([
-            'gh', 'release', 'create', tag,
-            '--title', f'Release {tag}',
-            '--notes', release_notes,
-            str(archive_path)  # Only include the current version source archive
-        ], timeout=300)  # 5 minutes timeout
+        # Add AppImage if it exists
+        appimage_path = dist_dir / f"{self.project_dir.name}-{self.version}-x86_64.AppImage"
+        if appimage_path.exists():
+            self.output_message("Adding AppImage to release...")
+            release_cmd.append(str(appimage_path))
         
-        # Verify release and wait for it to be available
+        self._run_command(release_cmd)
+        
+        # Clean up notes file
+        notes_file.unlink()
+        
+        # Wait for release to be available
+        self.output_message("Waiting for release to be available...")
         if not self._verify_release_assets(self.version):
-            raise Exception("Failed to verify release assets after creation")
+            raise Exception("Failed to verify release assets")
             
-        # Calculate SHA256 from GitHub release to verify it matches
-        self.output_message("Verifying GitHub release SHA256...")
+        # Calculate and verify SHA256 of the GitHub release
+        self.output_message("Calculating SHA256 of GitHub release...")
         max_retries = 5
         sha256 = None
         
