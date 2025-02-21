@@ -457,13 +457,32 @@ class ReleaseThread(QThread):
             self.output_message("\nBuilding source distribution...")
             archive_path = dist_dir / archive_file
             
-            # Create source archive using git archive
-            subprocess.run(
+            # Create source archive using git archive with normalized attributes
+            self._run_command(
+                ['git', 'config', 'core.autocrlf', 'false'],
+                cwd=self.project_dir
+            )
+            self._run_command(
+                ['git', 'config', 'core.eol', 'lf'],
+                cwd=self.project_dir
+            )
+            self._run_command(
+                ['git', 'add', '.'],
+                cwd=self.project_dir
+            )
+            self._run_command(
+                ['git', 'commit', '--allow-empty', '-m', 'Normalize line endings'],
+                cwd=self.project_dir
+            )
+            
+            # Create archive with normalized attributes
+            self._run_command(
                 ['git', 'archive', '--format=tar.gz',
-                 f'--prefix={archive_name}/', '-o',
-                 str(archive_path), 'HEAD'],
-                cwd=self.project_dir,
-                check=True
+                 '--prefix', f'{archive_name}/',
+                 '-o', str(archive_path),
+                 '--worktree-attributes',
+                 'HEAD'],
+                cwd=self.project_dir
             )
             
             # Calculate SHA256 of the local file
@@ -492,7 +511,7 @@ class ReleaseThread(QThread):
             return True
             
         except Exception as e:
-            self.output_message(f"Error during build: {str(e)}")
+            self.output_message(f"Failed to build packages: {str(e)}")
             return False
 
     def _get_version(self) -> str:

@@ -1,8 +1,6 @@
 # Git export-ignore patterns
 
 # Build artifacts
-*.tar.gz export-ignore
-*.pkg.tar.zst export-ignore
 dist/ export-ignore
 build/ export-ignore
 
@@ -26,3 +24,18 @@ node_modules/ export-ignore
 .env.* export-ignore
 *.key export-ignore
 *.pem export-ignore
+
+# Ensure consistent line endings
+* text=auto eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+PKGBUILD text eol=lf
+.SRCINFO text eol=lf
+
+# Don't ignore package files
+*.tar.gz -export-ignore
+*.pkg.tar.zst -export-ignore
