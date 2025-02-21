@@ -7,7 +7,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
     QLineEdit, QMessageBox, QFileDialog, QGroupBox, QTabWidget,
     QTextEdit, QFormLayout, QComboBox, QListWidget, QProgressBar,
-    QDialog, QDialogButtonBox
+    QDialog, QDialogButtonBox, QScrollArea, QTreeWidget, QTreeWidgetItem,
+    QCheckBox
 )
 from PyQt6.QtCore import pyqtSignal, QSettings, QDir, Qt
 from PyQt6.QtGui import QMovie, QTextCursor
@@ -51,17 +52,21 @@ class GitWidget(QWidget):
         self.git_branch.setPlaceholderText("main")
         self.git_error_text = QLabel()
         self.git_status_label = QLabel()
+        self.repo_info = QLabel()  # Add repository info label
+        self.repo_info.setWordWrap(True)
         self.git_manager = GitManager()
         
         # Initialize managers
         self.git_config_manager = None
         self.release_manager = None
+        self.sequester_widget = None  # Add sequester widget initialization
         
         self.init_ui()
         
     def init_ui(self):
         """Initialize the Git UI components."""
         layout = QVBoxLayout(self)
+        layout.setSpacing(4)  # Reduce default spacing
         
         # Add compact view toggle button in the top-right
         compact_layout = QHBoxLayout()
@@ -73,9 +78,15 @@ class GitWidget(QWidget):
         compact_layout.addWidget(self.compact_btn)
         layout.addLayout(compact_layout)
         
-        # Repository path group with status indicator
+        # Left side: Repository settings and info
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setSpacing(4)
+        
+        # Repository settings group
         repo_group = QGroupBox("Repository Settings")
         repo_layout = QFormLayout()
+        repo_layout.setSpacing(4)
         
         # Repository path with status indicator
         repo_path_layout = QHBoxLayout()
@@ -107,7 +118,37 @@ class GitWidget(QWidget):
         
         repo_layout.addRow("Local Path:", repo_path_layout)
         
-        # Commit message input
+        # Git URL input
+        git_url_layout = QHBoxLayout()
+        git_url_layout.addWidget(self.git_url)
+        repo_layout.addRow("Git URL:", git_url_layout)
+        
+        # Git storage path
+        storage_layout = QHBoxLayout()
+        storage_layout.addWidget(self.git_storage_path)
+        storage_browse_btn = QPushButton("Browse")
+        storage_browse_btn.clicked.connect(self.select_git_storage)
+        storage_layout.addWidget(storage_browse_btn)
+        repo_layout.addRow("Storage Path:", storage_layout)
+        
+        # AUR URL and path
+        aur_url_layout = QHBoxLayout()
+        aur_url_layout.addWidget(self.aur_url)
+        repo_layout.addRow("AUR URL:", aur_url_layout)
+        
+        aur_path_layout = QHBoxLayout()
+        aur_path_layout.addWidget(self.aur_path)
+        aur_browse_btn = QPushButton("Browse")
+        aur_browse_btn.clicked.connect(self.browse_aur_dir)
+        aur_path_layout.addWidget(aur_browse_btn)
+        repo_layout.addRow("AUR Path:", aur_path_layout)
+        
+        # Git branch
+        branch_layout = QHBoxLayout()
+        branch_layout.addWidget(self.git_branch)
+        repo_layout.addRow("Branch:", branch_layout)
+        
+        # Commit message input with reduced height
         commit_layout = QHBoxLayout()
         self.commit_message = QLineEdit()
         self.commit_message.setPlaceholderText("Enter commit message...")
@@ -115,127 +156,50 @@ class GitWidget(QWidget):
         commit_btn.clicked.connect(self.commit_changes)
         commit_layout.addWidget(self.commit_message)
         commit_layout.addWidget(commit_btn)
-        repo_layout.addRow("Branch:", commit_layout)
-        
-        # Git URL and remote controls
-        url_layout = QHBoxLayout()
-        url_layout.addWidget(self.git_url)
-        
-        remote_btn_layout = QHBoxLayout()
-        init_repo_btn = QPushButton("Initialize Git")
-        init_repo_btn.clicked.connect(self.init_git_repo)
-        remote_btn_layout.addWidget(init_repo_btn)
-        
-        add_remote_btn = QPushButton("Add/Update Remote")
-        add_remote_btn.clicked.connect(self.add_git_remote)
-        remote_btn_layout.addWidget(add_remote_btn)
-        
-        url_layout.addLayout(remote_btn_layout)
-        repo_layout.addRow("Git URL:", url_layout)
-        
-        # AUR URL and controls
-        aur_layout = QHBoxLayout()
-        aur_layout.addWidget(self.aur_url)
-        
-        # Add buttons for AUR URL
-        aur_url_btn = QPushButton("Generate URL")
-        aur_url_btn.clicked.connect(self.generate_aur_url)
-        aur_layout.addWidget(aur_url_btn)
-        
-        repo_layout.addRow("AUR URL:", aur_layout)
-        
-        # Branch selection with create option
-        branch_layout = QHBoxLayout()
-        branch_layout.addWidget(self.git_branch)
-        create_branch_btn = QPushButton("Create Branch")
-        create_branch_btn.clicked.connect(self.create_branch)
-        branch_layout.addWidget(create_branch_btn)
-        repo_layout.addRow("Branch:", branch_layout)
-        
-        # Storage location (combines artifacts and git storage)
-        storage_layout = QHBoxLayout()
-        storage_layout.addWidget(self.git_storage_path)
-        storage_browse = QPushButton("Browse")
-        storage_browse.clicked.connect(self.select_git_storage)
-        storage_layout.addWidget(storage_browse)
-        repo_layout.addRow("Storage Path:", storage_layout)
-        
-        # Add repository info display
-        self.repo_info = QTextEdit()
-        self.repo_info.setReadOnly(True)
-        self.repo_info.setMaximumHeight(100)
-        repo_layout.addRow("Repository Info:", self.repo_info)
+        repo_layout.addRow("Commit:", commit_layout)
         
         repo_group.setLayout(repo_layout)
-        layout.addWidget(repo_group)
+        left_layout.addWidget(repo_group)
         
-        # Create tab widget
+        # Repository info
+        info_group = QGroupBox("Repository Info")
+        info_layout = QVBoxLayout()
+        info_layout.addWidget(self.repo_info)
+        info_group.setLayout(info_layout)
+        left_layout.addWidget(info_group)
+        
+        # Create main horizontal layout
+        main_layout = QHBoxLayout()
+        main_layout.addWidget(left_widget, 1)  # Left side takes 1 part
+        
+        # Right side: Tabs
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        
+        # Create tab widget with reduced spacing
         self.tab_widget = QTabWidget()
+        self.tab_widget.setDocumentMode(True)  # More compact tabs
         
-        # Git Config Manager tab
-        config_tab = QWidget()
-        config_layout = QVBoxLayout(config_tab)
-        
-        # Git config container for GitConfigManager widget
+        # Git Config tab
         self.git_config_container = QWidget()
-        config_container_layout = QVBoxLayout()
-        self.git_config_container.setLayout(config_container_layout)
-        config_layout.addWidget(self.git_config_container)
-        
-        # Gitignore editor button
-        gitignore_btn = QPushButton("Edit .gitignore")
-        gitignore_btn.clicked.connect(self.open_gitignore)
-        config_layout.addWidget(gitignore_btn)
-        
-        self.tab_widget.addTab(config_tab, "Git Config")
-        
-        # Git Sequester tab
-        sequester_tab = QWidget()
-        sequester_layout = QVBoxLayout(sequester_tab)
-        
-        # Initialize GitSequester widget
-        self.sequester_widget = GitSequester(str(self.git_repo_path.text()))
-        self.sequester_widget.set_storage_path(str(self.git_storage_path.text()))
-        sequester_layout.addWidget(self.sequester_widget)
-        
-        self.tab_widget.addTab(sequester_tab, "Git Sequester")
-        
-        # Git Submodules tab
-        submodules_tab = QWidget()
-        submodules_layout = QVBoxLayout(submodules_tab)
-        submodules_tab.setLayout(submodules_layout)
-        
-        # Create placeholder for submodule widget
-        self.submodule_widget = None
-        self.submodules_layout = submodules_layout  # Store reference for later
-        
-        self.tab_widget.addTab(submodules_tab, "Git Submodules")
-        
-        # Connect storage path changes
-        self.git_storage_path.textChanged.connect(
-            lambda path: self.sequester_widget.set_storage_path(path) if self.sequester_widget else None
-        )
+        self.git_config_container.setLayout(QVBoxLayout())
+        self.tab_widget.addTab(self.git_config_container, "Git Config")
         
         # Release Manager tab
-        release_tab = QWidget()
-        release_layout = QVBoxLayout(release_tab)
-        
-        # Create ReleaseManager instance
         self.release_manager_widget = ReleaseManager()
-        release_layout.addWidget(self.release_manager_widget)
+        self.tab_widget.addTab(self.release_manager_widget, "Release Manager")
         
-        self.tab_widget.addTab(release_tab, "Release Manager")
+        # Git Sequester tab
+        if self.git_repo_path.text():
+            self.sequester_widget = GitSequester(self.git_repo_path.text())
+            if self.git_storage_path.text():
+                self.sequester_widget.set_storage_path(self.git_storage_path.text())
+            self.tab_widget.addTab(self.sequester_widget, "Git Sequester")
         
-        # Connect signals from ReleaseManager
-        self.release_manager_widget.progress.connect(self.update_release_progress)
-        self.release_manager_widget.error.connect(self.handle_release_error)
-        self.release_manager_widget.finished.connect(self.release_finished)
-        self.release_manager_widget.dialog_signal.connect(self.handle_release_dialog)
+        right_layout.addWidget(self.tab_widget)
+        main_layout.addWidget(right_widget, 2)  # Right side takes 2 parts
         
-        # Update project directory when git repo changes
-        self.git_repo_path.textChanged.connect(self._update_release_manager_path)
-        
-        layout.addWidget(self.tab_widget)
+        layout.addLayout(main_layout)
         
         # Status and error display at the bottom
         self.git_status_label.setStyleSheet("color: #666666;")
@@ -287,14 +251,27 @@ class GitWidget(QWidget):
             if hasattr(self, 'release_manager_widget'):
                 self.release_manager_widget.project_dir_input.setText(str(repo_path))
                 self.release_manager_widget.project_dir = repo_path
-                # Set task preset to "Full Release (All Tasks)"
-                self.release_manager_widget.task_preset.setCurrentIndex(0)
-                self.release_manager_widget.update_task_selection(0)
                 
                 # Try to infer version for release manager
                 version = self._infer_version(repo_path)
                 if version and hasattr(self.release_manager_widget, 'version_input'):
                     self.release_manager_widget.version_input.setText(version)
+                    
+                # Force update of task selection
+                self.release_manager_widget.task_preset.setCurrentIndex(0)
+                self.release_manager_widget.update_task_selection(0)
+                
+                # Update project path in release manager
+                self._update_release_manager_path()
+            
+            # Update Git Sequester
+            if self.sequester_widget:
+                self.tab_widget.removeTab(self.tab_widget.indexOf(self.sequester_widget))
+                self.sequester_widget.deleteLater()
+            self.sequester_widget = GitSequester(str(repo_path))
+            if self.git_storage_path.text():
+                self.sequester_widget.set_storage_path(self.git_storage_path.text())
+            self.tab_widget.addTab(self.sequester_widget, "Git Sequester")
 
     def _reset_ui_state(self):
         """Reset UI state when switching repositories."""
@@ -413,30 +390,15 @@ class GitWidget(QWidget):
         try:
             latest_version = None
             
-            # First try to get latest git tag
-            result = subprocess.run(
-                ["git", "tag", "-l", "v*"],
-                cwd=repo_path,
-                capture_output=True,
-                text=True
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                # Get all version tags and sort them
-                version_tags = [tag.lstrip('v') for tag in result.stdout.strip().split('\n')]
-                version_tags.sort(key=lambda v: [int(x) for x in v.split('.')])
-                if version_tags:
-                    latest_version = version_tags[-1]
+            # First check PKGBUILD
+            pkgbuild = repo_path / "PKGBUILD"
+            if pkgbuild.exists():
+                content = pkgbuild.read_text()
+                match = re.search(r'pkgver=([0-9][0-9a-z.-]*)', content)
+                if match:
+                    latest_version = match.group(1)
             
-            # If no git tags, check PKGBUILD
-            if not latest_version:
-                pkgbuild = repo_path / "PKGBUILD"
-                if pkgbuild.exists():
-                    content = pkgbuild.read_text()
-                    match = re.search(r'pkgver=([0-9][0-9a-z.-]*)', content)
-                    if match:
-                        latest_version = match.group(1)
-            
-            # If still no version, check other common files
+            # Then check other common files
             if not latest_version:
                 version_files = [
                     (repo_path / "pyproject.toml", r'version\s*=\s*["\']([^"\']+)["\']'),
@@ -451,6 +413,21 @@ class GitWidget(QWidget):
                         if match:
                             latest_version = match.group(1)
                             break
+            
+            # Finally try git tags
+            if not latest_version:
+                result = subprocess.run(
+                    ["git", "tag", "-l", "v*"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    text=True
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    # Get all version tags and sort them
+                    version_tags = [tag.lstrip('v') for tag in result.stdout.strip().split('\n')]
+                    version_tags.sort(key=lambda v: [int(x) for x in v.split('.')])
+                    if version_tags:
+                        latest_version = version_tags[-1]
             
             # If we found a version, increment the patch number
             if latest_version:
@@ -724,109 +701,30 @@ class GitWidget(QWidget):
             self.sequester_widget.refresh_untracked_files()
 
     def browse_aur_dir(self):
-        """Browse for AUR package directory."""
-        repo_name = Path(self.git_repo_path.text()).name if self.git_repo_path.text() else ""
-        if not repo_name:
-            QMessageBox.warning(self, "Error", "Please select a repository first")
-            return
-            
-        # Check for existing AUR path first
-        start_dir = self.aur_path.text() or self.settings.value("aur_path")
-        
-        # If no existing path, suggest creating in aur-packages
-        if not start_dir and repo_name:
-            suggested_paths = [
-                Path(self.git_repo_path.text()).parent / "aur-packages",
-                Path.home() / "Code" / "aur-packages"
-            ]
-            
-            for path in suggested_paths:
-                if path.exists():
-                    start_dir = str(path)
-                    break
-                    
-            if not start_dir:
-                # Ask user if they want to create aur-packages directory
-                reply = QMessageBox.question(
-                    self,
-                    "Create AUR Directory?",
-                    "No AUR packages directory found. Would you like to create one?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                
-                if reply == QMessageBox.StandardButton.Yes:
-                    parent_dir = Path(self.git_repo_path.text()).parent
-                    aur_dir = parent_dir / "aur-packages"
-                    try:
-                        aur_dir.mkdir(parents=True, exist_ok=True)
-                        start_dir = str(aur_dir)
-                    except Exception as e:
-                        QMessageBox.critical(self, "Error", f"Failed to create directory: {e}")
-                        return
-                else:
-                    start_dir = QDir.homePath()
-        
-        if not start_dir:
-            start_dir = QDir.homePath()
-            
+        """Open dialog to select AUR package directory."""
         aur_dir = QFileDialog.getExistingDirectory(
-            self, "Select AUR Package Directory",
-            start_dir,
-            QFileDialog.Option.ShowDirsOnly
+            self,
+            "Select AUR Package Directory",
+            self.aur_path.text() or str(Path.home() / "Code" / "aur-packages")
         )
-        
         if aur_dir:
-            # Check if selected directory is for AUR package
-            aur_path = Path(aur_dir)
-            if not (aur_path / ".git").exists():
-                # Ask to create new AUR package
-                reply = QMessageBox.question(
-                    self,
-                    "Initialize AUR Package?",
-                    "Selected directory is not a Git repository. Would you like to initialize it as an AUR package?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                
-                if reply == QMessageBox.StandardButton.Yes:
-                    try:
-                        # Initialize Git repository
-                        import subprocess
-                        subprocess.run(["git", "init"], cwd=aur_dir, check=True)
-                        
-                        # Set up AUR remote
-                        package_name = repo_name.lower()
-                        aur_remote = f"ssh://aur@aur.archlinux.org/{package_name}.git"
-                        
-                        # Ask user to confirm/modify package name
-                        from PyQt6.QtWidgets import QInputDialog
-                        package_name, ok = QInputDialog.getText(
-                            self,
-                            "AUR Package Name",
-                            "Enter AUR package name:",
-                            text=package_name
-                        )
-                        
-                        if ok and package_name:
-                            aur_remote = f"ssh://aur@aur.archlinux.org/{package_name}.git"
-                            subprocess.run(
-                                ["git", "remote", "add", "origin", aur_remote],
-                                cwd=aur_dir,
-                                check=True
-                            )
-                            
-                            # Update UI
-                            self.aur_url.setText(aur_remote)
-                            self.settings.setValue("aur_url", aur_remote)
-                            
-                    except subprocess.CalledProcessError as e:
-                        QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e.stderr}")
-                        return
-                    except Exception as e:
-                        QMessageBox.critical(self, "Error", f"Failed to initialize AUR package: {e}")
-                        return
-            
             self.aur_path.setText(aur_dir)
             self.settings.setValue("aur_path", aur_dir)
+            
+            # Try to infer AUR URL from directory
+            if Path(aur_dir).exists():
+                try:
+                    result = subprocess.run(
+                        ["git", "remote", "get-url", "origin"],
+                        cwd=aur_dir,
+                        capture_output=True,
+                        text=True
+                    )
+                    if result.returncode == 0 and "aur.archlinux.org" in result.stdout:
+                        self.aur_url.setText(result.stdout.strip())
+                        self.settings.setValue("aur_url", result.stdout.strip())
+                except Exception:
+                    pass
 
     def update_release_progress(self, message: str):
         """Update release progress in ReleaseManager."""
@@ -876,15 +774,21 @@ class GitWidget(QWidget):
             self.release_start_button.setEnabled(has_repo)
 
     def select_git_storage(self):
-        """Open dialog to select Git storage location."""
+        """Open dialog to select Git storage path."""
         storage_dir = QFileDialog.getExistingDirectory(
             self,
-            "Select Git Storage Location",
-            self.git_output_path.text() or str(Path.home())
+            "Select Git Storage Directory",
+            self.git_storage_path.text() or str(Path.home())
         )
         if storage_dir:
+            self.git_storage_path.setText(storage_dir)
+            self.settings.setValue("git_storage_path", storage_dir)
             self.sequester_path_changed.emit(storage_dir)
             
+            # Update sequester storage path
+            if self.sequester_widget:
+                self.sequester_widget.set_storage_path(storage_dir)
+
     def backup_git_files(self):
         """Backup Git files."""
         if not self.git_repo_path.text():
@@ -1261,7 +1165,17 @@ class GitWidget(QWidget):
     def _update_release_manager_path(self):
         """Update release manager's project directory when git repo changes."""
         if hasattr(self, 'release_manager_widget'):
-            self.release_manager_widget.project_dir = Path(self.git_repo_path.text()) if self.git_repo_path.text() else None 
+            repo_path = Path(self.git_repo_path.text()) if self.git_repo_path.text() else None
+            if repo_path and repo_path.exists():
+                self.release_manager_widget.project_dir = repo_path
+                self.release_manager_widget.project_dir_input.setText(str(repo_path))
+                # Force update of task selection
+                self.release_manager_widget.task_preset.setCurrentIndex(0)
+                self.release_manager_widget.update_task_selection(0)
+                # Try to infer version
+                version = self._infer_version(repo_path)
+                if version and hasattr(self.release_manager_widget, 'version_input'):
+                    self.release_manager_widget.version_input.setText(version)
 
     def toggle_compact_view(self, checked: bool):
         """Toggle between compact and normal view."""
@@ -1372,3 +1286,130 @@ class GitWidget(QWidget):
             "Project Not Found",
             "Could not find varchiver project in common locations.\nPlease use Browse to locate it manually."
         ) 
+
+    def handle_untracked_files(self, untracked_files):
+        """Handle untracked files by offering to add them to .gitignore"""
+        if not untracked_files:
+            return
+            
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Untracked Files")
+        layout = QVBoxLayout(dialog)
+        
+        # Add description
+        desc = QLabel("The following files are untracked. Select files to add to .gitignore:")
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
+        
+        # Add file list with checkboxes
+        file_list = QTreeWidget()
+        file_list.setHeaderLabels(["File", "Pattern"])
+        file_list.setSelectionMode(QTreeWidget.SelectionMode.MultiSelection)
+        
+        for file_path in untracked_files:
+            item = QTreeWidgetItem(file_list)
+            item.setText(0, file_path)
+            # Suggest gitignore pattern
+            pattern = f"/{file_path}" if "/" not in file_path else file_path
+            item.setText(1, pattern)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.CheckState.Unchecked)
+        
+        layout.addWidget(file_list)
+        
+        # Add buttons
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | 
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # Get selected patterns
+            patterns = []
+            for i in range(file_list.topLevelItemCount()):
+                item = file_list.topLevelItem(i)
+                if item.checkState(0) == Qt.CheckState.Checked:
+                    patterns.append(item.text(1))
+            
+            if patterns:
+                # Add patterns to .gitignore
+                gitignore_path = Path(self.git_repo_path.text()) / ".gitignore"
+                try:
+                    # Create .gitignore if it doesn't exist
+                    if not gitignore_path.exists():
+                        gitignore_path.touch()
+                    
+                    # Read existing content
+                    content = gitignore_path.read_text() if gitignore_path.exists() else ""
+                    
+                    # Add new patterns
+                    if content and not content.endswith('\n'):
+                        content += '\n'
+                    content += '\n'.join(patterns) + '\n'
+                    
+                    # Write back
+                    gitignore_path.write_text(content)
+                    
+                    QMessageBox.information(self, "Success", 
+                        f"Added {len(patterns)} pattern(s) to .gitignore")
+                        
+                    # Refresh repository status
+                    self.update_repo_status()
+                    
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", 
+                        f"Failed to update .gitignore: {str(e)}")
+
+    def update_task_selection(self, index):
+        """Update task selection in ReleaseManager."""
+        if hasattr(self, 'release_manager_widget'):
+            self.release_manager_widget.task_preset.setCurrentIndex(index)
+            self.release_manager_widget.update_task_selection(index) 
+
+    def _check_git_status(self, cwd=None):
+        """Check Git status and handle untracked files."""
+        try:
+            # Check for untracked files
+            result = subprocess.run(
+                ["git", "ls-files", "--others", "--exclude-standard"],
+                cwd=cwd or self.git_repo_path.text(),
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            untracked_files = [f for f in result.stdout.splitlines() if f.strip()]
+            
+            if untracked_files:
+                reply = QMessageBox.question(
+                    self,
+                    "Untracked Files Found",
+                    f"Found {len(untracked_files)} untracked files. Would you like to add them to .gitignore?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.handle_untracked_files(untracked_files)
+            
+            # Check for changes in tracked files
+            result = subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=no"],
+                cwd=cwd or self.git_repo_path.text(),
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            return result.stdout.strip()
+            
+        except subprocess.CalledProcessError as e:
+            self.git_error_text.setText(f"Git status check failed: {e.stderr}")
+            self.git_error_text.setVisible(True)
+            return None
+        except Exception as e:
+            self.git_error_text.setText(f"Error checking Git status: {str(e)}")
+            self.git_error_text.setVisible(True)
+            return None 

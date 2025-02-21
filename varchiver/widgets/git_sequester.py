@@ -3,18 +3,20 @@
 from pathlib import Path
 import os
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                            QLabel, QTextEdit, QMessageBox, QListWidget)
+                            QLabel, QTextEdit, QMessageBox, QListWidget,
+                            QTabWidget, QGroupBox)
 from PyQt6.QtCore import Qt
+from ..utils.git_utils import GitConfigHandler
 
 class GitSequester(QWidget):
-    """Widget for managing Git file sequestration."""
+    """Widget for managing Git file sequestration and untracked files."""
     
     def __init__(self, repo_path: str, parent=None):
         super().__init__(parent)
         self.repo_path = Path(repo_path)
         self.storage_path = None  # Will be set via set_storage_path
+        self.git_handler = GitConfigHandler(str(self.repo_path))
         self.init_ui()
-        self.refresh_untracked_files()
         
     def set_storage_path(self, path: str):
         """Set the storage path for sequestered files."""
@@ -33,41 +35,165 @@ class GitSequester(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
         
+        # Create tab widget
+        tab_widget = QTabWidget()
+        
+        # Git Files Tab
+        git_tab = QWidget()
+        git_layout = QVBoxLayout()
+        
         # Description
-        desc = QLabel(
-            "Manage untracked Git files. Select files to temporarily remove or restore."
+        git_desc = QLabel(
+            "Extract Git-related files when working with environments that don't play well with Git. "
+            "This will safely remove .git directories and related files, storing them for later restoration."
         )
-        desc.setWordWrap(True)
-        layout.addWidget(desc)
+        git_desc.setWordWrap(True)
+        git_layout.addWidget(git_desc)
+        
+        # Status group
+        status_group = QGroupBox("Git Status")
+        status_layout = QVBoxLayout()
+        self.git_status = QLabel()
+        self.update_git_status()
+        status_layout.addWidget(self.git_status)
+        status_group.setLayout(status_layout)
+        git_layout.addWidget(status_group)
+        
+        # Git action buttons
+        git_buttons = QHBoxLayout()
+        
+        extract_btn = QPushButton("Extract Git Files")
+        extract_btn.clicked.connect(self.extract_git_files)
+        git_buttons.addWidget(extract_btn)
+        
+        restore_btn = QPushButton("Restore Git Files")
+        restore_btn.clicked.connect(self.restore_git_files)
+        git_buttons.addWidget(restore_btn)
+        
+        git_layout.addLayout(git_buttons)
+        git_tab.setLayout(git_layout)
+        
+        # Untracked Files Tab
+        untracked_tab = QWidget()
+        untracked_layout = QVBoxLayout()
+        
+        # Description
+        untracked_desc = QLabel(
+            "Manage untracked files. Select files to temporarily remove or restore."
+        )
+        untracked_desc.setWordWrap(True)
+        untracked_layout.addWidget(untracked_desc)
         
         # Untracked files list
         self.untracked_list = QListWidget()
         self.untracked_list.setSelectionMode(
             QListWidget.SelectionMode.ExtendedSelection
         )
-        layout.addWidget(self.untracked_list)
+        untracked_layout.addWidget(self.untracked_list)
         
-        # Buttons
-        button_layout = QHBoxLayout()
+        # Untracked file buttons
+        untracked_buttons = QHBoxLayout()
         
         refresh_btn = QPushButton("Refresh")
         refresh_btn.clicked.connect(self.refresh_untracked_files)
-        button_layout.addWidget(refresh_btn)
+        untracked_buttons.addWidget(refresh_btn)
         
         sequester_btn = QPushButton("Sequester Selected")
         sequester_btn.clicked.connect(self.sequester_selected)
-        button_layout.addWidget(sequester_btn)
+        untracked_buttons.addWidget(sequester_btn)
         
-        restore_btn = QPushButton("Restore Selected")
-        restore_btn.clicked.connect(self.restore_selected)
-        button_layout.addWidget(restore_btn)
+        restore_untracked_btn = QPushButton("Restore Selected")
+        restore_untracked_btn.clicked.connect(self.restore_selected)
+        untracked_buttons.addWidget(restore_untracked_btn)
         
-        layout.addLayout(button_layout)
+        untracked_layout.addLayout(untracked_buttons)
         
         # Status
         self.status_label = QLabel()
-        layout.addWidget(self.status_label)
+        untracked_layout.addWidget(self.status_label)
         
+        untracked_tab.setLayout(untracked_layout)
+        
+        # Add tabs
+        tab_widget.addTab(git_tab, "Git Files")
+        tab_widget.addTab(untracked_tab, "Untracked Files")
+        
+        layout.addWidget(tab_widget)
+        
+        # Initial refresh
+        self.refresh_untracked_files()
+        
+    def update_git_status(self):
+        """Update the Git status display."""
+        if self.git_handler.is_git_repo():
+            git_dir = self.repo_path / '.git'
+            if git_dir.is_file():  # Submodule
+                with open(git_dir, 'r') as f:
+                    content = f.read().strip()
+                    if content.startswith('gitdir:'):
+                        git_dir = Path(content.split(':', 1)[1].strip())
+            
+            # Check if Git files are extracted
+            backup_path = self.get_sequester_dir() / "git_backup.json"
+            if backup_path.exists():
+                self.git_status.setText("Git files are currently extracted")
+                self.git_status.setStyleSheet("color: orange")
+            else:
+                self.git_status.setText("Git files are present")
+                self.git_status.setStyleSheet("color: green")
+        else:
+            self.git_status.setText("No Git repository found")
+            self.git_status.setStyleSheet("color: red")
+            
+    def extract_git_files(self):
+        """Extract Git-related files from the repository."""
+        try:
+            if not self.git_handler.is_git_repo():
+                QMessageBox.warning(self, "Warning", "No Git repository found")
+                return
+                
+            # Confirm action
+            reply = QMessageBox.question(
+                self,
+                "Extract Git Files",
+                "This will extract all Git-related files from the repository. Continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                backup_path = self.get_sequester_dir() / "git_backup.json"
+                self.git_handler.remove_git_files(str(backup_path))
+                self.update_git_status()
+                QMessageBox.information(self, "Success", "Git files extracted successfully")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to extract Git files: {str(e)}")
+            
+    def restore_git_files(self):
+        """Restore previously extracted Git files."""
+        try:
+            backup_path = self.get_sequester_dir() / "git_backup.json"
+            if not backup_path.exists():
+                QMessageBox.warning(self, "Warning", "No extracted Git files found")
+                return
+                
+            # Confirm action
+            reply = QMessageBox.question(
+                self,
+                "Restore Git Files",
+                "This will restore all Git-related files to the repository. Continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                self.git_handler.restore_git_files(str(backup_path))
+                backup_path.unlink()  # Remove backup after successful restore
+                self.update_git_status()
+                QMessageBox.information(self, "Success", "Git files restored successfully")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to restore Git files: {str(e)}")
+            
     def refresh_untracked_files(self):
         """Refresh the list of untracked files."""
         try:
@@ -106,7 +232,7 @@ class GitSequester(QWidget):
             sequester_dir.mkdir(exist_ok=True)
             
             # Create manifest
-            manifest_file = sequester_dir / "manifest.json"
+            manifest_file = sequester_dir / "untracked_manifest.json"  # Renamed to avoid conflict
             if manifest_file.exists():
                 manifest = json.loads(manifest_file.read_text())
             else:
@@ -137,7 +263,7 @@ class GitSequester(QWidget):
         try:
             import json
             sequester_dir = self.get_sequester_dir()
-            manifest_file = sequester_dir / "manifest.json"
+            manifest_file = sequester_dir / "untracked_manifest.json"  # Renamed to avoid conflict
             
             if not manifest_file.exists():
                 QMessageBox.warning(self, "Warning", "No sequestered files found")

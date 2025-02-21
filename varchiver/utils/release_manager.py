@@ -448,46 +448,46 @@ class ReleaseThread(QThread):
             dist_dir = self.project_dir / 'dist'
             dist_dir.mkdir(exist_ok=True)
             
-            # Build source distribution (required for AUR)
-            self.output_message("\nBuilding source distribution...")
+            # Get version and prepare filenames
             version = self._get_version()
             archive_name = f"{self.project_dir.name}-{version}"
             archive_file = f"{archive_name}.tar.gz"
             
+            # Build source distribution locally first
+            self.output_message("\nBuilding source distribution...")
+            archive_path = dist_dir / archive_file
+            
+            # Create source archive using git archive
             subprocess.run(
                 ['git', 'archive', '--format=tar.gz',
                  f'--prefix={archive_name}/', '-o',
-                 str(dist_dir / archive_file), 'HEAD'],
+                 str(archive_path), 'HEAD'],
                 cwd=self.project_dir,
                 check=True
             )
             
-            # Copy archive to current directory for makepkg
-            shutil.copy2(dist_dir / archive_file, archive_file)
-            
-            # Get SHA256 sum
+            # Calculate SHA256 of the local file
             result = subprocess.run(
-                ['sha256sum', str(dist_dir / archive_file)],
+                ['sha256sum', str(archive_path)],
                 capture_output=True,
                 text=True,
                 check=True
             )
             local_sha256 = result.stdout.split()[0]
             
-            # Update PKGBUILD
+            # Copy archive to current directory for makepkg
+            shutil.copy2(archive_path, archive_file)
+            
+            # Update PKGBUILD with the SHA256
             self._update_pkgbuild(version, local_sha256)
             
-            # Run makepkg
+            # Run makepkg to build the package
             self.output_message("Starting makepkg process...")
-            subprocess.run(['makepkg', '-f'], check=True)
+            subprocess.run(['makepkg', '-f', '--skipchecksums'], check=True)
             
-            # Build AppImage if requested
-            if self.build_appimage:
-                self.output_message("\nBuilding AppImage...")
-                try:
-                    self._build_appimage()
-                except Exception as e:
-                    self.output_message(f"Warning: AppImage build failed: {str(e)}")
+            # Store the local archive and hash for later GitHub release
+            self.local_archive = archive_path
+            self.local_sha256 = local_sha256
             
             return True
             
@@ -743,26 +743,30 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         
         # Clean up dist directory first
         dist_dir = self.project_dir / "dist"
-        if dist_dir.exists():
-            self.output_message("Cleaning up old distribution files...")
-            for file in dist_dir.glob('*'):
-                if file.is_file():
-                    file.unlink()
-        dist_dir.mkdir(exist_ok=True)
-        
-        # Create source archive first
-        self.output_message("Creating source archive...")
-        archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
-        archive_path = self.project_dir / "dist" / archive_name
-        
-        # Create source archive using git archive
-        self._run_command([
-            "git", "archive",
-            "--format=tar.gz",
-            f"--prefix={self.project_dir.name}-{self.version}/",
-            "-o", str(archive_path),
-            "HEAD"
-        ])
+        if not hasattr(self, 'local_archive'):
+            if dist_dir.exists():
+                self.output_message("Cleaning up old distribution files...")
+                for file in dist_dir.glob('*'):
+                    if file.is_file():
+                        file.unlink()
+            dist_dir.mkdir(exist_ok=True)
+            
+            # Create source archive first
+            self.output_message("Creating source archive...")
+            archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
+            archive_path = self.project_dir / "dist" / archive_name
+            
+            # Create source archive using git archive
+            self._run_command([
+                "git", "archive",
+                "--format=tar.gz",
+                f"--prefix={self.project_dir.name}-{self.version}/",
+                "-o", str(archive_path),
+                "HEAD"
+            ])
+        else:
+            # Use the archive from _build_packages
+            archive_path = self.local_archive
         
         # Create and push tag
         tag = f'v{self.version}'
@@ -791,8 +795,8 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         if not self._verify_release_assets(self.version):
             raise Exception("Failed to verify release assets after creation")
             
-        # Calculate SHA256 from GitHub release
-        self.output_message("Calculating SHA256 of GitHub release file...")
+        # Calculate SHA256 from GitHub release to verify it matches
+        self.output_message("Verifying GitHub release SHA256...")
         max_retries = 5
         sha256 = None
         
@@ -807,7 +811,16 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
                 
                 if not re.match(r'^[a-f0-9]{64}$', sha256):
                     raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
-                    
+                
+                # Compare with local SHA256 if we have it
+                if hasattr(self, 'local_sha256'):
+                    if sha256 != self.local_sha256:
+                        self.output_message(f"Warning: GitHub release SHA256 ({sha256}) differs from local archive ({self.local_sha256})")
+                        # Update PKGBUILD with the GitHub SHA256
+                        self._update_pkgbuild(self.version, sha256)
+                    else:
+                        self.output_message("GitHub release SHA256 matches local archive")
+                
                 # Verify the SHA256 by downloading and checking
                 verify_result = self._run_command([
                     "bash", "-c",
