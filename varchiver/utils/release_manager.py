@@ -477,48 +477,23 @@ class ReleaseThread(QThread):
                 cwd=self.project_dir
             )
             
-            # Wait for GitHub release to be available and get its SHA256
-            self.output_message("Waiting for GitHub release to be available...")
-            max_retries = 10
-            github_sha256 = None
+            # Calculate local SHA256
+            sha256_result = self._run_command([
+                "sha256sum",
+                str(archive_path)
+            ])
+            local_sha256 = sha256_result.stdout.split()[0]
             
-            for attempt in range(max_retries):
-                try:
-                    time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
-                    release_url = f"{self.url}/archive/v{version}.tar.gz"
-                    
-                    # Download and calculate SHA256 in one go
-                    sha256_result = self._run_command([
-                        "bash", "-c",
-                        f"curl -L {release_url} | sha256sum"
-                    ], timeout=60)
-                    github_sha256 = sha256_result.stdout.split()[0]
-                    
-                    if not re.match(r'^[a-f0-9]{64}$', github_sha256):
-                        raise Exception(f"Invalid SHA256 sum calculated: {github_sha256}")
-                    
-                    # Verify the SHA256
-                    verify_result = self._run_command([
-                        "bash", "-c",
-                        f"curl -L {release_url} | sha256sum -c --status <(echo {github_sha256}  -)"
-                    ], check=False)
-                    
-                    if verify_result.returncode == 0:
-                        self.output_message(f"GitHub release SHA256 verified: {github_sha256}")
-                        break
-                    else:
-                        raise Exception("SHA256 verification failed")
-                        
-                except Exception as e:
-                    self.output_message(f"Attempt {attempt + 1} failed: {e}")
-                    if attempt == max_retries - 1:
-                        raise Exception("Failed to get GitHub release SHA256 after multiple attempts")
+            if not re.match(r'^[a-f0-9]{64}$', local_sha256):
+                raise Exception(f"Invalid SHA256 sum calculated: {local_sha256}")
             
-            if not github_sha256:
-                raise Exception("Failed to get GitHub release SHA256")
+            # Update PKGBUILD with the local SHA256
+            self._update_pkgbuild(version, local_sha256)
             
-            # Update PKGBUILD with the GitHub SHA256
-            self._update_pkgbuild(version, github_sha256)
+            # Commit and push PKGBUILD changes
+            self._run_command(['git', 'add', 'PKGBUILD'])
+            self._run_command(['git', 'commit', '-m', f'Update PKGBUILD SHA256 for {version}'])
+            self._run_command(['git', 'push', 'origin', 'HEAD'])
             
             # Copy archive to current directory for makepkg
             shutil.copy2(archive_path, archive_file)
@@ -529,7 +504,7 @@ class ReleaseThread(QThread):
             
             # Store the local archive and hash for later use
             self.local_archive = archive_path
-            self.local_sha256 = github_sha256
+            self.local_sha256 = local_sha256
             
             return True
             
@@ -850,10 +825,9 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         if not self._verify_release_assets(self.version):
             raise Exception("Failed to verify release assets")
             
-        # Calculate and verify SHA256 of the GitHub release
-        self.output_message("Calculating SHA256 of GitHub release...")
+        # Verify the GitHub release SHA256 matches our local one
+        self.output_message("Verifying GitHub release SHA256...")
         max_retries = 5
-        sha256 = None
         
         for attempt in range(max_retries):
             try:
@@ -862,62 +836,24 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
                     "bash", "-c",
                     f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
                 ], timeout=60)
-                sha256 = sha256_result.stdout.split()[0]
+                github_sha256 = sha256_result.stdout.split()[0]
                 
-                if not re.match(r'^[a-f0-9]{64}$', sha256):
-                    raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
+                if not re.match(r'^[a-f0-9]{64}$', github_sha256):
+                    raise Exception(f"Invalid SHA256 sum calculated: {github_sha256}")
                 
-                # Compare with local SHA256 if we have it
-                if hasattr(self, 'local_sha256'):
-                    if sha256 != self.local_sha256:
-                        self.output_message(f"Warning: GitHub release SHA256 ({sha256}) differs from local archive ({self.local_sha256})")
-                        # Update PKGBUILD with the GitHub SHA256
-                        self._update_pkgbuild(self.version, sha256)
-                    else:
-                        self.output_message("GitHub release SHA256 matches local archive")
-                
-                # Verify the SHA256 by downloading and checking
-                verify_result = self._run_command([
-                    "bash", "-c",
-                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum -c --status <(echo {sha256}  -)"
-                ], check=False)
-                
-                if verify_result.returncode == 0:
-                    self.output_message(f"SHA256 verified: {sha256}")
-                    break
+                # Compare with local SHA256
+                if github_sha256 != self.local_sha256:
+                    self.output_message(f"Warning: GitHub release SHA256 ({github_sha256}) differs from local archive ({self.local_sha256})")
+                    if attempt == max_retries - 1:
+                        raise Exception("GitHub release SHA256 does not match local archive after multiple attempts")
                 else:
-                    raise Exception("SHA256 verification failed")
+                    self.output_message("GitHub release SHA256 matches local archive")
+                    break
                     
             except Exception as e:
                 self.output_message(f"Attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries - 1:
-                    raise Exception("Failed to calculate and verify SHA256 after multiple attempts")
-        
-        # Update PKGBUILD with SHA256
-        pkgbuild_path = self.project_dir / "PKGBUILD"
-        with open(pkgbuild_path, 'r') as f:
-            pkgbuild_content = f.read()
-            
-        # Update source URL to use GitHub release
-        pkgbuild_content = re.sub(
-            r'source=\([^)]*\)',
-            f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-            pkgbuild_content,
-            flags=re.MULTILINE | re.DOTALL
-        )
-            
-        pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, sha256)
-        
-        with open(pkgbuild_path, 'w') as f:
-            f.write(pkgbuild_content)
-        
-        # Commit PKGBUILD changes
-        self._run_command(['git', 'add', 'PKGBUILD'])
-        self._run_command(['git', 'commit', '-m', f'Update PKGBUILD SHA256 for {self.version}'])
-        
-        # Push all changes
-        self.output_message("Pushing changes to remote...")
-        self._run_command(['git', 'push', 'origin', 'HEAD'])
+                    raise Exception("Failed to verify GitHub release SHA256 after multiple attempts")
         
         self.output_message(f"\nGitHub release {tag} created and verified successfully!")
 
