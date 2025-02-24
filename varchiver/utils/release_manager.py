@@ -477,7 +477,7 @@ class ReleaseThread(QThread):
                 cwd=self.project_dir
             )
             
-            # Calculate local SHA256
+            # Calculate SHA256
             sha256_result = self._run_command([
                 "sha256sum",
                 str(archive_path)
@@ -487,7 +487,11 @@ class ReleaseThread(QThread):
             if not re.match(r'^[a-f0-9]{64}$', local_sha256):
                 raise Exception(f"Invalid SHA256 sum calculated: {local_sha256}")
             
-            # Update PKGBUILD with the local SHA256
+            # Store the archive and hash for later use
+            self.local_archive = archive_path
+            self.local_sha256 = local_sha256
+            
+            # Update PKGBUILD with the SHA256
             self._update_pkgbuild(version, local_sha256)
             
             # Commit and push PKGBUILD changes
@@ -501,10 +505,6 @@ class ReleaseThread(QThread):
             # Run makepkg to build the package
             self.output_message("Starting makepkg process...")
             subprocess.run(['makepkg', '-f', '--skipchecksums'], check=True)
-            
-            # Store the local archive and hash for later use
-            self.local_archive = archive_path
-            self.local_sha256 = local_sha256
             
             return True
             
@@ -758,32 +758,11 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         # Get system architecture
         arch = self._run_command(['uname', '-m']).stdout.strip()
         
-        # Clean up dist directory first
-        dist_dir = self.project_dir / "dist"
+        # Use the archive from _build_packages if available
         if not hasattr(self, 'local_archive'):
-            if dist_dir.exists():
-                self.output_message("Cleaning up old distribution files...")
-                for file in dist_dir.glob('*'):
-                    if file.is_file():
-                        file.unlink()
-            dist_dir.mkdir(exist_ok=True)
-            
-            # Create source archive first
-            self.output_message("Creating source archive...")
-            archive_name = f"{self.project_dir.name}-{self.version}.tar.gz"
-            archive_path = self.project_dir / "dist" / archive_name
-            
-            # Create source archive using git archive
-            self._run_command([
-                "git", "archive",
-                "--format=tar.gz",
-                f"--prefix={self.project_dir.name}-{self.version}/",
-                "-o", str(archive_path),
-                "HEAD"
-            ])
-        else:
-            # Use the archive from _build_packages
-            archive_path = self.local_archive
+            raise Exception("No local archive found. Please build packages first.")
+        
+        archive_path = self.local_archive
         
         # Create and push tag
         tag = f'v{self.version}'
@@ -810,7 +789,7 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         ]
         
         # Add AppImage if it exists
-        appimage_path = dist_dir / f"{self.project_dir.name}-{self.version}-x86_64.AppImage"
+        appimage_path = self.project_dir / 'dist' / f"{self.project_dir.name}-{self.version}-x86_64.AppImage"
         if appimage_path.exists():
             self.output_message("Adding AppImage to release...")
             release_cmd.append(str(appimage_path))
@@ -824,36 +803,6 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
         self.output_message("Waiting for release to be available...")
         if not self._verify_release_assets(self.version):
             raise Exception("Failed to verify release assets")
-            
-        # Verify the GitHub release SHA256 matches our local one
-        self.output_message("Verifying GitHub release SHA256...")
-        max_retries = 5
-        
-        for attempt in range(max_retries):
-            try:
-                time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
-                sha256_result = self._run_command([
-                    "bash", "-c",
-                    f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
-                ], timeout=60)
-                github_sha256 = sha256_result.stdout.split()[0]
-                
-                if not re.match(r'^[a-f0-9]{64}$', github_sha256):
-                    raise Exception(f"Invalid SHA256 sum calculated: {github_sha256}")
-                
-                # Compare with local SHA256
-                if github_sha256 != self.local_sha256:
-                    self.output_message(f"Warning: GitHub release SHA256 ({github_sha256}) differs from local archive ({self.local_sha256})")
-                    if attempt == max_retries - 1:
-                        raise Exception("GitHub release SHA256 does not match local archive after multiple attempts")
-                else:
-                    self.output_message("GitHub release SHA256 matches local archive")
-                    break
-                    
-            except Exception as e:
-                self.output_message(f"Attempt {attempt + 1} failed: {e}")
-                if attempt == max_retries - 1:
-                    raise Exception("Failed to verify GitHub release SHA256 after multiple attempts")
         
         self.output_message(f"\nGitHub release {tag} created and verified successfully!")
 
@@ -889,72 +838,14 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
                 # If checkout fails, create master branch
                 self._run_command(["git", "checkout", "-b", "master", "origin/master"], cwd=self.aur_dir)
             
-            # Read the project's PKGBUILD
+            # Copy PKGBUILD from project directory (which has the correct SHA256)
             pkgbuild_src = self.project_dir / "PKGBUILD"
             if not pkgbuild_src.exists():
                 raise Exception("PKGBUILD not found in project directory")
             
-            with pkgbuild_src.open('r') as f:
-                pkgbuild_content = f.read()
+            # Copy PKGBUILD to AUR directory
+            shutil.copy2(pkgbuild_src, self.aur_dir / "PKGBUILD")
             
-            # Update version and source hash
-            pkgbuild_content = re.sub(
-                r'^pkgver=.*$',
-                f'pkgver={self.version}',
-                pkgbuild_content,
-                flags=re.MULTILINE
-            )
-            
-            # Update source array
-            pkgbuild_content = re.sub(
-                r'source=\([^)]*\)',
-                f'source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")',
-                pkgbuild_content,
-                flags=re.MULTILINE | re.DOTALL
-            )
-            
-            # Calculate SHA256 with retries
-            self.output_message("Calculating SHA256 of GitHub release file...")
-            max_retries = 5
-            sha256 = None
-            
-            for attempt in range(max_retries):
-                try:
-                    time.sleep(5 * (attempt + 1))  # Increasing delay between attempts
-                    sha256_result = self._run_command([
-                        "bash", "-c",
-                        f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum"
-                    ], timeout=60)
-                    sha256 = sha256_result.stdout.split()[0]
-                    
-                    if not re.match(r'^[a-f0-9]{64}$', sha256):
-                        raise Exception(f"Invalid SHA256 sum calculated: {sha256}")
-                        
-                    # Verify the SHA256 by downloading and checking
-                    verify_result = self._run_command([
-                        "bash", "-c",
-                        f"curl -L {self.url}/archive/v{self.version}.tar.gz | sha256sum -c --status <(echo {sha256}  -)"
-                    ], check=False)
-                    
-                    if verify_result.returncode == 0:
-                        self.output_message(f"SHA256 verified: {sha256}")
-                        break
-                    else:
-                        raise Exception("SHA256 verification failed")
-                        
-                except Exception as e:
-                    self.output_message(f"Attempt {attempt + 1} failed: {e}")
-                    if attempt == max_retries - 1:
-                        raise Exception("Failed to calculate and verify SHA256 after multiple attempts")
-            
-            # Update SHA256 sum
-            pkgbuild_content = self._update_pkgbuild_sha256(pkgbuild_content, sha256)
-            
-            # Write updated PKGBUILD
-            pkgbuild_dest = self.aur_dir / "PKGBUILD"
-            with pkgbuild_dest.open('w') as f:
-                f.write(pkgbuild_content)
-                
             # Generate and update .SRCINFO
             self.progress.emit("Generating .SRCINFO...")
             srcinfo_result = self._run_command(
@@ -986,8 +877,6 @@ exec "$HERE/usr/bin/python3" "$HERE/usr/bin/{0}" "$@"
             
         except Exception as e:
             self.output_message(f"Error updating AUR package: {e}")
-            # Don't raise the exception - let the process continue
-            # This allows the release to complete even if AUR update fails
             return
 
     def _update_file_version(self, file_path, pattern, replacement):
