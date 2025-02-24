@@ -70,25 +70,11 @@ def main():
         # Process events to show splash immediately
         app.processEvents()
 
-        # Import main widget (this is where the delay happens)
-        if "--release" in sys.argv:
-            from varchiver.utils.release_manager import ReleaseManager
-            widget = ReleaseManager()
-        else:
-            from varchiver.widgets.main_widget import MainWidget
-            widget = MainWidget()
+        # Import main module
+        from varchiver.main import main as varchiver_main
         
-        widget.setWindowIcon(icon)
-        
-        # Show main window and close splash after a short delay
-        def show_main():
-            widget.show()
-            splash.finish(widget)
-        
-        QTimer.singleShot(1, show_main)  # Show main window after 1 second
-        
-        # Start the event loop
-        return app.exec()
+        # Run main with command line arguments
+        return varchiver_main(sys.argv[1:])
         
     except Exception as e:
         print(f"Bootstrap Error: {str(e)}", file=sys.stderr)

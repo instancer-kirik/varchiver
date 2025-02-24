@@ -1,10 +1,12 @@
 [Desktop Entry]
 Type=Application
 Name=Varchiver
-Comment=Advanced Archive Management Tool
-Exec=varchiver %f
-Icon=varchiver
+GenericName=Versatile/Variable Archiver
+Comment=Create and extract archives
+Icon=archive-manager
+Exec=varchiver %F
 Terminal=false
-Categories=Utility;Archiving;Compression;
-MimeType=application/zip;application/x-tar;application/x-compressed-tar;application/x-bzip2-compressed-tar;application/x-rar;
-Keywords=archive;compress;extract;zip;tar;rar;
+Categories=Qt;Utility;Archiving;Compression;
+MimeType=application/x-tar;application/x-compressed-tar;application/x-bzip-compressed-tar;application/x-tarz;application/x-xz-compressed-tar;application/x-lzma-compressed-tar;application/zip;application/x-7z-compressed;application/x-rar;application/x-rar-compressed;application/gzip;application/x-gzip;application/x-bzip2;application/x-lzma;application/x-xz;
+Keywords=archive;compress;extract;zip;tar;rar;7z;
+StartupNotify=true

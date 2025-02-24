@@ -5,6 +5,7 @@ from pathlib import Path
 import argparse
 
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
 
 from .widgets.main_widget import MainWidget
 from .utils.archive_utils import get_archive_type
@@ -35,13 +36,21 @@ def main(args=None):
     # Parse command line arguments
     args = parse_args(args)
 
-    # Create Qt application
-    app = QApplication(sys.argv)
-    app.setApplicationName(PROJECT_CONFIGS['name'])
-    app.setApplicationVersion(PROJECT_CONFIGS['version'])
+    # Create Qt application if not already created
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
+        app.setApplicationName(PROJECT_CONFIGS['name'])
+        app.setApplicationVersion(PROJECT_CONFIGS['version'])
+        app.setStyle('Fusion')
+        
+        # Set application icon
+        icon = QIcon.fromTheme('archive-manager', QIcon.fromTheme('package'))
+        app.setWindowIcon(icon)
 
     # Create main widget
     widget = MainWidget()
+    widget.setWindowIcon(app.windowIcon())
     widget.show()
 
     # Handle command line arguments
@@ -72,26 +81,37 @@ def main(args=None):
             if not os.path.isfile(archive_file):
                 print(f"Error: Archive file not found: {archive_file}", file=sys.stderr)
                 return 1
-            widget.browse_archive(
-                archive_file,
-                password=args.password
-            )
+            widget._open_archive(archive_file, password=args.password)
         else:
-            # Archive mode
-            # Verify files exist
-            for file in args.files:
-                if not os.path.exists(file):
-                    print(f"Error: File not found: {file}", file=sys.stderr)
-                    return 1
-            # If output is specified, use it as archive name
-            archive_name = args.output if args.output else None
-            widget.compress_files(
-                args.files,
-                archive_name=archive_name,
-                password=args.password,
-                compression_level=args.compression,
-                skip_patterns=args.skip_patterns,
-                collision_strategy=args.collision
-            )
+            # Handle files passed from file manager
+            valid_files = []
+            for file_path in args.files:
+                if os.path.isfile(file_path):
+                    # Check if it's an archive file
+                    archive_type = get_archive_type(file_path)
+                    if archive_type:
+                        valid_files.append(file_path)
+            
+            if valid_files:
+                # Open first file and queue the rest
+                widget._open_archive(valid_files[0])
+                
+                # Queue remaining files for extraction if any
+                if len(valid_files) > 1:
+                    for file_path in valid_files[1:]:
+                        extraction_info = {
+                            'archive_name': file_path,
+                            'output_dir': os.path.dirname(file_path),
+                            'password': args.password,
+                            'collision_strategy': args.collision or 'skip',
+                            'preserve_permissions': args.preserve_permissions,
+                            'skip_patterns': args.skip_patterns
+                        }
+                        widget.extraction_queue.append(extraction_info)
+                    widget.start_extract_button.setEnabled(True)
+                    widget.update_status(f"Queued {len(valid_files)-1} archives for extraction")
 
     return app.exec()
+
+if __name__ == '__main__':
+    sys.exit(main())

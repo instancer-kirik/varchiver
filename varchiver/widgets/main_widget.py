@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import shutil
 import psutil
+import json
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QLabel, QProgressBar, QTextEdit, QComboBox,
@@ -44,9 +45,14 @@ class MainWidget(QWidget):
         self.current_contents = None  # Current archive contents
         self.current_thread = None  # Current operation thread
         self._browse_thread = None  # Browse thread for archives/directories
-        self.password = None  # Current archive password
+        self.password = None  # Current archive password 
         self.skip_checkboxes = {}  # Skip pattern checkboxes
         self.extraction_queue = []  # Queue for pending extractions
+        
+        # Initialize recent archives
+        self.recent_archives = []
+        self.recent_archives_file = os.path.expanduser('~/.config/varchiver/recent_archives.json')
+        self.load_recent_archives()
         
         # Check RAR availability
         self.rar_available = is_rar_available()
@@ -90,7 +96,7 @@ class MainWidget(QWidget):
         mode_header.addWidget(self.mode_combo)
         
         # Theme toggle
-        self.theme_button = QPushButton()
+        self.theme_button = QPushButton("Light Mode")
         self.theme_button.clicked.connect(self.toggle_theme)
         mode_header.addWidget(self.theme_button)
         
@@ -101,6 +107,21 @@ class MainWidget(QWidget):
         
         mode_layout.addLayout(mode_header)
         main_layout.addWidget(mode_container)
+        
+        # Add recent archives section
+        self.recent_group = QGroupBox("Recent Archives")
+        recent_layout = QVBoxLayout(self.recent_group)
+        
+        self.recent_list = QListWidget()
+        self.recent_list.itemDoubleClicked.connect(self._on_recent_archive_clicked)
+        recent_layout.addWidget(self.recent_list)
+        
+        # Add clear recent button
+        clear_recent_button = QPushButton("Clear Recent")
+        clear_recent_button.clicked.connect(self.clear_recent_archives)
+        recent_layout.addWidget(clear_recent_button)
+        
+        main_layout.addWidget(self.recent_group)
         
         # Add Git widget
         main_layout.addWidget(self.git_widget)
@@ -363,9 +384,11 @@ class MainWidget(QWidget):
         if self.mode_combo.currentText() == "Dev Tools":
             self.archive_group.hide()
             self.git_widget.show()
+            self.recent_group.hide()
         else:
             self.archive_group.show()
             self.git_widget.hide()
+            self.recent_group.show()
 
     def update_compression_label(self):
         """Update the compression label based on slider value"""
@@ -482,17 +505,21 @@ class MainWidget(QWidget):
             dialog.setFileMode(QFileDialog.FileMode.AnyFile)
             dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
 
-    def _open_archive(self, filename):
-        """Open an archive file or directory"""
+    def _open_archive(self, archive_path, password=None):
+        """Open an archive and add it to recent archives"""
         try:
-            self.current_archive_path = filename
-            self.status_label.setText(f"Opening: {os.path.basename(filename)}")
+            # Add to recent archives
+            self.add_recent_archive(archive_path)
+            
+            # Existing open archive logic...
+            self.current_archive_path = archive_path
+            self.status_label.setText(f"Opening: {os.path.basename(archive_path)}")
             self.progress_bar.setVisible(True)
-            self.progressbar.setValue(0)
+            self.progress_bar.setValue(0)
             self.error_label.setVisible(False)
 
             # Create and start browse thread
-            self._browse_thread = BrowseThread(filename, self.password)
+            self._browse_thread = BrowseThread(archive_path, password)
             self._browse_thread.contents_ready.connect(self._on_contents_ready)
             self._browse_thread.error.connect(self._on_error)
             self._browse_thread.status.connect(self.update_status)
@@ -1183,13 +1210,9 @@ class MainWidget(QWidget):
         self.update_theme_button()
 
     def update_theme_button(self):
-        """Update theme button icon based on current theme."""
+        """Update theme button text based on current theme."""
         if hasattr(self, 'theme_button'):
-            icon_type = (QStyle.StandardPixmap.SP_DialogCloseButton 
-                        if self.theme_manager.is_dark_theme() 
-                        else QStyle.StandardPixmap.SP_DialogOkButton)
-            icon = self.style().standardIcon(icon_type)
-            self.theme_button.setIcon(icon)
+            self.theme_button.setText("Dark Mode" if self.theme_manager.is_dark_theme() else "Light Mode")
 
     def show_file_preview(self, mode="create"):
         """Show file preview dialog"""
@@ -1298,9 +1321,11 @@ class MainWidget(QWidget):
         if mode == "Dev Tools":
             self.show_git_ui()
             self.archive_group.hide()
+            self.recent_group.hide()
         else:
             self.hide_git_ui()
             self.archive_group.show()
+            self.recent_group.show()
             
     def show_git_ui(self):
         """Show Git-related UI elements"""
@@ -1351,10 +1376,112 @@ class MainWidget(QWidget):
         except Exception as e:
             self.handle_error(f"Error handling double click: {str(e)}")
 
+    def _handle_files_to_open(self, files):
+        """Handle files passed to open from command line or file manager"""
+        if not files:
+            return
+
+        # If multiple files, queue them for extraction
+        if len(files) > 1:
+            for file_path in files:
+                if os.path.isfile(file_path):
+                    extraction_info = {
+                        'archive_name': file_path,
+                        'output_dir': os.path.dirname(file_path),
+                        'password': None,
+                        'collision_strategy': self.collision_combo.currentText(),
+                        'preserve_permissions': self.preserve_permissions.isChecked(),
+                        'skip_patterns': self.get_active_skip_patterns()
+                    }
+                    self.extraction_queue.append(extraction_info)
+            
+            # Enable start extract button
+            self.start_extract_button.setEnabled(True)
+            self.update_status(f"Queued {len(files)} archives for extraction")
+        
+        # Open the first file immediately
+        first_file = files[0]
+        if os.path.isfile(first_file):
+            self._open_archive(first_file)
+
+    def add_recent_archive(self, archive_path):
+        """Add an archive to recent archives list"""
+        if not archive_path:
+            return
+            
+        # Convert to absolute path
+        archive_path = os.path.abspath(archive_path)
+        
+        # Remove if already exists (to move to top)
+        if archive_path in self.recent_archives:
+            self.recent_archives.remove(archive_path)
+            
+        # Add to start of list
+        self.recent_archives.insert(0, archive_path)
+        
+        # Keep only last 10 items
+        self.recent_archives = self.recent_archives[:10]
+        
+        # Update UI
+        self.update_recent_archives_ui()
+        
+        # Save to file
+        self.save_recent_archives()
+
+    def update_recent_archives_ui(self):
+        """Update the recent archives list in UI"""
+        self.recent_list.clear()
+        for archive in self.recent_archives:
+            if os.path.exists(archive):  # Only show existing files
+                self.recent_list.addItem(os.path.basename(archive))
+
+    def _on_recent_archive_clicked(self, item):
+        """Handle click on recent archive"""
+        archive_path = self.recent_archives[self.recent_list.row(item)]
+        if os.path.exists(archive_path):
+            self._open_archive(archive_path)
+        else:
+            # Remove non-existent file from list
+            self.recent_archives.remove(archive_path)
+            self.update_recent_archives_ui()
+            self.save_recent_archives()
+            self.show_error(f"Archive no longer exists: {archive_path}")
+
+    def load_recent_archives(self):
+        """Load recent archives from file"""
+        try:
+            os.makedirs(os.path.dirname(self.recent_archives_file), exist_ok=True)
+            if os.path.exists(self.recent_archives_file):
+                with open(self.recent_archives_file, 'r') as f:
+                    self.recent_archives = json.load(f)
+        except Exception as e:
+            print(f"Error loading recent archives: {e}")
+            self.recent_archives = []
+
+    def save_recent_archives(self):
+        """Save recent archives to file"""
+        try:
+            with open(self.recent_archives_file, 'w') as f:
+                json.dump(self.recent_archives, f)
+        except Exception as e:
+            print(f"Error saving recent archives: {e}")
+
+    def clear_recent_archives(self):
+        """Clear recent archives list"""
+        self.recent_archives = []
+        self.update_recent_archives_ui()
+        self.save_recent_archives()
+
 def main():
     app = QApplication(sys.argv)
-    widget = MainWidget()
+    
+    # Get files to open from command line arguments
+    files_to_open = sys.argv[1:] if len(sys.argv) > 1 else None
+    
+    # Create widget with files to open
+    widget = MainWidget(files_to_open=files_to_open)
     widget.show()
+    
     signal.signal(signal.SIGINT, lambda sig, frame: widget.handle_interrupt())
     sys.exit(app.exec())
 
