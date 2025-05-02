@@ -32,6 +32,9 @@ from ..utils.git_manager import GitManager
 from .file_preview_dialog import FilePreviewDialog
 from .collision_dialog import CollisionDialog
 from .git_widget import GitWidget
+from .variable_calendar import VariableCalendarWidget
+from .supabase_widget import SupabaseWidget
+from .supabase_config_dialog import SupabaseConfigDialog
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
@@ -69,6 +72,14 @@ class MainWidget(QWidget):
         self.git_widget.artifacts_path_changed.connect(self.on_artifacts_path_changed)
         self.git_widget.setVisible(False)  # Initially hidden
         
+        # Initialize variable calendar widget
+        self.variable_calendar = VariableCalendarWidget()
+        self.variable_calendar.setVisible(False)
+        
+        # Initialize Supabase widget
+        self.supabase_widget = SupabaseWidget()
+        self.supabase_widget.setVisible(False)
+        
         # Initialize UI
         self.setup_ui()
 
@@ -85,12 +96,14 @@ class MainWidget(QWidget):
         self.mode_combo = QComboBox()
         self.mode_combo.addItems([
             'Archive',           # Normal archiving with skip patterns
-            'Dev Tools'         # Development tools and utilities
+            'Dev Tools',        # Development tools and utilities
+            'Variable Calendar' # Variable tracking and visualization
         ])
         self.mode_combo.setToolTip(
             'Operation mode:\n'
             'Archive: Normal archiving with skip patterns\n'
-            'Dev Tools: Development utilities and configuration management'
+            'Dev Tools: Development utilities and configuration management\n'
+            'Variable Calendar: Variable tracking and visualization'
         )
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
         mode_header.addWidget(self.mode_combo)
@@ -125,6 +138,12 @@ class MainWidget(QWidget):
         
         # Add Git widget
         main_layout.addWidget(self.git_widget)
+        
+        # Add variable calendar widget
+        main_layout.addWidget(self.variable_calendar)
+        
+        # Add Supabase widget (for Dev Tools mode)
+        main_layout.addWidget(self.supabase_widget)
         
         # Create archive group
         self.archive_group = QGroupBox("Archive Operations")
@@ -385,10 +404,20 @@ class MainWidget(QWidget):
             self.archive_group.hide()
             self.git_widget.show()
             self.recent_group.hide()
+            self.variable_calendar.hide()
+            self.supabase_widget.show()
+        elif self.mode_combo.currentText() == "Variable Calendar":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.show()
+            self.supabase_widget.hide()
         else:
             self.archive_group.show()
             self.git_widget.hide()
             self.recent_group.show()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
 
     def update_compression_label(self):
         """Update the compression label based on slider value"""
@@ -1322,10 +1351,20 @@ class MainWidget(QWidget):
             self.show_git_ui()
             self.archive_group.hide()
             self.recent_group.hide()
-        else:
+            self.variable_calendar.hide()
+            self.supabase_widget.show()
+        elif mode == "Variable Calendar":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.show()
+            self.supabase_widget.hide()
+        else:  # Archive mode
             self.hide_git_ui()
             self.archive_group.show()
             self.recent_group.show()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
             
     def show_git_ui(self):
         """Show Git-related UI elements"""

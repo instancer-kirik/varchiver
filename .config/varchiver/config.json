@@ -1,0 +1,17 @@
+{
+    "database": {
+        "type": "postgresql",
+        "host": "localhost",
+        "port": 5432,
+        "dbname": "varchiver",
+        "user": "varchiver",
+        "password": "varchiver"
+    },
+    "variable_calendar": {
+        "default_view": "calendar",
+        "date_format": "%Y-%m-%d",
+        "time_format": "%H:%M:%S",
+        "auto_refresh": true,
+        "refresh_interval": 60
+    }
+}
