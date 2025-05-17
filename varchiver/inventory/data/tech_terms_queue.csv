@@ -1,0 +1,76 @@
+term,type,category,description,status
+Gravity-Tech,Core Technology,Foundation,Base technology for gravity manipulation and control,pending
+Wave Manipulation,Core Technology,Foundation,Control and manipulation of various wave types,pending
+Spacedrive,Propulsion,Core,Advanced propulsion system using gravity-tech,pending
+Directed Gravity Device,Utility,Core,Device for precise gravity manipulation,pending
+Gravimancy,Magic System,Core,Fusion of gravity-tech and magical principles,pending
+Spinjack,Core Technology,Foundation,Kinetic energy storage and manipulation,Implemented
+Turnstile,Propulsion,Core,Angular momentum propulsion system,Implemented
+Ionocaloric,Thermal,Core,Temperature manipulation through ion cycling,Implemented
+Caboodler,Utility,Core,Modular utility system,Implemented
+Rail Grindstone,Power,Core,Momentum storage and energy generation,Implemented
+Cubeport,Structure,Core,Main spaceport structure with themed faces,pending
+Oceth,Location,World,Main continent with ancient ruins and settlements,pending
+Drush Syndicate,Faction,World,Technology-focused faction,pending
+Lokex Frame,Faction,World,Advanced engineering faction,pending
+Feap Wardens,Faction,World,Environmental and thermal tech faction,pending
+The Shrow,Faction,World,Mysterious faction with advanced tech,pending
+Nethbound,Faction,World,Magic-tech fusion faction,pending
+United Systems,Faction,World,Main governing body,pending
+Devast Core,Power,Core,Volatile gravitational singularity generator for deep-space dreadnoughts,pending
+Devast Beacon,Weapon,Core,Resonance amplifier that disassembles enemy constructs via wave collapse,pending
+Devast Node,Utility,Core,Forbidden neural uplink terminal for AI cluster override,pending
+Devast Shard,Material,Core,Fractured crystal for high-tier magic/tech hybrids,pending
+Devast Engine,Propulsion,Core,Spinjack-aligned hyperspin engine using controlled entropy,pending
+Devast Mantle,Defense,Core,Defensive module that folds space around the user,pending
+Devast Pulse Array,Weapon,Core,Directed energy weapon feeding on momentum and temperature,pending
+Order of the Devast,Faction,World,Lost techno-religious order focused on spacetime manipulation,pending
+Devast Ark,Faction,World,Nomadic ship-faction believing in recursive annihilation,pending
+House Devast,Faction,World,Elite aristocracy from Oceth with forbidden tech mastery,pending
+The Devast Choir,Faction,World,Sonic warfare faction using resonance for control,pending
+Devast Reach,Location,World,Barren orbital belt with broken satellites and whisper storms,pending
+Devast Vale,Location,World,Crater region on Oceth with war artifacts and gravity seams,pending
+Devast Citadel,Location,World,Abandoned black cube tower orbiting a dead star,pending
+Devast Trench,Location,World,Continental scar with magnetic fog and tech-wildlife,pending
+Neth,Location,World,Dark net dimension or base-world region,pending
+Geeth,Currency,World,Organic AI race currency system,pending
+Shrow,Material,World,Mist-based stealth technology or biome,pending
+Tast,Consumable,Core,Light combat drug for speed enhancement,pending
+Scaen,Utility,Core,Memory-record scene or illusion zone technology,pending
+Tuemorrow,Concept,World,Next reality layer or daily reset mechanic,pending
+Merse,Currency,World,Liquid-world currency or drowned tech system,pending
+Sterick,Enemy,World,Rare enemy class or title designation,pending
+Synce,Utility,Core,Synchronization mechanic for ghost mirroring and revival,pending
+Evision,Utility,Core,Advanced vision mode for upgrades and hacking,pending
+Critle,Pet,World,Companion system or minor currency class,pending
+Zern,Currency,World,Primary currency or system state indicator,pending
+Feap,Mod,Core,Modification slot type or in-game action verb,pending
+Stique,Weapon,Core,Advanced weapon type or player fashion system,pending
+Starecrow,Enemy,World,Mid-tier boss or enemy type,pending
+Trip,Movement,Core,Movement ability or short loop event system,pending
+Hant,Utility,Core,Ghost signal or memory echo technology,pending
+Uncollapser,Utility,Core,Glitch-stable dimension or unbreakable structure tech,pending
+Shelse,Location,World,Side-zone or substrate region,pending
+Lokex Chip,Utility,Core,Advanced door/hack/lock mechanism,pending
+Struct,Architecture,Core,Advanced building or upgrade system,pending
+Grush,Movement,Core,Advanced movement or attack verb system,pending
+Orior,Language,World,Ancient language or noble faction root,pending
+Giss,Information,World,Information broker or intelligence slang system,pending
+Campoors,Location,World,Playable arena region with foggy dystopian atmosphere,pending
+Fashing,Style,World,In-world slang for fashion and tech fusion,pending
+Bleck,Effect,Core,Onomatopoeic effect for impact or transformation,pending
+Honjunitai,Faction,World,Specialized faction or faction offshoot,pending
+Resonator,Utility,Core,Basic harmonic resonator for frequency matching,Implemented
+Magitek Core,Core,Core,Advanced core integrating magical and technological energies,Implemented
+Gravitic Field Generator,Field,Core,Powerful device for gravitational field manipulation,Implemented
+Thermal Regulator,Thermal,Core,Ancient device for precise thermal energy control,Implemented
+Harmonic Blade,Weapon,Core,Weapon that resonates with target frequency,Implemented
+Arcane Plate,Armor,Core,Armor with magical protection and tech enhancements,Implemented
+Gravitic Manipulator,Tool,Core,Basic tool for gravity manipulation,Implemented
+Spinjack Core,Core,Core,Spinal implant for kinetic energy storage and release,Implemented
+Turnstile Drive,Propulsion,Core,Advanced propulsion using asymmetrical resonance fields,Implemented
+Ionocaloric Mesh,Thermal,Core,Advanced thermal control using ion cycling,Implemented
+Modular Caboodler,Utility,Core,Versatile utility system with interchangeable modules,Implemented
+Devasting,Concept,World,Adjective form for exotic phenomena (e.g. Devasting Pressure Zones),pending 
+esketter ,Utility,Core, pending, pending
+inkatr

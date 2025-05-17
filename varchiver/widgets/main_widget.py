@@ -35,6 +35,8 @@ from .git_widget import GitWidget
 from .variable_calendar import VariableCalendarWidget
 from .supabase_widget import SupabaseWidget
 from .supabase_config_dialog import SupabaseConfigDialog
+from .inventory_widget import InventoryWidget
+from .json_editor_widget import JsonEditorWidget
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
@@ -80,6 +82,14 @@ class MainWidget(QWidget):
         self.supabase_widget = SupabaseWidget()
         self.supabase_widget.setVisible(False)
         
+        # Initialize inventory widget
+        self.inventory_widget = InventoryWidget()
+        self.inventory_widget.setVisible(False)
+        
+        # Initialize JSON Editor widget
+        self.json_editor_widget = JsonEditorWidget()
+        self.json_editor_widget.setVisible(False)
+        
         # Initialize UI
         self.setup_ui()
 
@@ -97,13 +107,17 @@ class MainWidget(QWidget):
         self.mode_combo.addItems([
             'Archive',           # Normal archiving with skip patterns
             'Dev Tools',        # Development tools and utilities
-            'Variable Calendar' # Variable tracking and visualization
+            'Variable Calendar', # Variable tracking and visualization
+            'Inventory',         # Cubok Inventory Manager
+            'JSON Editor'       # New JSON Editor mode
         ])
         self.mode_combo.setToolTip(
             'Operation mode:\n'
             'Archive: Normal archiving with skip patterns\n'
             'Dev Tools: Development utilities and configuration management\n'
-            'Variable Calendar: Variable tracking and visualization'
+            'Variable Calendar: Variable tracking and visualization\n'
+            'Inventory: Cubok Inventory Manager for gear and tech items\n'
+            'JSON Editor: Editor for large JSON files'
         )
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
         mode_header.addWidget(self.mode_combo)
@@ -144,6 +158,14 @@ class MainWidget(QWidget):
         
         # Add Supabase widget (for Dev Tools mode)
         main_layout.addWidget(self.supabase_widget)
+        
+        # Add inventory widget
+        self.inventory_widget = InventoryWidget()
+        self.inventory_widget.setVisible(False)
+        main_layout.addWidget(self.inventory_widget)
+        
+        # Add JSON Editor widget
+        main_layout.addWidget(self.json_editor_widget)
         
         # Create archive group
         self.archive_group = QGroupBox("Archive Operations")
@@ -406,18 +428,40 @@ class MainWidget(QWidget):
             self.recent_group.hide()
             self.variable_calendar.hide()
             self.supabase_widget.show()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
         elif self.mode_combo.currentText() == "Variable Calendar":
             self.git_widget.hide()
             self.archive_group.hide()
             self.recent_group.hide()
             self.variable_calendar.show()
             self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
+        elif self.mode_combo.currentText() == "Inventory":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
+            self.inventory_widget.show()
+            self.json_editor_widget.hide()
+        elif self.mode_combo.currentText() == "JSON Editor":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.show()
         else:
             self.archive_group.show()
             self.git_widget.hide()
             self.recent_group.show()
             self.variable_calendar.hide()
             self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
 
     def update_compression_label(self):
         """Update the compression label based on slider value"""
@@ -1353,18 +1397,40 @@ class MainWidget(QWidget):
             self.recent_group.hide()
             self.variable_calendar.hide()
             self.supabase_widget.show()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
         elif mode == "Variable Calendar":
             self.git_widget.hide()
             self.archive_group.hide()
             self.recent_group.hide()
             self.variable_calendar.show()
             self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
+        elif mode == "Inventory":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
+            self.inventory_widget.show()
+            self.json_editor_widget.hide()
+        elif mode == "JSON Editor":
+            self.git_widget.hide()
+            self.archive_group.hide()
+            self.recent_group.hide()
+            self.variable_calendar.hide()
+            self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.show()
         else:  # Archive mode
             self.hide_git_ui()
             self.archive_group.show()
             self.recent_group.show()
             self.variable_calendar.hide()
             self.supabase_widget.hide()
+            self.inventory_widget.hide()
+            self.json_editor_widget.hide()
             
     def show_git_ui(self):
         """Show Git-related UI elements"""

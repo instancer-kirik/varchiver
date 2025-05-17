@@ -1,0 +1,54 @@
+{
+    "items": [
+        {
+            "id": "item_001",
+            "name": "Basic Energy Cell",
+            "description": "A standard energy cell used in basic equipment",
+            "tech_tier": "tier1",
+            "energy_type": "electrical",
+            "weight": 0.5,
+            "volume": 0.2,
+            "effects": ["power_source", "rechargeable"]
+        },
+        {
+            "id": "item_002",
+            "name": "Advanced Battery",
+            "description": "High-capacity battery for advanced devices",
+            "tech_tier": "tier2",
+            "energy_type": "electrical",
+            "weight": 1.0,
+            "volume": 0.5,
+            "effects": ["power_source", "rechargeable", "high_capacity"]
+        },
+        {
+            "id": "item_003",
+            "name": "Quantum Core",
+            "description": "Advanced power source using quantum technology",
+            "tech_tier": "tier3",
+            "energy_type": "quantum",
+            "weight": 2.0,
+            "volume": 1.0,
+            "effects": ["power_source", "quantum_stable", "high_output"]
+        },
+        {
+            "id": "item_004",
+            "name": "Fusion Cell",
+            "description": "Miniature fusion reactor for high-end equipment",
+            "tech_tier": "tier4",
+            "energy_type": "fusion",
+            "weight": 3.0,
+            "volume": 1.5,
+            "effects": ["power_source", "fusion_stable", "extreme_output"]
+        },
+        {
+            "id": "item_005",
+            "name": "Antimatter Core",
+            "description": "The most advanced power source available",
+            "tech_tier": "tier5",
+            "energy_type": "antimatter",
+            "weight": 4.0,
+            "volume": 2.0,
+            "effects": ["power_source", "antimatter_stable", "infinite_output"]
+        }
+    ]
+} 

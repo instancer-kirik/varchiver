@@ -20,6 +20,8 @@ dependencies = [
     "pillow>=11.1.0",
     "psycopg2>=2.9.10",
     "supabase>=2.15.1",
+    "sqlalchemy>=2.0.41",
+    "psycopg2-binary>=2.9.10",
 ]
 
 [project.optional-dependencies]

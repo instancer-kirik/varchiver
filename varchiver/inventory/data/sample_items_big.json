@@ -1,0 +1,1445 @@
+{
+  "items": [
+    {
+      "id": "resonator_t1",
+      "name": "Basic Resonator",
+      "description": "A simple harmonic resonator for basic frequency matching.",
+      "tech_tier": "Tier 1",
+      "energy_type": "Resonant",
+      "category": "Modular",
+      "subcategory": "Resonators",
+      "type": "tech_module",
+      "rarity": "common",
+      "durability": 100,
+      "manufacturing_cost": 500.0,
+      "lore_notes": "First generation resonance technology. Widely adopted due to its simplicity and reliability in early space exploration. These modules formed the backbone of early sensor arrays and communication systems before more advanced focusing techniques were developed.",
+      "origin_faction": "United Systems",
+      "function_script": "resonator_v1.lua",
+      "icon": "resonator_t1.png",
+      "image_3d": "resonator_t1.glb",
+
+      "historical_era": "Early Expansion Era",
+      "cultural_significance": ["Standard Issue Component", "Symbol of Early Engineering"],
+      "discovery_location": "Old Terra Orbital Shipyards - Decommissioned Sector Gamma",
+      "related_lore_entries": ["lore_united_systems_founding", "tech_history_resonance_pioneers_vol1"],
+
+      "required_slots": ["small_utility_port_standard_v1"],
+      "power_draw_priority": "low",
+      "crew_requirement": null,
+      "maintenance_schedule": "Inspect every 500 operational cycles. Replace crystal matrix after 2000 cycles.",
+      "preferred_backpack_modes": ["field_repair_kit", "standard_component_storage"],
+      "environmental_sensitivities": ["high_emp_fields", "extreme_gravitational_flux"],
+      "legal_status": "Legal Globally",
+      "status_effects": [{"effect_id": "passive_harmonic_stabilization_field", "potency": 0.05, "aura_radius_m": 1, "type": "passive_aura"}],
+
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "scrap_electronics_tier1", "quantity": 3},
+        {"item_id": "crystal_resonating_shard_crude", "quantity": 1}
+      ],
+      "research_prerequisites": ["basic_electronics_mastery", "intro_to_resonance_physics_applied"],
+      "variant_of": null,
+
+      "tech_tags": ["resonant", "harmonic", "basic", "tier1_module", "sensor_component"],
+      "materials": ["crystal_glass", "carbon_fiber_shell", "copper_wiring_low_grade"],
+      "effects": ["Frequency matching", "Basic Harmonic Stabilization", "Low-Power Signal Amplification"],
+      "compatibility_tags": ["united_systems_bus_v1", "low_power_data_link_std"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 5,
+        "slot_size": [1, 1],
+        "slot_type": "resonator",
+        "weight_kg": 0.8,
+        "volume_l": 0.5
+      },
+
+      "energy_profile": {
+        "type": "resonant",
+        "input_energy": "low_bandwidth_wave",
+        "output": "stabilized_frequency_pulse",
+        "base_energy": 50.0,
+        "energy_drain": 5.0,
+        "peak_energy": 75.0,
+        "modifiers": ["+harmonic_amplification", "-noise_floor"]
+      },
+
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-10, 60],
+        "failure_temp_c": 90,
+        "cooling_required": false
+      },
+
+      "resonance_profile": {
+        "frequency_hz": 440,
+        "resonance_type": "harmonic",
+        "resonant_modes": ["primary", "auxiliary"]
+      },
+
+      "compute_model": {
+        "function_id": "harmonic_modulator",
+        "params": {
+          "input_frequency_range": [200, 600],
+          "damping": 0.2,
+          "resonance_quality": 0.8,
+          "harmonic_series": [1, 2, 3, 4, 5]
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "raw_crystal_generic", "quantity": 5},
+            {"item_id": "carbon_fiber_sheet_small", "quantity": 2}
+          ],
+          "tools_required_runtime": ["basic_assembly_jig_id"],
+          "output_quantity": 1
+        },
+        "manufacture_time": 180,
+        "rarity": "common_schematic",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["basic_fabricator_id", "clean_assembly_bench_lvl1"]
+      }
+    },
+    {
+      "id": "magitek_core_t2",
+      "name": "Advanced Magitek Core",
+      "description": "A sophisticated core that integrates magical and technological energies.",
+      "tech_tier": "Tier 2",
+      "energy_type": "Magitek",
+      "category": "Modular",
+      "subcategory": "Cores",
+      "type": "tech_module",
+      "rarity": "uncommon",
+      "durability": 150,
+      "manufacturing_cost": 1500.0,
+      "lore_notes": "Fusion of ancient magic and modern technology. These cores are notoriously difficult to stabilize without proper Nethbound attunement rituals.",
+      "origin_faction": "Nethbound",
+      "function_script": "magitek_core_v2.lua",
+      "icon": "magitek_core_t2.png",
+      "image_3d": "magitek_core_t2.glb",
+      
+      "historical_era": "Post-Arcane Renaissance",
+      "cultural_significance": "Highly Restricted Nethbound Technology",
+      "discovery_location": "Recovered from a derelict Nethbound Scout in the Whispering Nebula",
+      "related_lore_entries": ["lore_nethbound_secrets", "arcane_energy_theory_advanced"],
+
+      "required_slots": [{"type": "medium_core_housing", "affinity":"magitek_conduit_t2"}],
+      "power_draw_priority": "critical",
+      "crew_requirement": {"skill": "Magitek Engineering", "level": 2, "count": 1, "specialization": "Nethbound Systems"},
+      "maintenance_schedule": "Monthly attunement ritual. Recalibrate mana-matrix every 250 cycles.",
+      "preferred_backpack_modes": ["secure_containment_unit", "magitek_diagnostics_kit"],
+      "environmental_sensitivities": ["strong_null_magic_fields", "astral_void_exposure"],
+      "legal_status": {"United Systems": "Highly Illegal", "Nethbound Enclaves": "Restricted Military Tech", "Outer Rim Territories": "Contraband"},
+      "status_effects": [
+        {"effect_id": "mana_conversion_aura", "potency": 1.5, "radius_m": 5, "type": "active_aura_toggle"},
+        {"effect_id": "arcane_feedback_ward", "chance": 0.1, "mitigation_percent": 50, "type": "reactive_defense"}
+      ],
+
+      "crafting_recipe_id": "recipe_magitek_core_stabilization_ritual", 
+      "deconstruct_yield": [
+        {"item_id": "enchanted_crystal_fragments", "quantity": 3},
+        {"item_id": "titanium_alloy_salvage_t2", "quantity": 2},
+        {"item_id": "mana_circuit_damaged", "quantity": 1}
+      ],
+      "research_prerequisites": ["advanced_magitechnology", "nethbound_arcane_symbology", "quantum_entanglement_basics"],
+      "variant_of": "magitek_core_t1_prototype",
+
+      "tech_tags": ["magitek", "fusion", "advanced", "tier2_core", "arcane_tech"],
+      "materials": ["enchanted_crystal", "titanium_alloy", "mana_circuit", "stabilized_ectoplasm"],
+      "effects": ["Spell integration", "Mana conversion", "Limited Reality Warping"],
+      "compatibility_tags": ["nethbound_magitek_std_v2", "arcane_energy_bus_type_b"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2],
+        "slot_type": "core",
+        "weight_kg": 2.5,
+        "volume_l": 1.2
+      },
+      "energy_profile": {
+        "type": "magitek",
+        "input_energy": "magical_energy",
+        "output": "converted_energy",
+        "base_energy": 150.0,
+        "energy_drain": 15.0,
+        "peak_energy": 200.0,
+        "modifiers": ["+mana_efficiency", "+spell_stability"]
+      },
+
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [0, 80],
+        "failure_temp_c": 120,
+        "cooling_required": true
+      },
+
+      "resonance_profile": {
+        "frequency_hz": 880,
+        "resonance_type": "stable",
+        "resonant_modes": ["primary", "resonant"]
+      },
+
+      "compute_model": {
+        "function_id": "magitek_converter",
+        "params": {
+          "mana_efficiency": 0.85,
+          "spell_stability": 0.9,
+          "conversion_ratio": 1.2,
+          "resonance_threshold": 0.7
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "refined_enchanted_crystal", "quantity": 2},
+            {"item_id": "processed_titanium_alloy", "quantity": 5},
+            {"item_id": "mana_conduit_kit_t2", "quantity": 1}
+          ],
+          "rituals_required": ["nethbound_stabilization_chant_id"],
+          "output_quantity": 1
+        },
+        "manufacture_time": 7200, 
+        "rarity": "rare_dataslate",
+        "crafting_time_modifier": 0.9,
+        "required_tools_or_facilities": ["magitek_forge_lvl2_id", "arcane_focusing_chamber_id"]
+      }
+    },
+    {
+      "id": "gravitic_field_t3",
+      "name": "Elite Gravitic Field Generator",
+      "description": "A powerful device that manipulates gravitational fields with precision.",
+      "tech_tier": "Tier 3",
+      "energy_type": "Gravitic",
+      "category": "Modular",
+      "subcategory": "Field Shapers",
+      "type": "tech_module",
+      "rarity": "rare",
+      "durability": 200,
+      "manufacturing_cost": 3000.0,
+      "lore_notes": "Advanced gravity manipulation technology, developed by Lokex Frame. Its internal workings are a closely guarded secret, rumored to involve micro-singularities.",
+      "origin_faction": "Lokex Frame",
+      "function_script": "gravitic_field_v3.lua",
+      "icon": "gravitic_field_t3.png",
+      "image_3d": "gravitic_field_t3.glb",
+
+      "historical_era": "Mid-Corporate Wars",
+      "cultural_significance": "Lokex Frame Military Asset",
+      "discovery_location": "Blacksite Research Facility Omega-7 (Post-raid data archive)",
+      "related_lore_entries": ["lore_lokex_frame_dominance", "gravitic_theory_classified_papers"],
+
+      "required_slots": [{"type": "large_field_emitter_harness", "rating": "Class_A_Gravitic"}],
+      "power_draw_priority": "high",
+      "crew_requirement": {"skill": "Gravitic Engineering", "level": 4, "count": 1, "specialization": "Field Dynamics"},
+      "maintenance_schedule": "Bi-weekly calibration of singularity core. Full diagnostic every 1000 cycles.",
+      "preferred_backpack_modes": ["heavy_duty_containment", "gravitic_calibration_tools"],
+      "environmental_sensitivities": ["temporal distortions", "reality_destabilization_fields"],
+      "legal_status": {"Lokex Frame Space": "Military Use Only", "Most Others": "Banned/Highly Regulated"},
+      "status_effects": [
+        {"effect_id": "localized_gravity_well", "strength_g": 0.5, "radius_m": 10, "duration_s": 60, "type": "active_area_control"},
+        {"effect_id": "inertial_dampening_field_passive", "efficiency_percent": 30, "type": "passive_self"}
+      ],
+      
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "quantum_crystal_unstable", "quantity": 1},
+        {"item_id": "neutronium_alloy_shards_t3", "quantity": 4},
+        {"item_id": "field_stabilizer_damaged_t3", "quantity": 1}
+      ],
+      "research_prerequisites": ["advanced_gravitic_manipulation", "singularity_containment_principles", "lokex_frame_encryption_level3"],
+      "variant_of": null,
+
+      "tech_tags": ["gravitic", "elite", "field", "tier3_module", "spatial_control"],
+      "materials": ["quantum_crystal", "neutronium_alloy", "field_stabilizer", "dark_matter_filament"],
+      "effects": ["Mass alteration", "Spatial distortion", "Micro-gravity manipulation"],
+      "compatibility_tags": ["lokex_military_bus_v3", "high_energy_gravitic_interface"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [3, 3],
+        "slot_type": "field_shaper",
+        "weight_kg": 5.0,
+        "volume_l": 2.5
+      },
+
+      "energy_profile": {
+        "type": "gravitic",
+        "input_energy": "high_bandwidth_wave",
+        "output": "modulated_signal",
+        "base_energy": 300.0,
+        "energy_drain": 30.0,
+        "peak_energy": 400.0,
+        "modifiers": ["+field_strength", "+spatial_stability"]
+      },
+
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-20, 100],
+        "failure_temp_c": 150,
+        "cooling_required": true
+      },
+
+      "resonance_profile": {
+        "frequency_hz": 1760,
+        "resonance_type": "resonant",
+        "resonant_modes": ["primary", "auxiliary", "resonant"]
+      },
+
+      "compute_model": {
+        "function_id": "gravitic_field_generator",
+        "params": {
+          "field_strength": 0.95,
+          "spatial_resolution": 0.8,
+          "quantum_stability": 0.75,
+          "field_range": [0.1, 10.0]
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "purified_quantum_crystal", "quantity": 3},
+            {"item_id": "forged_neutronium_alloy_ingot", "quantity": 2},
+            {"item_id": "advanced_field_stabilizer_kit_t3", "quantity": 1}
+          ],
+          "assembly_protocols": ["lokex_secure_fab_protocol_g7"],
+          "output_quantity": 1
+        },
+        "manufacture_time": 21600, 
+        "rarity": "classified_blueprint_fragment",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["gravitic_assembler_lvl3_id", "zero_g_fabrication_bay_id", "quantum_entanglement_forge_id"]
+      }
+    },
+    {
+      "id": "thermal_regulator_t4",
+      "name": "Legendary Thermal Regulator",
+      "description": "An ancient device that can control thermal energy with incredible precision, rumored to be of Precursor origin.",
+      "tech_tier": "Tier 4",
+      "energy_type": "Thermal",
+      "category": "Modular",
+      "subcategory": "Circuitry",
+      "type": "tech_module",
+      "rarity": "legendary",
+      "durability": 300,
+      "manufacturing_cost": 10000.0,
+      "lore_notes": "A relic from a bygone era, its operational principles defy modern understanding. Its surface is cool to the touch, regardless of load.",
+      "origin_faction": "Precursor (Presumed)",
+      "function_script": "precursor_thermal_control.aic",
+      "icon": "thermal_regulator_t4.png",
+      "image_3d": "thermal_regulator_t4.glb",
+
+      "historical_era": "Pre-Collapse (Ancient Tech)",
+      "cultural_significance": "Priceless Archaeological Find",
+      "discovery_location": "Deep within the Xylosian Precursor Tombs",
+      "related_lore_entries": ["lore_precursors_xylos", "thermal_dynamics_beyond_entropy"],
+
+      "required_slots": [{"type": "adaptive_artifact_interface", "signature": "precursor_energy_matrix"}],
+      "power_draw_priority": "essential",
+      "crew_requirement": {"skill": "Archaeotechnology", "level": 5, "count": 1, "specialization": "Precursor Systems"},
+      "maintenance_schedule": "Self-repairing. Requires psychic resonance check annually.",
+      "preferred_backpack_modes": ["stasis_field_pouch", "artifact_analysis_scanner"],
+      "environmental_sensitivities": ["chroniton_flux", "strong_psychic_dissonance"],
+      "legal_status": "Universal Heritage Artifact - Study Only",
+      "status_effects": [
+        {"effect_id": "perfect_temperature_equilibrium", "radius_m": 50, "variance_c": 0.01, "type": "passive_aura_field"},
+        {"effect_id": "entropy_reversal_pulse_minor", "cooldown_s": 3600, "effect_description": "Reverts minor heat damage in area", "type":"active_utility"}
+      ],
+      
+      "crafting_recipe_id": null, 
+      "deconstruct_yield": [], 
+      "research_prerequisites": ["archaeotech_level5", "precursor_linguistics_advanced", "non_euclidean_thermodynamics"],
+      "variant_of": null,
+
+      "tech_tags": ["thermal", "legendary", "control", "tier4_artifact", "precursor_tech"],
+      "materials": ["unknown_precursor_alloy", "stabilized_chroniton_crystal", "sentient_coolant_gel"],
+      "effects": ["Absolute temperature control", "Localized entropy manipulation", "Energy siphoning"],
+      "compatibility_tags": ["precursor_universal_interface_alpha", "ancient_energy_grid_adapter"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2,2], 
+        "slot_type": "artifact_integration",
+        "weight_kg": 3.0,
+        "volume_l": 1.0
+      },
+      "energy_profile": {
+        "type": "Exotic/Thermal",
+        "input_energy": "ambient_heat_or_direct_feed",
+        "output": "precisely_controlled_thermal_energy_or_cryo_energy",
+        "base_energy": 0, 
+        "energy_drain": 0,
+        "peak_energy": 1000, 
+        "modifiers": ["+absolute_zero_capability", "+heat_to_energy_conversion_99%"]
+      },
+      "thermal_profile": {
+          "sensitive": false, 
+          "operating_range_c": [-273, 10000], 
+          "failure_temp_c": 100000, 
+          "cooling_required": false 
+      },
+      "blueprint": null 
+    },
+    {
+      "id": "resonant_weapon_t2",
+      "name": "Harmonic Blade",
+      "description": "A melee weapon that emits resonant frequencies to disrupt molecular bonds upon impact.",
+      "tech_tier": "Tier 2",
+      "energy_type": "Resonant",
+      "category": "Physical",
+      "subcategory": "Weapons",
+      "type": "weapon_melee_energy",
+      "rarity": "uncommon",
+      "durability": 120,
+      "manufacturing_cost": 900.0,
+      "lore_notes": "Favored by agile combatants, the Harmonic Blade requires precise strikes to maximize its disruptive potential.",
+      "origin_faction": "Ronin Clans",
+      "function_script": "harmonic_blade.lua",
+      "icon": "resonant_weapon_t2.png",
+      "image_3d": "resonant_weapon_t2.glb",
+
+      "historical_era": "Early Corporate Skirmishes",
+      "cultural_significance": "Ronin Duelist's Mark",
+      "discovery_location": "Hidden armories in the Neon District of Kai'Shan",
+      "related_lore_entries": ["lore_ronin_clans_codex", "resonant_weaponry_treatise"],
+
+      "required_slots": ["melee_weapon_grip_standard", "resonant_cell_slot_small"],
+      "power_draw_priority": "medium",
+      "crew_requirement": {"skill": "Melee Combat (Energy Blades)", "level": 2, "count": 1},
+      "maintenance_schedule": "Sharpen emitter array and recalibrate frequency modulator after every 50 engagements.",
+      "preferred_backpack_modes": ["combat_loadout_scabbard", "weapon_maintenance_kit"],
+      "environmental_sensitivities": ["strong_dampening_fields"],
+      "legal_status": "Legal in most systems, regulated in some high-security zones.",
+      "status_effects": [
+        {"effect_id": "molecular_disruption_strike", "damage_bonus_percent": 25, "proc_chance": 0.15, "type": "on_hit_proc"},
+        {"effect_id": "harmonic_hum_intimidation", "radius_m": 3, "effect_strength": "minor_morale_penalty", "type":"passive_aura_subtle"}
+      ],
+
+      "crafting_recipe_id": "recipe_harmonic_blade_tuning",
+      "deconstruct_yield": [
+        {"item_id": "resonant_crystal_focused", "quantity": 1},
+        {"item_id": "high_tensile_alloy_parts", "quantity": 3},
+        {"item_id": "energy_cell_casing_small_damaged", "quantity": 1}
+      ],
+      "research_prerequisites": ["resonant_energy_applications_combat", "melee_weapon_design_t2"],
+      "variant_of": "resonant_dagger_t1",
+      
+      "tech_tags": ["resonant", "weapon", "advanced", "tier2_melee", "energy_blade"],
+      "materials": ["focused_resonance_crystal", "high_tensile_grip_alloy", "miniature_power_cell"],
+      "effects": ["Frequency matching", "Wave amplification", "Armor Penetration (Minor)"],
+      "compatibility_tags": ["ronin_weapon_interface_std", "resonant_power_cell_type_a"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [1,3], 
+        "slot_type": "weapon_melee",
+        "weight_kg": 1.2,
+        "volume_l": 0.8
+      },
+      "energy_profile": {
+          "type": "Resonant Cell",
+          "input_energy": "direct_charge_or_cell_swap",
+          "output": "high_frequency_resonant_edge",
+          "base_energy": 100, 
+          "energy_drain": 2, 
+          "peak_energy": 10, 
+          "modifiers": ["+disruption_field_strength_on_crit"]
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "raw_focused_resonance_crystal", "quantity": 1},
+            {"item_id": "high_tensile_alloy_billet", "quantity": 2},
+            {"item_id": "miniature_power_cell_kit", "quantity": 1}
+          ],
+          "assembly_steps_description": "Requires precise crystal tuning and energy matrix alignment.",
+          "output_quantity": 1
+        },
+        "manufacture_time": 3600, 
+        "rarity": "uncommon_blueprint_scroll",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["precision_weapon_forge_id", "resonant_tuning_station_id"]
+      }
+    },
+    {
+      "id": "magitek_armor_t3",
+      "name": "Arcane Plate",
+      "description": "Heavy armor that integrates magical protection with technological enhancements, offering robust defense.",
+      "tech_tier": "Tier 3",
+      "energy_type": "Magitek",
+      "category": "Physical",
+      "subcategory": "Armor",
+      "type": "armor_heavy_suit",
+      "rarity": "rare",
+      "durability": 250,
+      "manufacturing_cost": 4500.0,
+      "lore_notes": "The Arcane Plate is a testament to the Nethbound's mastery over Magitek, capable of shrugging off both mundane ballistics and hostile spells.",
+      "origin_faction": "Nethbound",
+      "function_script": "arcane_plate_defense_matrix.lua",
+      "icon": "magitek_armor_t3.png",
+      "image_3d": "magitek_armor_t3.glb",
+
+      "historical_era": "Arcane Renaissance - Second Wave",
+      "cultural_significance": "Nethbound Guardian Regalia",
+      "discovery_location": "Forged in the Shadowlight Sanctums of Neth",
+      "related_lore_entries": ["lore_nethbound_guardians", "magitek_armor_schematics_vol3"],
+
+      "required_slots": ["heavy_armor_harness_magitek", "integrated_shield_emitter_slot_t3"],
+      "power_draw_priority": "high", 
+      "crew_requirement": {"skill": "Heavy Armor Proficiency (Magitek)", "level": 3, "count": 1},
+      "maintenance_schedule": "Weekly enchantment renewal. Full system diagnostic and plate resealing every 300 cycles.",
+      "preferred_backpack_modes": ["combat_deployment_rack", "armor_repair_station_mobile"],
+      "environmental_sensitivities": ["anti_magic_zones", "reality_shear_fields"],
+      "legal_status": {"Nethbound": "Military Issue", "United Systems": "Prohibited Superheavy Armor"},
+      "status_effects": [
+        {"effect_id": "adaptive_magical_warding", "resistance_bonus_percent": 20, "damage_types": ["elemental", "arcane"], "type": "passive_defense"},
+        {"effect_id": "kinetic_energy_redirection", "redirect_chance": 0.1, "effect_description": "Redirects a portion of kinetic impact energy into shields", "type":"passive_defense"}
+      ],
+
+      "crafting_recipe_id": "recipe_arcane_plate_infusion",
+      "deconstruct_yield": [
+        {"item_id": "enchanted_heavy_plates", "quantity": 5},
+        {"item_id": "magitek_circuitry_bundle_t3", "quantity": 2},
+        {"item_id": "broken_shield_emitter_core_t3", "quantity": 1}
+      ],
+      "research_prerequisites": ["advanced_magitek_armoring", "nethbound_enchanting_mastery", "heavy_exosuit_integration"],
+      "variant_of": "magitek_sentry_armor_t2",
+
+      "tech_tags": ["magitek", "armor", "elite", "tier3_heavy_armor", "spell_resistant"],
+      "materials": ["spellforged_adamantite_plates", "integrated_magitek_circuitry", "miniature_shield_emitter_array"],
+      "effects": ["Spell integration", "Arcane circuits", "Enhanced Physical Protection", "Minor Shield Generation"],
+      "compatibility_tags": ["nethbound_heavy_armor_std", "magitek_power_interface_type_c"],
+
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [3,4], 
+        "slot_type": "armor_suit_heavy",
+        "weight_kg": 75.0,
+        "volume_l": 60.0
+      },
+      "energy_profile":{
+          "type": "Integrated Magitek Core",
+          "input_energy": "internal_mana_battery_or_external_feed",
+          "output": "power_for_shields_and_enhancements",
+          "base_energy": 500, 
+          "energy_drain": 10, 
+          "peak_energy": 50, 
+          "modifiers": ["+spell_resistance_scaling_with_charge"]
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "adamantite_ingot_spellforged", "quantity": 10},
+            {"item_id": "magitek_core_miniature_t3", "quantity": 1},
+            {"item_id": "shield_emitter_kit_advanced", "quantity": 2}
+          ],
+          "enchantments_required": ["greater_ward_of_deflection_id", "seal_of_arcane_fortitude_id"],
+          "output_quantity": 1
+        },
+        "manufacture_time": 86400, 
+        "rarity": "epic_armor_codex",
+        "crafting_time_modifier": 0.95,
+        "required_tools_or_facilities": ["magitek_power_forge_id", "enchanting_altar_lvl3_id", "heavy_armor_assembly_rig_id"]
+      }
+    },
+    {
+      "id": "gravitic_tool_t1",
+      "name": "Basic Gravitic Manipulator",
+      "description": "A simple handheld tool for basic gravity manipulation tasks like lifting small objects or creating minor push/pull forces.",
+      "tech_tier": "Tier 1",
+      "energy_type": "Gravitic",
+      "category": "Physical",
+      "subcategory": "Tools",
+      "type": "tool_utility_handheld",
+      "rarity": "common",
+      "durability": 80,
+      "manufacturing_cost": 300.0,
+      "lore_notes": "Commonly found in engineering bays and cargo holds. Limited in power but useful for delicate tasks.",
+      "origin_faction": "Generic Fabrication Corp",
+      "function_script": "gravitic_manipulator_basic.lua",
+      "icon": "gravitic_tool_t1.png",
+      "image_3d": "gravitic_tool_t1.glb",
+
+      "historical_era": "Early Interstellar Trade Era",
+      "cultural_significance": "Standard Engineering Tool",
+      "discovery_location": "Mass-produced across most developed systems.",
+      "related_lore_entries": ["lore_standard_toolkit_history", "basic_gravitics_manual_v1"],
+
+      "required_slots": ["tool_holster_standard", "small_energy_cell_slot_gravitic"],
+      "power_draw_priority": "low",
+      "crew_requirement": {"skill": "Basic Tool Operation", "level": 1, "count": 1},
+      "maintenance_schedule": "Clean focusing lens weekly. Replace energy cell as needed.",
+      "preferred_backpack_modes": ["engineer_toolbelt", "utility_pouch_small"],
+      "environmental_sensitivities": ["intense_magnetic_fields_can_disrupt_focus"],
+      "legal_status": "Legal everywhere.",
+      "status_effects": [{"effect_id": "fine_object_manipulation", "lift_capacity_kg": 5, "force_newtons": 10, "type":"active_utility_tool"}],
+
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "gravitic_emitter_crude", "quantity": 1},
+        {"item_id": "generic_plastic_casing_parts", "quantity": 2},
+        {"item_id": "spent_energy_cell_small", "quantity": 1}
+      ],
+      "research_prerequisites": ["intro_to_gravitic_emitters"],
+      "variant_of": null,
+
+      "tech_tags": ["gravitic", "tool", "basic", "tier1_utility", "manipulator"],
+      "materials": ["low_grade_gravitic_emitter", "durable_plastic_casing", "standard_energy_cell_small"],
+      "effects": ["Mass alteration (minor)", "Push/Pull Force Generation"],
+      "compatibility_tags": ["standard_tool_interface_gravitic", "small_energy_cell_universal_b_type"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 3,
+        "slot_size": [1,2],
+        "slot_type": "tool_handheld",
+        "weight_kg": 0.7,
+        "volume_l": 0.4
+      },
+      "energy_profile": {
+          "type": "Small Gravitic Cell",
+          "input_energy": "cell_recharge_or_replacement",
+          "output": "focused_graviton_pulses",
+          "base_energy": 50, 
+          "energy_drain": 1, 
+          "peak_energy": 5, 
+          "modifiers": []
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "crude_gravitic_emitter_kit", "quantity": 1},
+            {"item_id": "plastic_casing_mold_generic", "quantity": 1},
+            {"item_id": "small_energy_cell_components_basic", "quantity": 1}
+          ],
+          "assembly_time_minutes": 15,
+          "output_quantity": 1
+        },
+        "manufacture_time": 900, 
+        "rarity": "common_tool_schematic",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["basic_workbench_id", "soldering_iron_id"]
+      }
+    },
+    {
+      "id": "thermal_consumable_t2",
+      "name": "Heat Sink Pack",
+      "description": "A pack of disposable heat sinks for rapid thermal management in emergency situations or for overclocked modules.",
+      "tech_tier": "Tier 2",
+      "energy_type": "Thermal",
+      "category": "Physical",
+      "subcategory": "Consumables",
+      "type": "consumable_utility_thermal",
+      "rarity": "uncommon",
+      "durability": 1, 
+      "manufacturing_cost": 50.0, 
+      "lore_notes": "Essential for overclockers and those operating in high-heat environments. Each sink absorbs a significant amount of thermal energy before becoming saturated.",
+      "origin_faction": "Various Industrial Suppliers",
+      "function_script": null, 
+      "icon": "thermal_consumable_t2.png",
+      "image_3d": "thermal_consumable_t2.glb",
+
+      "historical_era": "Corporate Expansion Phase",
+      "cultural_significance": "Overclocker's Best Friend",
+      "discovery_location": "Widely available in tech stores and industrial depots.",
+      "related_lore_entries": ["lore_overclocking_culture", "thermal_management_guide_field_ops"],
+
+      "required_slots": ["consumable_dispenser_slot_medium"],
+      "power_draw_priority": null, 
+      "crew_requirement": null,
+      "maintenance_schedule": "Store in a cool, dry place. Check expiry date.",
+      "preferred_backpack_modes": ["emergency_kit_pouch", "tech_support_belt"],
+      "environmental_sensitivities": ["extreme_ambient_heat_may_reduce_effectiveness"],
+      "legal_status": "Legal everywhere.",
+      "status_effects": [{"effect_id": "rapid_heat_absorption", "heat_dissipated_kj": 500, "duration_s": 10, "type":"on_use_consumable_targetted"}],
+
+      "crafting_recipe_id": "recipe_heat_sink_pack_assembly",
+      "deconstruct_yield": [{"item_id": "saturated_heat_sink_material", "quantity": 5}], 
+      "research_prerequisites": ["advanced_thermal_materials_t2", "consumable_fabrication_methods"],
+      "variant_of": "cryo_gel_pack_t1",
+
+      "tech_tags": ["thermal", "consumable", "advanced", "tier2_utility", "heat_sink"],
+      "materials": ["phase_change_alloy_t2", "insulated_casing_pack"],
+      "effects": ["Rapid Heat Dissipation", "Emergency Cooling"],
+      "compatibility_tags": ["standard_thermal_port_consumable", "module_overclock_support_gear"],
+      
+      "inventory_properties": {
+        "stack_size": 5, 
+        "max_stack_size": 20, 
+        "slot_size": [1,1],
+        "slot_type": "consumable_pack",
+        "weight_kg": 0.5, 
+        "volume_l": 0.3 
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "phase_change_alloy_pellets_t2", "quantity": 10},
+            {"item_id": "insulated_casing_material_sheets", "quantity": 2}
+          ],
+          "packaging_instructions": "Assemble 5 sinks per pack.",
+          "output_quantity": 1 
+        },
+        "manufacture_time": 300, 
+        "rarity": "uncommon_consumable_formula",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["consumable_assembly_bench_id", "material_press_small_id"]
+      }
+    },
+    {
+      "id": "spinjack_core_t1",
+      "name": "Basic Spinjack Core",
+      "description": "A spinal implant that stores and releases kinetic energy from movement, providing bursts of speed or power.",
+      "tech_tier": "Tier 1",
+      "energy_type": "Kinetic",
+      "category": "Modular",
+      "subcategory": "Core",
+      "type": "tech_module_cybernetic",
+      "rarity": "common",
+      "durability": 100,
+      "manufacturing_cost": 800.0,
+      "lore_notes": "Basic kinetic energy storage technology. Often used by couriers and scouts. Early models had a noticeable 'whine' when charging.",
+      "origin_faction": "Drush Syndicate",
+      "function_script": "spinjack_v1.lua",
+      "icon": "spinjack_core_t1.png",
+      "image_3d": "spinjack_core_t1.glb",
+
+      "historical_era": "Early Cybernetic Augmentation Era",
+      "cultural_significance": "Drush Syndicate Runner's Gear",
+      "discovery_location": "Black market clinics in Drush territories.",
+      "related_lore_entries": ["lore_drush_syndicate_ops", "cybernetics_kinetic_storage_intro"],
+
+      "required_slots": [{"type": "cybernetic_core_harness_spinal", "class":"spinjack_compatible_t1"}],
+      "power_draw_priority": "medium",
+      "crew_requirement": {"skill": "Cybernetic Integration Tolerance", "level": 1, "count": 1},
+      "maintenance_schedule": "Bi-monthly recalibration of kinetic flywheel. Neural interface check every 6 months.",
+      "preferred_backpack_modes": ["cybernetic_implant_case", "field_diagnostic_kit_cyber"],
+      "environmental_sensitivities": ["strong_inertial_dampeners_can_interfere_with_charging"],
+      "legal_status": {"Drush Syndicate": "Commonplace", "United Systems": "Restricted Augmentation"},
+      "status_effects": [
+        {"effect_id": "kinetic_burst_dash", "speed_boost_percent": 50, "duration_s": 3, "cooldown_s":10, "type":"active_movement"},
+        {"effect_id": "impact_energy_absorption_minor", "absorption_percent": 10, "type": "passive_defense_on_move"}
+      ],
+
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "kinetic_crystal_shards", "quantity": 2},
+        {"item_id": "neural_weave_scraps", "quantity": 1},
+        {"item_id": "titanium_housing_damaged_t1", "quantity": 1}
+      ],
+      "research_prerequisites": ["basic_cybernetics", "kinetic_energy_systems_t1"],
+      "variant_of": null,
+      
+      "tech_tags": ["spinjack", "kinetic", "movement", "tier1_cybernetic", "core_implant"],
+      "materials": ["kinetic_crystal", "neural_weave", "titanium_housing"],
+      "effects": ["Momentum storage", "Burst speed", "Minor Fall Damage Reduction"],
+      "compatibility_tags": ["drush_cybernetic_interface_v1", "kinetic_energy_link_std_alpha"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2],
+        "slot_type": "core_cybernetic",
+        "weight_kg": 1.5,
+        "volume_l": 0.8
+      },
+      "energy_profile": {
+        "type": "kinetic",
+        "input_energy": "movement",
+        "output": "stored_momentum",
+        "base_energy": 50.0, 
+        "energy_drain": 5.0, 
+        "peak_energy": 100.0, 
+        "modifiers": ["+momentum_efficiency", "-heat_generation"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-20, 60],
+        "failure_temp_c": 80,
+        "cooling_required": true 
+      },
+      "resonance_profile": {
+        "frequency_hz": 440, 
+        "resonance_type": "kinetic",
+        "resonant_modes": ["store", "release"]
+      },
+      "compute_model": {
+        "function_id": "kinetic_storage",
+        "params": {
+          "storage_capacity": 100.0,
+          "efficiency": 0.85,
+          "release_rate": 0.3,
+          "momentum_conversion": 0.9
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "raw_kinetic_crystal", "quantity": 3},
+            {"item_id": "neural_interface_kit_basic", "quantity": 1},
+            {"item_id": "titanium_casing_small_cybernetic", "quantity": 1}
+          ],
+          "surgical_requirements": "Requires cybernetic implantation bay.",
+          "output_quantity": 1
+        },
+        "manufacture_time": 14400, 
+        "rarity": "common_cybernetic_schematic",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["cybernetic_assembly_station_id", "neural_calibration_unit_id"]
+      }
+    },
+    {
+      "id": "turnstile_drive_t2",
+      "name": "Turnstile Drive",
+      "description": "Advanced propulsion system using asymmetrical resonance fields for rapid angular velocity changes.",
+      "tech_tier": "Tier 2",
+      "energy_type": "Resonant",
+      "category": "Modular",
+      "subcategory": "Propulsion",
+      "type": "tech_module_engine",
+      "rarity": "uncommon",
+      "durability": 150,
+      "manufacturing_cost": 2000.0,
+      "lore_notes": "Revolutionary propulsion technology using angular momentum. Allows for incredibly nimble spacecraft, but places high stress on pilots not used to it.",
+      "origin_faction": "Lokex Frame",
+      "function_script": "turnstile_v2.lua",
+      "icon": "turnstile_drive_t2.png",
+      "image_3d": "turnstile_drive_t2.glb",
+
+      "historical_era": "Rapid Fleet Expansion Period",
+      "cultural_significance": "Signature Lokex Frame Maneuvering System",
+      "discovery_location": "Developed in Lokex R&D Orbital Platforms.",
+      "related_lore_entries": ["lore_lokex_fleet_tactics", "asymmetric_resonance_propulsion_theory"],
+
+      "required_slots": [{"type":"medium_engine_nacelle_lokex", "rating":"Class_T2_Turnstile"}],
+      "power_draw_priority": "critical_maneuvering",
+      "crew_requirement": {"skill": "Advanced Piloting (Turnstile Drives)", "level": 3, "count": 1},
+      "maintenance_schedule": "Resonance chamber alignment every 100 flight hours. Full diagnostic after high-G maneuvers.",
+      "preferred_backpack_modes": ["engine_diagnostic_toolkit_t2", "emergency_field_stabilizer_pack"],
+      "environmental_sensitivities": ["strong_gravimetric_shear_can_induce_instability"],
+      "legal_status": {"Lokex Frame": "Standard Issue", "Competitors": "Sought After Tech"},
+      "status_effects": [
+        {"effect_id": "rapid_yaw_pitch_roll", "agility_boost_percent": 75, "type":"active_flight_mode"},
+        {"effect_id": "inertial_compensation_field_partial", "g_force_reduction": 0.3, "type":"passive_pilot_support"}
+      ],
+
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "resonance_crystal_array_damaged_t2", "quantity": 1},
+        {"item_id": "quantum_weave_scraps_high_grade", "quantity": 3},
+        {"item_id": "neutronium_core_fragment_small", "quantity": 1}
+      ],
+      "research_prerequisites": ["lokex_propulsion_systems_t2", "advanced_resonance_field_theory"],
+      "variant_of": "experimental_vector_thruster_x2",
+      
+      "tech_tags": ["turnstile", "resonant", "propulsion", "tier2_engine", "maneuvering_system"],
+      "materials": ["resonance_crystal_array", "quantum_weave_stabilizers", "miniature_neutronium_core"],
+      "effects": ["Angular momentum control", "Inertia bending (minor)", "Rapid Orientation Change"],
+      "compatibility_tags": ["lokex_maneuvering_bus_v2", "resonant_power_link_high_output"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [3, 3], 
+        "slot_type": "engine_maneuvering",
+        "weight_kg": 25.0,
+        "volume_l": 15.0
+      },
+      "energy_profile": {
+        "type": "resonant",
+        "input_energy": "quantum_flux_feed",
+        "output": "vectored_angular_momentum_thrust",
+        "base_energy": 200.0, 
+        "energy_drain": 20.0, 
+        "peak_energy": 300.0, 
+        "modifiers": ["+angular_efficiency", "+momentum_stability"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-50, 100],
+        "failure_temp_c": 150,
+        "cooling_required": true
+      },
+      "resonance_profile": {
+        "frequency_hz": 880, 
+        "resonance_type": "angular",
+        "resonant_modes": ["spin_port", "spin_starboard", "pulse_brake", "stabilize_attitude"]
+      },
+      "compute_model": {
+        "function_id": "angular_momentum_drive",
+        "params": {
+          "max_angular_velocity_dps": 720.0,
+          "momentum_transfer_efficiency": 0.95,
+          "inertia_modulation_factor": 0.8,
+          "resonance_frequency_target_hz": 880.0
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "calibrated_resonance_crystal_array_t2", "quantity": 1},
+            {"item_id": "quantum_weave_loom_output_large", "quantity": 2},
+            {"item_id": "miniature_neutronium_core_stabilized", "quantity": 1}
+          ],
+          "assembly_jig_id": "lokex_turnstile_assembly_jig_m2",
+          "output_quantity": 1
+        },
+        "manufacture_time": 28800, 
+        "rarity": "uncommon_engine_design_lokex",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["advanced_engine_fab_id", "resonance_tuning_chamber_id", "lokex_secure_cleanroom_id"]
+      }
+    },
+    {
+      "id": "ionocaloric_mesh_t3",
+      "name": "Ionocaloric Mesh",
+      "description": "Advanced thermal control system using ion cycling for precise temperature manipulation across a wide range.",
+      "tech_tier": "Tier 3",
+      "energy_type": "Thermal",
+      "category": "Modular",
+      "subcategory": "Thermal",
+      "type": "tech_module_environmental",
+      "rarity": "rare",
+      "durability": 200,
+      "manufacturing_cost": 2500.0,
+      "lore_notes": "Cutting-edge thermal management technology from Feap Wardens, capable of creating intense cold or heat locally. Often used in terraforming or sensitive lab environments.",
+      "origin_faction": "Feap Wardens",
+      "function_script": "ionocaloric_v3.lua",
+      "icon": "ionocaloric_mesh_t3.png",
+      "image_3d": "ionocaloric_mesh_t3.glb",
+
+      "historical_era": "New Environmentalism Movement",
+      "cultural_significance": "Feap Warden Terraforming Tool",
+      "discovery_location": "Feap Warden Bio-Domes and Research Outposts.",
+      "related_lore_entries": ["lore_feap_wardens_philosophy", "ionocaloric_effect_research_papers"],
+
+      "required_slots": [{"type":"medium_thermal_regulator_port_feap", "class":"ionocaloric_t3"}],
+      "power_draw_priority": "high_environmental",
+      "crew_requirement": {"skill": "Environmental Engineering (Ionocalorics)", "level": 3, "count": 1},
+      "maintenance_schedule": "Ion filter replacement every 500 cycles. Full system flush and recalibration annually.",
+      "preferred_backpack_modes": ["environmental_control_kit", "ion_mesh_diagnostics_tool"],
+      "environmental_sensitivities": ["high_particulate_atmospheres_can_clog_filters"],
+      "legal_status": {"Feap Wardens": "Controlled Distribution", "Other Factions": "Rare Import"},
+      "status_effects": [
+        {"effect_id": "localized_temperature_control_zone", "min_temp_c": -100, "max_temp_c":200, "radius_m":10, "type":"active_area_environmental"},
+        {"effect_id": "energy_efficient_thermal_transfer", "efficiency_percent": 85, "type":"passive_operational"}
+      ],
+
+      "crafting_recipe_id": null,
+      "deconstruct_yield": [
+        {"item_id": "ion_crystal_matrix_damaged_t3", "quantity": 1},
+        {"item_id": "thermal_weave_scraps_advanced", "quantity": 4},
+        {"item_id": "quantum_circuit_board_fried_t3", "quantity": 1}
+      ],
+      "research_prerequisites": ["feap_warden_thermal_tech_t3", "advanced_ion_physics", "environmental_control_systems_design"],
+      "variant_of": "cryothermal_emitter_t2",
+      
+      "tech_tags": ["thermal", "ionocaloric", "control", "tier3_environmental", "temperature_regulation"],
+      "materials": ["ion_crystal_matrix", "advanced_thermal_weave", "miniaturized_quantum_circuitry"],
+      "effects": ["Heat extraction", "Cold generation", "Precise Temperature Zone Creation"],
+      "compatibility_tags": ["feap_warden_environmental_bus_v3", "ionocaloric_power_interface_std"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2],
+        "slot_type": "thermal_regulator_advanced",
+        "weight_kg": 3.0,
+        "volume_l": 1.5
+      },
+      "energy_profile": {
+        "type": "thermal_ionocaloric",
+        "input_energy": "electrical_high_amperage",
+        "output": "directed_thermal_flux_or_cryo_effect",
+        "base_energy": 150.0, 
+        "energy_drain": 15.0, 
+        "peak_energy": 250.0, 
+        "modifiers": ["+thermal_efficiency", "+ion_stability"]
+      },
+      "thermal_profile": {
+        "sensitive": false, 
+        "operating_range_c": [-100, 200], 
+        "failure_temp_c": 250, 
+        "cooling_required": true 
+      },
+      "resonance_profile": {
+        "frequency_hz": 1320, 
+        "resonance_type": "thermal_ionic",
+        "resonant_modes": ["heat_cycle", "cool_cycle", "stabilize_ambient_temp"]
+      },
+      "compute_model": {
+        "function_id": "ionocaloric_controller",
+        "params": {
+          "target_temperature_range_c": [-100, 200],
+          "ion_flow_rate_max_mol_s": 0.75,
+          "thermal_efficiency_cop": 0.9, 
+          "max_cooling_capacity_kw": 150.0,
+          "max_heating_capacity_kw": 120.0
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "processed_ion_crystal_matrix_t3", "quantity": 1},
+            {"item_id": "advanced_thermal_weave_rolls", "quantity": 3},
+            {"item_id": "miniaturized_quantum_circuit_kit_t3", "quantity": 1}
+          ],
+          "calibration_sequence_id": "feap_ionocaloric_calibration_protocol_epsilon",
+          "output_quantity": 1
+        },
+        "manufacture_time": 43200, 
+        "rarity": "rare_environmental_schematic_feap",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["advanced_environmental_fab_id", "ion_physics_lab_id", "quantum_circuit_etching_station_id"]
+      }
+    },
+    {
+      "id": "caboodler_t2",
+      "name": "Modular Caboodler",
+      "description": "Versatile utility system with interchangeable modules for various tasks, a true jack-of-all-trades device.",
+      "tech_tier": "Tier 2",
+      "energy_type": "Modular", 
+      "category": "Utility",
+      "subcategory": "Tool",
+      "type": "tech_module_multi_tool",
+      "rarity": "uncommon",
+      "durability": 150,
+      "manufacturing_cost": 1800.0,
+      "lore_notes": "Revolutionary modular utility system. Its adaptability makes it popular with explorers and field technicians. The 'Caboodler' name is a folksy term that stuck.",
+      "origin_faction": "United Systems (Skunkworks Division)",
+      "function_script": "caboodler_v2.lua", 
+      "icon": "caboodler_t2.png",
+      "image_3d": "caboodler_t2.glb",
+
+      "historical_era": "Age of Independent Prospectors",
+      "cultural_significance": "Explorer's Multi-tool of Choice",
+      "discovery_location": "Initially prototyped in asteroid belt workshops.",
+      "related_lore_entries": ["lore_famous_explorers_gear", "modular_tool_design_principles_v2"],
+
+      "required_slots": [{"type":"universal_utility_mount_medium", "interface":"caboodler_module_bus_t2"}],
+      "power_draw_priority": "medium_utility",
+      "crew_requirement": {"skill": "Field Engineering (Modular Systems)", "level": 2, "count": 1},
+      "maintenance_schedule": "Clean module interface contacts weekly. Run self-diagnostic monthly.",
+      "preferred_backpack_modes": ["caboodler_module_case", "general_utility_belt"],
+      "environmental_sensitivities": ["fine_dust_can_jam_module_ports_if_uncovered"],
+      "legal_status": "Legal and widely available.",
+      "status_effects": [
+        {"effect_id": "rapid_module_hot_swap", "swap_time_reduction_s": 2, "type":"passive_operational_enhancement"},
+        {"effect_id": "adaptive_power_routing", "efficiency_bonus_percent_per_module_match": 5, "type":"passive_operational"}
+      ],
+
+      "crafting_recipe_id": "recipe_caboodler_base_unit_fabrication",
+      "deconstruct_yield": [
+        {"item_id": "modular_frame_components_t2", "quantity": 3},
+        {"item_id": "utility_circuit_board_generic_t2", "quantity": 1},
+        {"item_id": "adaptor_weave_strips_damaged", "quantity": 2}
+      ],
+      "research_prerequisites": ["modular_systems_integration_t2", "universal_tool_interface_design"],
+      "variant_of": "omni_tool_prototype_mk3",
+
+      "tech_tags": ["modular", "utility", "tool", "tier2_multitool", "adaptable_system"],
+      "materials": ["hardened_modular_frame", "multi_interface_utility_circuitry", "self_sealing_adaptor_weave"],
+      "effects": ["Module integration", "Task adaptation", "Power Management for Attached Modules"],
+      "compatibility_tags": ["universal_caboodler_module_std_t2", "medium_utility_power_link_b"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2], 
+        "slot_type": "utility_multi_tool_base",
+        "weight_kg": 2.0,
+        "volume_l": 1.0
+      },
+      "energy_profile": {
+        "type": "modular_adaptive_power_cell",
+        "input_energy": "electrical_standard_charge_port_or_cell",
+        "output": "regulated_power_to_active_module",
+        "base_energy": 100.0, 
+        "energy_drain": 10.0, 
+        "peak_energy": 150.0, 
+        "modifiers": ["+module_efficiency", "+adaptation_speed"]
+      },
+      "thermal_profile": {
+        "sensitive": false, 
+        "operating_range_c": [-20, 60],
+        "failure_temp_c": 80,
+        "cooling_required": false 
+      },
+      "resonance_profile": {
+        "frequency_hz": 660, 
+        "resonance_type": "modular_handshake",
+        "resonant_modes": ["adapt_interface_protocol", "integrate_module_power_draw", "optimize_data_flow"]
+      },
+      "compute_model": {
+        "function_id": "modular_utility_controller",
+        "params": {
+          "max_supported_modules_simultaneously": 1, 
+          "module_compatibility_database_version": "v2.37",
+          "power_allocation_efficiency": 0.85,
+          "module_hot_swap_protocol_timeout_ms": 500
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "modular_frame_kit_t2", "quantity": 1},
+            {"item_id": "utility_circuit_board_fab_t2", "quantity": 1},
+            {"item_id": "adaptor_weave_spool_small", "quantity": 1}
+          ],
+          "assembly_requires_calibration_module_id": "caboodler_master_calibrator_x1",
+          "output_quantity": 1
+        },
+        "manufacture_time": 10800, 
+        "rarity": "uncommon_utility_platform_design",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["general_electronics_fab_id", "modular_assembly_bench_id"]
+      }
+    },
+    {
+      "id": "rail_grindstone_t4",
+      "name": "Rail Grindstone",
+      "description": "Massive kinetic apparatus oscillating a dense mass between interdimensional portals for immense momentum storage and power generation.",
+      "tech_tier": "Tier 4",
+      "energy_type": "Kinetic",
+      "category": "Station",
+      "subcategory": "Power",
+      "type": "station_module_power_generator",
+      "rarity": "legendary",
+      "durability": 500, 
+      "manufacturing_cost": 100000.0, 
+      "lore_notes": "Revolutionary power generation technology developed by The Shrow. The 'Grindstone' itself is a hyperdense exotic material. Its oscillations are said to echo across realities.",
+      "origin_faction": "The Shrow",
+      "function_script": "rail_grindstone_v4.lua", 
+      "icon": "rail_grindstone_t4.png",
+      "image_3d": "rail_grindstone_t4.glb",
+
+      "historical_era": "The Transdimensional Leap Era",
+      "cultural_significance": "The Shrow's Primary Power Source - Highly Secretive",
+      "discovery_location": "Observed within Shrow Citadels (from a safe distance).",
+      "related_lore_entries": ["lore_the_shrow_origins", "transdimensional_physics_forbidden_texts"],
+
+      "required_slots": [{"type":"station_anchor_point_capital_power", "interface":"shrow_grindstone_conduit_t4"}],
+      "power_draw_priority": "station_primary_power",
+      "crew_requirement": {"skill": "Transdimensional Engineering (Grindstone Ops)", "level": 5, "count": 5, "specialization":"Portal Stability"},
+      "maintenance_schedule": "Continuous portal alignment monitoring. Exotic material integrity scan monthly. Full system recalibration bi-annually.",
+      "preferred_backpack_modes": [], 
+      "environmental_sensitivities": ["reality_flux_above_threshold_omega", "chroniton_particle_saturation"],
+      "legal_status": {"The Shrow": "Exclusively Used", "All Others": "Unknown / Unattainable Tech"},
+      "status_effects": [
+        {"effect_id": "massive_kinetic_energy_output", "power_output_gw": 500, "type":"passive_power_generation"},
+        {"effect_id": "localized_reality_stabilization_field", "radius_km":1, "stability_factor": 0.999, "type":"passive_operational_aura"}
+      ],
+
+      "crafting_recipe_id": null, 
+      "deconstruct_yield": [], 
+      "research_prerequisites": ["the_shrow_transdimensional_engineering_secrets", "exotic_matter_physics_mastery", "portal_mechanics_beyond_einstein"],
+      "variant_of": null,
+
+      "tech_tags": ["kinetic", "momentum", "power", "tier4_station_power", "transdimensional_tech", "shrow_exclusive"],
+      "materials": ["hyperdense_exotic_grindstone_material", "reality_stabilized_rail_alloy", "transdimensional_portal_emitter_array"],
+      "effects": ["Immense Momentum Storage", "High-Yield Energy Generation", "Localized Portal Manipulation"],
+      "compatibility_tags": ["shrow_capital_power_grid_alpha", "transdimensional_energy_tap_omega"],
+      
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [4, 4], 
+        "slot_type": "station_power_core_slot",
+        "weight_kg": 1000000.0, 
+        "volume_l": 500000.0 
+      },
+      "energy_profile": {
+        "type": "kinetic_transdimensional",
+        "input_energy": "initial_charge_plus_small_upkeep_for_portals",
+        "output": "massive_electrical_power_via_momentum_conversion",
+        "base_energy": 1000.0, 
+        "energy_drain": 100.0, 
+        "peak_energy": 1500000.0, 
+        "modifiers": ["+momentum_to_energy_conversion_efficiency_shrow", "+portal_stability_field_strength"]
+      },
+      "thermal_profile": {
+        "sensitive": true, 
+        "operating_range_c": [-50, 150], 
+        "failure_temp_c": 200, 
+        "cooling_required": true 
+      },
+      "resonance_profile": {
+        "frequency_hz": 1760, 
+        "resonance_type": "transdimensional_kinetic_harmonic",
+        "resonant_modes": ["store_momentum_phase", "release_energy_phase", "stabilize_reality_anchor"]
+      },
+      "compute_model": {
+        "function_id": "momentum_oscillator_transdimensional_controller",
+        "params": {
+          "oscillation_frequency_target_hz": 1760.0,
+          "portal_stability_threshold_min": 0.99995,
+          "energy_conversion_efficiency_target": 0.90, 
+          "max_momentum_storage_joule_seconds": 1e18 
+        }
+      },
+      "blueprint": null 
+    },
+    {
+      "id": "gravity_tech_foundational",
+      "name": "Foundational Gravity-Tech Principles",
+      "description": "A core data module containing the fundamental principles and equations for gravity manipulation. This is not a usable device itself, but the knowledge base for all gravitic engineering.",
+      "tech_tier": "Tier 0 (Foundational)",
+      "energy_type": "Gravitic",
+      "category": "Knowledge",
+      "subcategory": "Core Technology",
+      "type": "research_data_core",
+      "rarity": "essential",
+      "durability": null,
+      "manufacturing_cost": null,
+      "lore_notes": "The culmination of centuries of research into the nature of gravity. Unlocking these principles was a turning point in interstellar civilization, leading to FTL travel and advanced construction.",
+      "origin_faction": "Early Scientific Consortiums",
+      "function_script": null,
+      "icon": "gravity_tech_data_core.png",
+      "image_3d": null,
+      "historical_era": "Theoretical Breakthrough Era",
+      "cultural_significance": "Pillar of Modern Physics",
+      "discovery_location": "Synthesized from multiple independent research projects.",
+      "related_lore_entries": ["lore_history_of_physics_vol7", "gravity_unification_papers"],
+      "required_slots": null,
+      "power_draw_priority": null,
+      "crew_requirement": null,
+      "maintenance_schedule": "Archive data integrity check annually.",
+      "preferred_backpack_modes": ["secure_data_storage"],
+      "environmental_sensitivities": ["strong_magnetic_fields_can_corrupt_data_if_unshielded"],
+      "legal_status": "Public Domain (Basic Principles)",
+      "status_effects": null,
+      "crafting_recipe_id": null, 
+      "deconstruct_yield": null,
+      "research_prerequisites": [],
+      "variant_of": null,
+      "tech_tags": ["gravity_tech", "foundational", "research_data", "core_physics"],
+      "materials": ["crystal_data_storage_archival"],
+      "effects": ["Unlocks Gravitic Engineering Tier 1"],
+      "compatibility_tags": ["universal_research_database_format"],
+      "inventory_properties": {
+        "stack_size": 1, "max_stack_size": 1, "slot_size": [1,1],
+        "slot_type": "knowledge_core", "weight_kg": 0.1, "volume_l": 0.05
+      },
+      "energy_profile": null,
+      "thermal_profile": null,
+      "resonance_profile": null,
+      "compute_model": null,
+      "blueprint": {
+        "recipe_json": null,        
+        "manufacture_time": null,
+        "rarity": "unique_knowledge",
+        "crafting_time_modifier": null,
+        "required_tools_or_facilities": ["advanced_research_archive_id"]
+      }
+    },
+    {
+      "id": "wave_manipulation_foundational",
+      "name": "Foundational Wave Manipulation Theory",
+      "description": "A comprehensive data archive detailing the core theories and mathematics behind the manipulation of various wave spectra (EM, resonant, kinetic, etc.). Essential for advanced sensor, communication, and weapon systems.",
+      "tech_tier": "Tier 0 (Foundational)",
+      "energy_type": "Various (Theoretical)",
+      "category": "Knowledge",
+      "subcategory": "Core Technology",
+      "type": "research_data_advanced",
+      "rarity": "essential",
+      "durability": null,
+      "manufacturing_cost": null,
+      "lore_notes": "Understanding wave manipulation allowed for breakthroughs in everything from long-range scanners to resonant weaponry and advanced shield technology. This knowledge underpins countless modern devices.",
+      "origin_faction": "Pan-Systemic Physics Institutes",
+      "function_script": null,
+      "icon": "wave_manipulation_data.png",
+      "image_3d": null,
+      "historical_era": "Unified Wave Theory Era",
+      "cultural_significance": "Basis for Advanced Electronics and Energy Systems",
+      "discovery_location": "Collaborative research across multiple star systems.",
+      "related_lore_entries": ["lore_unified_field_theory_attempts", "wave_physics_collected_works"],
+      "required_slots": null,
+      "power_draw_priority": null,
+      "crew_requirement": null,
+      "maintenance_schedule": "Data redundancy checks, periodic updates with new theoretical models.",
+      "preferred_backpack_modes": ["encrypted_data_drive"],
+      "environmental_sensitivities": ["data_corruption_risk_near_reality_flux"],
+      "legal_status": "Open Access (Theoretical Frameworks)",
+      "status_effects": null,
+      "crafting_recipe_id": null,
+      "deconstruct_yield": null,
+      "research_prerequisites": ["advanced_mathematics_mastery"],
+      "variant_of": null,
+      "tech_tags": ["wave_manipulation", "foundational_physics", "research_data", "energy_systems_core"],
+      "materials": ["optoelectronic_data_crystal_secure"],
+      "effects": ["Unlocks Advanced Sensor Design", "Prerequisite for Resonant Technologies Tier 1"],
+      "compatibility_tags": ["standard_academic_data_format_v3"],
+      "inventory_properties": {
+        "stack_size": 1, "max_stack_size": 1, "slot_size": [1,1],
+        "slot_type": "knowledge_core_advanced", "weight_kg": 0.15, "volume_l": 0.07
+      },
+      "energy_profile": null,
+      "thermal_profile": null,
+      "resonance_profile": null,
+      "compute_model": null,
+      "blueprint": {
+        "recipe_json": null,
+        "manufacture_time": null,
+        "rarity": "unique_knowledge_compendium",
+        "crafting_time_modifier": null,
+        "required_tools_or_facilities": ["quantum_simulation_lab_id", "theoretical_physics_archive_id"]
+      }
+    },
+    {
+      "id": "spacedrive_engine_t1",
+      "name": "Basic Spacedrive Unit T1",
+      "description": "An early-generation FTL (Faster-Than-Light) engine based on manipulating localized spacetime bubbles via controlled gravity waves. Reliable but slow by modern standards.",
+      "tech_tier": "Tier 1",
+      "energy_type": "Gravitic",
+      "category": "Modular",
+      "subcategory": "Propulsion",
+      "type": "tech_module_engine_ftl",
+      "rarity": "common",
+      "durability": 200,
+      "manufacturing_cost": 5000.0,
+      "lore_notes": "The first widely adopted FTL drive, revolutionizing interstellar travel and trade. These units are known for their distinctive hum and the slight visual distortion they create when active.",
+      "origin_faction": "United Systems Stellar Cartography Corp",
+      "function_script": "spacedrive_t1_controller.lua",
+      "icon": "spacedrive_t1.png",
+      "image_3d": "spacedrive_t1.glb",
+      "historical_era": "First Interstellar Age",
+      "cultural_significance": "Symbol of Interstellar Expansion",
+      "discovery_location": "Developed at the Proxima Centauri Shipyards.",
+      "related_lore_entries": ["lore_history_of_ftl_travel_vol1", "spacedrive_pioneers_biographies"],
+      "required_slots": [{"type":"small_ftl_engine_mount_standard", "class":"gravity_wave_drive_t1"}],
+      "power_draw_priority": "critical_ftl_jump",
+      "crew_requirement": {"skill": "Basic Astrogation", "level": 1, "count": 1, "specialization":"Spacedrive Operation T1"},
+      "maintenance_schedule": "Graviton emitter alignment every 100 jumps. Spacetime coil integrity check monthly.",
+      "preferred_backpack_modes": ["ftl_engine_diagnostic_kit_t1", "emergency_spacetime_anchor_manual"],
+      "environmental_sensitivities": ["high_gravity_wells_can_disrupt_bubble_formation", "chroniton_fields_interfere_with_navigation"],
+      "legal_status": "Legal, widely available for civilian and commercial use.",
+      "status_effects": [
+        {"effect_id": "ftl_jump_capability_slow", "max_ftl_speed_c_equivalent": 0.5, "charge_time_minutes": 10, "type":"active_propulsion_ftl"}
+      ],
+      "crafting_recipe_id": "recipe_spacedrive_t1_assembly",
+      "deconstruct_yield": [
+        {"item_id": "graviton_emitter_array_damaged_t1", "quantity": 1},
+        {"item_id": "spacetime_coil_windings_used_t1", "quantity": 3},
+        {"item_id": "engine_casing_ftl_scrap_t1", "quantity": 5}
+      ],
+      "research_prerequisites": ["gravity_tech_foundational", "basic_engine_systems_t1", "astrogation_principles_intro"],
+      "variant_of": null,
+      "tech_tags": ["spacedrive", "ftl_engine", "gravitic_propulsion", "tier1_interstellar_drive"],
+      "materials": ["basic_graviton_emitter_array_t1", "spacetime_field_coils_copper", "reinforced_engine_casing_t1"],
+      "effects": ["Faster-Than-Light Travel (Slow)", "Localized Spacetime Bubble Generation"],
+      "compatibility_tags": ["standard_ftl_navigation_bus_v1", "gravitic_engine_power_interface_t1"],
+      "inventory_properties": {
+        "stack_size": 1, "max_stack_size": 1, "slot_size": [3, 2],
+        "slot_type": "engine_ftl_small", "weight_kg": 150.0, "volume_l": 80.0
+      },
+      "energy_profile": {
+        "type": "gravitic_ftl", "input_energy": "high_power_electrical_dedicated_ftl_bus", "output": "gravity_wave_propulsion_ftl",
+        "base_energy": 10000.0, "energy_drain_per_ly": 500.0, "peak_energy_on_jump_initiation": 50000.0, "modifiers": ["-ftl_speed_low", "+reliability_high"]
+      },
+      "thermal_profile": {
+        "sensitive": true, "operating_range_c": [-20, 120], "failure_temp_c": 180, "cooling_required": true
+      },
+      "resonance_profile": {
+        "frequency_hz": 50, "resonance_type": "spacetime_harmonic_bubble", "resonant_modes": ["jump_initiation", "stable_ftl_cruise", "bubble_collapse"]
+      },
+      "compute_model": {
+        "function_id": "ftl_navigation_controller_t1",
+        "params": { "max_jump_range_ly_single": 5, "navigation_accuracy_error_margin_percent": 0.1, "bubble_stability_threshold_min": 0.85 }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "graviton_emitter_kit_t1", "quantity": 2},
+            {"item_id": "copper_coil_large_spool", "quantity": 5},
+            {"item_id": "reinforced_steel_plates_engine_grade", "quantity": 10}
+          ],
+          "assembly_requires_specialized_jig_id": "ftl_engine_assembly_jig_t1",
+          "output_quantity": 1
+        },
+        "manufacture_time": 172800,
+        "rarity": "common_ftl_engine_schematic",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["heavy_engineering_bay_id", "gravitic_coil_winder_id", "ftl_calibration_station_t1_id"]
+      }
+    },
+    {
+      "id": "directed_gravity_device_t1",
+      "name": "Directed Gravity Device T1",
+      "description": "A handheld or mountable device capable of projecting a focused beam of gravitic force, allowing for basic push/pull manipulation of objects at a short range.",
+      "tech_tier": "Tier 1",
+      "energy_type": "Gravitic",
+      "category": "Utility",
+      "subcategory": "Tools",
+      "type": "tool_gravitic_manipulator_beam",
+      "rarity": "common",
+      "durability": 120,
+      "manufacturing_cost": 450.0,
+      "lore_notes": "An evolution of the basic gravitic manipulator, this device focuses gravitic energy into a controllable beam. Common in construction, cargo handling, and some niche combat applications.",
+      "origin_faction": "Lokex Frame (Civilian Applications Division)",
+      "function_script": "directed_gravity_beam_t1.lua",
+      "icon": "directed_gravity_device_t1.png",
+      "image_3d": "directed_gravity_device_t1.glb",
+      "historical_era": "Early Gravitic Tooling Era",
+      "cultural_significance": "Workhorse Tool in Zero-G Environments",
+      "discovery_location": "Standard issue on most Lokex Frame orbital facilities.",
+      "related_lore_entries": ["lore_lokex_civilian_tech_catalog", "applied_gravitics_tooling_manual_t1"],
+      "required_slots": [{"type":"utility_tool_hardpoint_small", "interface":"gravitic_beam_emitter_t1"}],
+      "power_draw_priority": "medium_when_active",
+      "crew_requirement": {"skill": "Gravitic Tool Operation (Beam)", "level": 1, "count": 1},
+      "maintenance_schedule": "Clean focusing lens weekly. Calibrate beam intensity monthly.",
+      "preferred_backpack_modes": ["industrial_tool_belt", "zero_g_utility_harness"],
+      "environmental_sensitivities": ["strong_magnetic_fields_can_disrupt_beam_cohesion", "dusty_environments_reduce_lens_efficiency"],
+      "legal_status": "Legal, some restrictions on beam strength in populated areas.",
+      "status_effects": [
+        {"effect_id": "gravitic_push_pull_beam", "max_force_newtons": 50, "range_m": 15, "beam_width_m": 0.5, "type":"active_utility_manipulation_beam"}
+      ],
+      "crafting_recipe_id": "recipe_directed_gravity_device_t1_fabrication",
+      "deconstruct_yield": [
+        {"item_id": "gravitic_beam_emitter_module_damaged_t1", "quantity": 1},
+        {"item_id": "focusing_lens_scratched_t1", "quantity": 1},
+        {"item_id": "tool_casing_parts_generic", "quantity": 3}
+      ],
+      "research_prerequisites": ["gravity_tech_foundational", "basic_gravitic_emitters_t1", "beam_focusing_principles_intro"],
+      "variant_of": "gravitic_tool_t1",
+      "tech_tags": ["gravity_device", "gravitic_tool", "beam_manipulator", "tier1_utility_lokex"],
+      "materials": ["focused_graviton_emitter_t1", "precision_focusing_lens_array_t1", "durable_tool_casing_ergonomic"],
+      "effects": ["Directed Gravitic Force Projection (Push/Pull)", "Short-Range Object Manipulation"],
+      "compatibility_tags": ["lokex_utility_tool_bus_v1", "standard_gravitic_power_cell_t1"],
+      "inventory_properties": {
+        "stack_size": 1, "max_stack_size": 2, "slot_size": [2, 1],
+        "slot_type": "tool_beam_manipulator_handheld", "weight_kg": 3.5, "volume_l": 2.0
+      },
+      "energy_profile": {
+        "type": "gravitic_beam_cell", "input_energy": "standard_tool_power_cell_or_direct_feed", "output": "focused_graviton_beam",
+        "base_energy": 200.0, "energy_drain_per_second_active": 5.0, "peak_energy_on_activation": 20.0, "modifiers": ["+beam_cohesion_short_range", "-force_falloff_with_distance"]
+      },
+      "thermal_profile": {
+        "sensitive": false, "operating_range_c": [-30, 70], "failure_temp_c": 90, "cooling_required": false
+      },
+      "resonance_profile": null,
+      "compute_model": {
+        "function_id": "gravity_beam_controller_t1",
+        "params": { "max_beam_range_m": 15, "max_force_output_newtons": 50, "beam_focus_cone_angle_degrees": 5 }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {"item_id": "graviton_emitter_calibrated_kit_t1", "quantity": 1},
+            {"item_id": "optical_grade_lens_blank_small", "quantity": 2},
+            {"item_id": "durable_plastic_tool_casing_molded", "quantity": 1}
+          ],
+          "assembly_requires_precision_alignment_jig_id": "gravitic_beam_alignment_jig_t1",
+          "output_quantity": 1
+        },
+        "manufacture_time": 7200,
+        "rarity": "common_utility_tool_schematic_lokex",
+        "crafting_time_modifier": 1.0,
+        "required_tools_or_facilities": ["precision_tool_assembly_station_id", "gravitic_emitter_calibration_bench_id"]
+      }
+    }
+  ]
+} 

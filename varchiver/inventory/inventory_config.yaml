@@ -1,0 +1,182 @@
+# Cubok Inventory Manager Configuration
+
+# Tech Tiers
+tech_tiers:
+  - name: "Tier 1"
+    description: "Basic tech, common components"
+    color: "#4CAF50"  # Green
+  - name: "Tier 2"
+    description: "Advanced tech, specialized components"
+    color: "#2196F3"  # Blue
+  - name: "Tier 3"
+    description: "Elite tech, rare components"
+    color: "#9C27B0"  # Purple
+  - name: "Tier 4"
+    description: "Legendary tech, unique components"
+    color: "#FF9800"  # Orange
+
+# Energy Types
+energy_types:
+  - name: "Resonant"
+    description: "Harmonic energy patterns"
+    color: "#E91E63"  # Pink
+    effects:
+      - "Frequency matching"
+      - "Wave amplification"
+      - "Pattern recognition"
+  - name: "Magitek"
+    description: "Magical-technological fusion"
+    color: "#673AB7"  # Deep Purple
+    effects:
+      - "Spell integration"
+      - "Mana conversion"
+      - "Arcane circuits"
+  - name: "Gravitic"
+    description: "Gravity manipulation"
+    color: "#3F51B5"  # Indigo
+    effects:
+      - "Mass alteration"
+      - "Spatial distortion"
+      - "Inertial dampening"
+  - name: "Thermal"
+    description: "Heat and energy management"
+    color: "#F44336"  # Red
+    effects:
+      - "Temperature control"
+      - "Energy conversion"
+      - "Heat dissipation"
+
+# Item Categories
+item_categories:
+  - name: "Physical"
+    description: "Tangible items and equipment"
+    subcategories:
+      - "Weapons"
+      - "Armor"
+      - "Tools"
+      - "Consumables"
+  - name: "Modular"
+    description: "Interchangeable components"
+    subcategories:
+      - "Cores"
+      - "Resonators"
+      - "Field Shapers"
+      - "Circuitry"
+  - name: "Abstract"
+    description: "Non-physical items"
+    subcategories:
+      - "Permissions"
+      - "Tech Modules"
+      - "Override Keys"
+      - "Data Fragments"
+
+# Item Properties
+item_properties:
+  inventory:
+    slot_size:
+      min: [1, 1]
+      max: [4, 4]
+    weight:
+      unit: "kg"
+      min: 0.1
+      max: 100.0
+    volume:
+      unit: "l"
+      min: 0.1
+      max: 50.0
+    stack_size:
+      min: 1
+      max: 999
+
+  energy_profiles:
+    types:
+      - "resonant"
+      - "magitek"
+      - "gravitic"
+      - "thermal"
+    input_types:
+      - "low_bandwidth_wave"
+      - "high_bandwidth_wave"
+      - "magical_energy"
+      - "thermal_energy"
+    output_types:
+      - "stabilized_frequency_pulse"
+      - "amplified_wave"
+      - "converted_energy"
+      - "modulated_signal"
+
+  thermal_profiles:
+    sensitivity_levels:
+      - "insensitive"
+      - "moderate"
+      - "sensitive"
+      - "critical"
+    operating_ranges:
+      min_temp: -50
+      max_temp: 150
+    cooling_requirements:
+      - "none"
+      - "passive"
+      - "active"
+      - "cryogenic"
+
+  resonance_profiles:
+    frequency_ranges:
+      min: 20
+      max: 20000
+    resonance_types:
+      - "harmonic"
+      - "chaotic"
+      - "stable"
+      - "resonant"
+    modes:
+      - "primary"
+      - "auxiliary"
+      - "resonant"
+      - "damped"
+
+  compute_models:
+    functions:
+      - "harmonic_modulator"
+      - "wave_amplifier"
+      - "energy_converter"
+      - "signal_processor"
+    parameter_ranges:
+      frequency:
+        min: 20
+        max: 20000
+      damping:
+        min: 0.0
+        max: 1.0
+      amplification:
+        min: 1.0
+        max: 100.0
+
+# Default Inventory Settings
+inventory_settings:
+  grid_size:
+    rows: 8
+    columns: 8
+  slot_size: 64
+  max_stack_size: 99
+  default_filters:
+    - "Tech Tier"
+    - "Energy Type"
+    - "Category"
+    - "Thermal Profile"
+    - "Resonance Profile"
+  view_modes:
+    - "Grid"
+    - "List"
+    - "Tree"
+  display_properties:
+    - "name"
+    - "tech_tier"
+    - "energy_type"
+    - "category"
+    - "stack_size"
+    - "weight"
+    - "volume"
+    - "thermal_profile"
+    - "resonance_profile" 
+    
