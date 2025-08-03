@@ -1,0 +1,644 @@
+{
+  "items": [
+    {
+      "id": "bumble_drive_v1",
+      "name": "BumbleDrive",
+      "description": "Bio-inspired levitation system based on resonant harmonic frequencies—defies classical lift mechanics.",
+      "tech_tier": "T4",
+      "energy_type": "Resonant",
+      "category": "Mobility",
+      "subcategory": "Locomotion",
+      "type": "drive_system",
+      "rarity": "rare",
+      "durability": 1500,
+      "manufacturing_cost": 7500.0,
+      "lore_notes": "Developed by observing the seemingly impossible flight mechanics of Earth's ancient bumblebees, this tech harnesses resonant frequencies to create lift in defiance of classical physics.",
+      "origin_faction": "Feap Wardens",
+      "function_script": "bumble_drive_v1.lua",
+      "icon": "bumble_drive.png",
+      "image_3d": "bumble_drive_v1.obj",
+      "historical_era": "Post-Resonance Discovery Era",
+      "cultural_significance": "Revolutionary invention that changed vehicle design across the galaxy",
+      "discovery_location": "Neth Research Station Alpha",
+      "related_lore_entries": ["resonance_breakthrough_2242", "bumblebee_studies"],
+      "required_slots": {
+        "type": "drive_mount",
+        "class": "resonant"
+      },
+      "power_draw_priority": "critical",
+      "crew_requirement": {
+        "skill": "Pilot",
+        "level": 3,
+        "count": 1
+      },
+      "maintenance_schedule": "quarterly",
+      "preferred_backpack_modes": ["field_loadout"],
+      "environmental_sensitivities": ["high_resonance_fields"],
+      "legal_status": {
+        "United Systems": "permitted",
+        "Nethbound Enclaves": "restricted"
+      },
+      "status_effects": [
+        {
+          "effect_id": "levitation",
+          "max_height_m": 15.5,
+          "stability": 0.87,
+          "type": "continuous"
+        }
+      ],
+      "crafting_recipe_id": "bd_schematic_v1",
+      "deconstruct_yield": [
+        {
+          "item_id": "resonance_crystal_pure",
+          "quantity": 2
+        },
+        {
+          "item_id": "harmonic_membrane",
+          "quantity": 1
+        }
+      ],
+      "research_prerequisites": ["biomimicry_302", "advanced_resonance_theory"],
+      "variant_of": null,
+      "tech_tags": ["resonant", "mobility", "levitation", "biomimetic"],
+      "materials": ["resonance_crystal", "harmonic_membrane", "quantum_foam"],
+      "effects": ["lift", "hover", "stabilize"],
+      "compatibility_tags": ["small_craft", "personal_mobility", "resonant_core"],
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2],
+        "slot_type": "tech",
+        "weight_kg": 3.5,
+        "volume_l": 2.2
+      },
+      "energy_profile": {
+        "type": "resonant",
+        "input_energy": "quantum",
+        "output": "lift_force",
+        "base_energy": 150.0,
+        "energy_drain": 12.5,
+        "peak_energy": 220.0,
+        "modifiers": ["harmonic_boost", "resonance_efficiency"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-10, 85],
+        "failure_temp_c": 120,
+        "cooling_required": true
+      },
+      "resonance_profile": {
+        "frequency_hz": 42875.3,
+        "resonance_type": "harmonic",
+        "resonant_modes": ["lift", "hover", "pulse"],
+        "resonance_signature": [42875.3, 85750.6, 128625.9],
+        "harmonic_index": 3.75,
+        "harmonic_series": [1.0, 2.0, 3.0, 3.75]
+      },
+      "compute_model": {
+        "function_id": "bumble_drive_controller_v1",
+        "params": {
+          "resonance_quality": 9.2,
+          "damping": 0.15,
+          "harmonic_series": [1.0, 2.0, 3.0, 3.75],
+          "input_frequency_range": [40000, 45000]
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {
+              "item_id": "resonance_crystal_pure",
+              "quantity": 2
+            },
+            {
+              "item_id": "harmonic_membrane",
+              "quantity": 1
+            },
+            {
+              "item_id": "quantum_foam_container",
+              "quantity": 3
+            }
+          ],
+          "assembly_steps_description": "Calibrate resonant frequency to 42875.3Hz precisely during membrane mounting",
+          "output_quantity": 1
+        },
+        "manufacture_time": 120.0,
+        "rarity": "rare_schematic",
+        "crafting_time_modifier": 1.4,
+        "required_tools_or_facilities": ["resonance_calibrator", "harmonic_forge"]
+      }
+    },
+    {
+      "id": "antigravitic_core_v2",
+      "name": "Antigravitic Core",
+      "description": "Creates localized null-gravity bubbles to float massive objects.",
+      "tech_tier": "T5",
+      "energy_type": "Gravitic",
+      "category": "Mobility",
+      "subcategory": "Locomotion",
+      "type": "field_generator",
+      "rarity": "epic",
+      "durability": 2200,
+      "manufacturing_cost": 12500.0,
+      "lore_notes": "The breakthrough that enabled affordable interplanetary construction, these cores bend spacetime to create pockets where gravity's influence is precisely controlled.",
+      "origin_faction": "Lokex Frame",
+      "function_script": "antigrav_core_v2.lua",
+      "icon": "antigrav_core.png",
+      "image_3d": "antigrav_core_v2.obj",
+      "historical_era": "Stellar Expansion Period",
+      "cultural_significance": "Transformed architecture and construction throughout civilized space",
+      "discovery_location": "Lokex Labs, Station Bravo",
+      "related_lore_entries": ["gravity_manipulation_theory", "lokex_engineering_legacy"],
+      "required_slots": {
+        "type": "field_mount",
+        "class": "gravitic"
+      },
+      "power_draw_priority": "high",
+      "crew_requirement": {
+        "skill": "Engineer",
+        "level": 4,
+        "count": 1,
+        "specialization": "Gravitic"
+      },
+      "maintenance_schedule": "monthly",
+      "preferred_backpack_modes": ["industrial"],
+      "environmental_sensitivities": ["strong_gravity_wells", "magnetic_anomalies"],
+      "legal_status": {
+        "United Systems": "regulated",
+        "Nethbound Enclaves": "unrestricted"
+      },
+      "status_effects": [
+        {
+          "effect_id": "gravity_null",
+          "radius_m": 25.0,
+          "strength_g": 0.001,
+          "type": "field"
+        }
+      ],
+      "crafting_recipe_id": "ag_schematic_v2",
+      "deconstruct_yield": [
+        {
+          "item_id": "exotic_matter_stabilized",
+          "quantity": 1
+        },
+        {
+          "item_id": "gravitic_lens_precision",
+          "quantity": 2
+        },
+        {
+          "item_id": "quantum_regulator",
+          "quantity": 1
+        }
+      ],
+      "research_prerequisites": ["gravitonics_501", "field_stability_research"],
+      "variant_of": "antigravitic_core_v1",
+      "tech_tags": ["gravitic", "field", "construction", "load_bearing"],
+      "materials": ["exotic_matter", "gravitic_lens", "quantum_regulator"],
+      "effects": ["null_gravity", "weight_reduction", "float"],
+      "compatibility_tags": ["heavy_equipment", "construction_gear", "void_platforms"],
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [3, 3],
+        "slot_type": "industrial",
+        "weight_kg": 15.2,
+        "volume_l": 8.4,
+        "efficiency": 0.92
+      },
+      "energy_profile": {
+        "type": "gravitic",
+        "input_energy": "quantum",
+        "output": "anti-g_field",
+        "base_energy": 350.0,
+        "energy_drain": 45.0,
+        "peak_energy": 820.0,
+        "modifiers": ["stabilized_field", "precision_focus"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-50, 120],
+        "failure_temp_c": 180,
+        "cooling_required": true,
+        "thermal_efficiency_cop": 3.8
+      },
+      "resonance_profile": {
+        "frequency_hz": 18247.1,
+        "resonance_type": "inverted",
+        "resonant_modes": ["null", "reduce", "invert"]
+      },
+      "compute_model": {
+        "function_id": "gravitic_field_controller_v2",
+        "params": {
+          "field_strength": 25.0,
+          "spatial_resolution": 0.05,
+          "mass_limit": 12000.0,
+          "stability_rating": 0.98,
+          "field_range": 25.0
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {
+              "item_id": "exotic_matter_stabilized",
+              "quantity": 1
+            },
+            {
+              "item_id": "gravitic_lens_precision",
+              "quantity": 2
+            },
+            {
+              "item_id": "quantum_regulator",
+              "quantity": 1
+            }
+          ],
+          "assembly_protocols": "Maintain zero-g environment during final calibration",
+          "output_quantity": 1
+        },
+        "manufacture_time": 240.0,
+        "rarity": "epic_schematic",
+        "crafting_time_modifier": 2.2,
+        "required_tools_or_facilities": ["gravitic_forge", "field_calibrator_station", "exotic_matter_containment"]
+      }
+    },
+    {
+      "id": "phase_oscillator_mk3",
+      "name": "Phase Oscillator",
+      "description": "Skips an object along spacetime threads in discrete hops.",
+      "tech_tier": "T5",
+      "energy_type": "Quantum",
+      "category": "Mobility",
+      "subcategory": "Phasing",
+      "type": "space_warper",
+      "rarity": "legendary",
+      "durability": 1800,
+      "manufacturing_cost": 22000.0,
+      "lore_notes": "By exploiting quantum uncertainties at the Planck scale, these devices allow matter to 'skip' between points in space without crossing the intervening distance.",
+      "origin_faction": "Nethbound Enclaves",
+      "function_script": "phase_oscillator_mk3.lua",
+      "icon": "phase_oscillator.png",
+      "image_3d": "phase_oscillator_mk3.obj",
+      "historical_era": "Quantum Revolution",
+      "cultural_significance": "Challenged fundamental understanding of spatial movement",
+      "discovery_location": "Deep Nether Labs",
+      "related_lore_entries": ["quantum_uncertainty_weaponization", "spacetime_thread_theory"],
+      "required_slots": {
+        "type": "reality_interface",
+        "signature": "q-level"
+      },
+      "power_draw_priority": "surge",
+      "crew_requirement": {
+        "skill": "Quantum_Engineer",
+        "level": 5,
+        "count": 1,
+        "specialization": "Phase-tech"
+      },
+      "maintenance_schedule": "weekly",
+      "preferred_backpack_modes": ["emergency", "stealth_ops"],
+      "environmental_sensitivities": ["reality_anchors", "causality_enforcement_fields"],
+      "legal_status": {
+        "United Systems": "restricted",
+        "Nethbound Enclaves": "military_grade"
+      },
+      "status_effects": [
+        {
+          "effect_id": "phase_shift",
+          "range_per_hop": 12.5,
+          "cooldown": 3.5,
+          "type": "teleport"
+        }
+      ],
+      "crafting_recipe_id": "po_schematic_mk3",
+      "deconstruct_yield": [
+        {
+          "item_id": "quantum_uncertainty_engine",
+          "quantity": 1
+        },
+        {
+          "item_id": "spacetime_thread_weaver",
+          "quantity": 1
+        },
+        {
+          "item_id": "causality_buffer",
+          "quantity": 2
+        }
+      ],
+      "research_prerequisites": ["quantum_phase_theory_701", "planck_scale_manipulation"],
+      "variant_of": "phase_oscillator_mk2",
+      "tech_tags": ["quantum", "phasing", "teleport", "spacetime_manipulation"],
+      "materials": ["uncertainty_engine", "thread_weaver", "causality_buffer"],
+      "effects": ["teleport", "phase", "skip"],
+      "compatibility_tags": ["stealth_suit", "quick_escape", "military_grade"],
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [2, 2],
+        "slot_type": "quantum",
+        "weight_kg": 1.8,
+        "volume_l": 0.9,
+        "phase_state": "unstable"
+      },
+      "energy_profile": {
+        "type": "quantum",
+        "input_energy": "exotic",
+        "output": "phase_shift",
+        "base_energy": 200.0,
+        "energy_drain": 8.0,
+        "peak_energy": 850.0,
+        "modifiers": ["quantum_efficiency", "reality_loosening"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-272, 40],
+        "failure_temp_c": 60,
+        "cooling_required": true
+      },
+      "resonance_profile": {
+        "frequency_hz": 86753.09,
+        "resonance_type": "quantum",
+        "resonant_modes": ["skip", "phase", "tunnel"]
+      },
+      "compute_model": {
+        "function_id": "phase_control_quantic_mk3",
+        "params": {
+          "range_per_hop": 12.5,
+          "cooldown": 3.5,
+          "phase_sync": 0.985
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {
+              "item_id": "quantum_uncertainty_engine",
+              "quantity": 1
+            },
+            {
+              "item_id": "spacetime_thread_weaver",
+              "quantity": 1
+            },
+            {
+              "item_id": "causality_buffer",
+              "quantity": 2
+            }
+          ],
+          "assembly_protocols": "Assembly must occur within quantum isolation chamber",
+          "output_quantity": 1
+        },
+        "manufacture_time": 480.0,
+        "rarity": "legendary_schematic",
+        "crafting_time_modifier": 3.5,
+        "required_tools_or_facilities": ["quantum_workbench", "reality_anchor", "nethbound_phase_tools"]
+      }
+    },
+    {
+      "id": "loop_anchor_beta",
+      "name": "Loop Anchor",
+      "description": "Marks a local temporal coordinate; allows short-term time reversion.",
+      "tech_tier": "T6",
+      "energy_type": "Temporal",
+      "category": "Time",
+      "subcategory": "Manipulation",
+      "type": "causality_device",
+      "rarity": "mythic",
+      "durability": 1200,
+      "manufacturing_cost": 35000.0,
+      "lore_notes": "Considered impossible until the Chrono Wars, these devices create localized loops in time that allow limited 'do-overs' without breaking the wider timeline.",
+      "origin_faction": "The Shrow",
+      "function_script": "loop_anchor_beta.lua",
+      "icon": "loop_anchor.png",
+      "image_3d": "loop_anchor_beta.obj",
+      "historical_era": "Post-Chrono War",
+      "cultural_significance": "Changed strategic thinking forever; created a new temporal arms race",
+      "discovery_location": "Classified Shrow Facility",
+      "related_lore_entries": ["temporal_ethics_primer", "chrono_war_timeline", "loop_protocols"],
+      "required_slots": {
+        "type": "temporal_mount",
+        "interface": "chronofield"
+      },
+      "power_draw_priority": "emergency",
+      "crew_requirement": {
+        "skill": "Chrononaut",
+        "level": 6,
+        "count": 1,
+        "specialization": "Loop_Specialist"
+      },
+      "maintenance_schedule": "after_each_use",
+      "preferred_backpack_modes": ["emergency", "test_equipment"],
+      "environmental_sensitivities": ["causality_fields", "high_entropy_zones"],
+      "legal_status": {
+        "The Shrow": "classified",
+        "All Others": "prohibited"
+      },
+      "status_effects": [
+        {
+          "effect_id": "time_loop",
+          "time_window": 12.0,
+          "memory_payload": 512000,
+          "type": "temporal"
+        }
+      ],
+      "crafting_recipe_id": "la_schematic_beta",
+      "deconstruct_yield": [],
+      "research_prerequisites": ["temporal_mechanics_901", "causality_preservation", "loop_containment"],
+      "variant_of": "loop_anchor_alpha",
+      "tech_tags": ["temporal", "causality", "reversion", "classified"],
+      "materials": ["chronoton_lattice", "causality_shunt", "memory_crystal"],
+      "effects": ["loop", "revert", "preserve"],
+      "compatibility_tags": ["temporal_suit", "emergency_system", "test_rig"],
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [1, 1],
+        "slot_type": "temporal",
+        "weight_kg": 0.4,
+        "volume_l": 0.2
+      },
+      "energy_profile": {
+        "type": "temporal",
+        "input_energy": "chronoton",
+        "output": "time_loop",
+        "base_energy": 500.0,
+        "energy_drain": 0.0,
+        "peak_energy": 8500.0,
+        "modifiers": ["causality_preservation", "memory_stability"],
+        "power_output_gw": 1.5
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-10, 30],
+        "failure_temp_c": 45,
+        "cooling_required": true,
+        "min_temp_c": -10,
+        "max_temp_c": 30
+      },
+      "resonance_profile": {
+        "frequency_hz": 1.21e9,
+        "resonance_type": "temporal",
+        "resonant_modes": ["loop", "preserve", "revert"],
+        "oscillation_frequency_target_hz": 1.21e9,
+        "portal_stability_threshold_min": 0.99
+      },
+      "compute_model": {
+        "function_id": "temporal_loop_processor",
+        "params": {
+          "time_window": 12.0,
+          "memory_payload": 512000,
+          "loop_cost": 850.0
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {
+              "item_id": "chronoton_lattice_pure",
+              "quantity": 1
+            },
+            {
+              "item_id": "causality_shunt_precision",
+              "quantity": 2
+            },
+            {
+              "item_id": "temporal_memory_crystal",
+              "quantity": 1
+            }
+          ],
+          "assembly_requires_calibration_module_id": "temporal_calibrator_v3",
+          "output_quantity": 1
+        },
+        "manufacture_time": 720.0,
+        "rarity": "mythic_schematic",
+        "crafting_time_modifier": 5.0,
+        "required_tools_or_facilities": ["chronoforge", "temporal_anchor", "causality_workbench"]
+      }
+    },
+    {
+      "id": "blink_frame_alpha",
+      "name": "Blink Frame",
+      "description": "Short-range personal teleport tool; emits quantum anchor pings.",
+      "tech_tier": "T4",
+      "energy_type": "Quantum",
+      "category": "Teleportation",
+      "subcategory": "Personal",
+      "type": "teleporter",
+      "rarity": "rare",
+      "durability": 1200,
+      "manufacturing_cost": 8500.0,
+      "lore_notes": "The first commercially available personal teleporter, the Blink Frame revolutionized urban transport but raised serious questions about security and privacy.",
+      "origin_faction": "Drush Syndicate",
+      "function_script": "blink_frame_alpha.lua",
+      "icon": "blink_frame.png",
+      "image_3d": "blink_frame_alpha.obj",
+      "historical_era": "Early Quantum Era",
+      "cultural_significance": "Changed urban living and security forever",
+      "discovery_location": "Drush Labs, New Mercury",
+      "related_lore_entries": ["teleport_regulations", "quantum_anchor_theory", "blink_theft_crisis"],
+      "required_slots": {
+        "type": "mobility_system",
+        "class": "quantum"
+      },
+      "power_draw_priority": "high",
+      "crew_requirement": {
+        "skill": "Basic",
+        "level": 2,
+        "count": 1
+      },
+      "maintenance_schedule": "monthly",
+      "preferred_backpack_modes": ["urban", "stealth"],
+      "environmental_sensitivities": ["anchor_jammers", "quantum_disruptors"],
+      "legal_status": {
+        "Drush Syndicate": "unrestricted",
+        "United Systems": "licensed"
+      },
+      "status_effects": [
+        {
+          "effect_id": "teleport",
+          "range_m": 50.0,
+          "charge_limit": 3,
+          "type": "mobility"
+        }
+      ],
+      "crafting_recipe_id": "bf_schematic_alpha",
+      "deconstruct_yield": [
+        {
+          "item_id": "quantum_entangler",
+          "quantity": 1
+        },
+        {
+          "item_id": "spatial_mapper_core",
+          "quantity": 1
+        },
+        {
+          "item_id": "anchor_ping_emitter",
+          "quantity": 2
+        }
+      ],
+      "research_prerequisites": ["quantum_teleportation_401", "spatial_mapping_tech"],
+      "variant_of": null,
+      "tech_tags": ["quantum", "teleport", "urban", "mobility"],
+      "materials": ["quantum_entangler", "spatial_mapper", "anchor_emitter"],
+      "effects": ["teleport", "blink", "relocate"],
+      "compatibility_tags": ["personal_armor", "combat_suit", "stealth_gear"],
+      "inventory_properties": {
+        "stack_size": 1,
+        "max_stack_size": 1,
+        "slot_size": [1, 2],
+        "slot_type": "mobility",
+        "weight_kg": 1.2,
+        "volume_l": 0.8
+      },
+      "energy_profile": {
+        "type": "quantum",
+        "input_energy": "standard",
+        "output": "teleport",
+        "base_energy": 100.0,
+        "energy_drain": 2.0,
+        "peak_energy": 450.0,
+        "modifiers": ["efficient_anchor", "quick_charge"]
+      },
+      "thermal_profile": {
+        "sensitive": true,
+        "operating_range_c": [-20, 60],
+        "failure_temp_c": 85,
+        "cooling_required": false
+      },
+      "resonance_profile": {
+        "frequency_hz": 42210.9,
+        "resonance_type": "quantum",
+        "resonant_modes": ["blink", "anchor", "ping"]
+      },
+      "compute_model": {
+        "function_id": "blink_control_system",
+        "params": {
+          "charge_limit": 3,
+          "anchor_stability": 0.92,
+          "reacquire_time": 2.5
+        }
+      },
+      "blueprint": {
+        "recipe_json": {
+          "input_materials": [
+            {
+              "item_id": "quantum_entangler",
+              "quantity": 1
+            },
+            {
+              "item_id": "spatial_mapper_core",
+              "quantity": 1
+            },
+            {
+              "item_id": "anchor_ping_emitter",
+              "quantity": 2
+            }
+          ],
+          "surgical_requirements": "Calibrate in low-interference environment",
+          "output_quantity": 1
+        },
+        "manufacture_time": 180.0,
+        "rarity": "rare_schematic",
+        "crafting_time_modifier": 1.5,
+        "required_tools_or_facilities": ["quantum_calibrator", "spatial_forge", "anchor_programming_station"]
+      }
+    }
+  ]
+}

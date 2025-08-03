@@ -1,5 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QHeaderView, QLabel, QTextEdit
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QFileDialog, QMessageBox, QHeaderView, QLabel, QTextEdit, QDialog, QDialogButtonBox, QComboBox, QMenu
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction
 import json
 import os
 
@@ -10,6 +11,31 @@ try:
     JSONSCHEMA_AVAILABLE = True
 except ImportError:
     print("WARNING: jsonschema library not found. Formal schema validation will be disabled. Pip install jsonschema to enable.")
+
+
+class TextEditDialog(QDialog):
+    """Dialog for editing long text fields"""
+
+    def __init__(self, title="Edit Text", initial_text="", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setModal(True)
+        self.resize(600, 400)
+
+        layout = QVBoxLayout(self)
+
+        self.text_edit = QTextEdit()
+        self.text_edit.setPlainText(initial_text)
+        layout.addWidget(self.text_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_text(self):
+        return self.text_edit.toPlainText()
+
 
 class JsonEditorWidget(QWidget):
     def __init__(self, parent=None):
@@ -34,7 +60,7 @@ class JsonEditorWidget(QWidget):
         self.save_button.clicked.connect(self.save_file)
         self.save_button.setEnabled(False)
         file_toolbar_layout.addWidget(self.save_button)
-        
+
         self.save_as_button = QPushButton("Save As...")
         self.save_as_button.clicked.connect(self.save_as_file_dialog)
         self.save_as_button.setEnabled(False)
@@ -56,18 +82,20 @@ class JsonEditorWidget(QWidget):
         self.infer_check_button.clicked.connect(self.infer_and_check_structure)
         self.infer_check_button.setEnabled(False) # Enabled when document is loaded
         validation_toolbar_layout.addWidget(self.infer_check_button)
-        
+
         self.schema_name_label = QLabel("Schema: None")
         validation_toolbar_layout.addWidget(self.schema_name_label)
         validation_toolbar_layout.addStretch()
         main_layout.addLayout(validation_toolbar_layout)
 
         # JSON Tree View
+        # Tree Widget to Display JSON Structure
         self.tree_widget = QTreeWidget()
-        self.tree_widget.setHeaderLabels(["Key/Index", "Value", "Type"])
-        self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        self.tree_widget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.tree_widget.setHeaderLabels(["Key", "Value", "Type"])
+        self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.tree_widget.itemChanged.connect(self._handle_item_changed)
+        self.tree_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tree_widget.customContextMenuRequested.connect(self._show_context_menu)
         main_layout.addWidget(self.tree_widget)
 
         # Validation/Error Display
@@ -176,13 +204,13 @@ class JsonEditorWidget(QWidget):
         except Exception as e:
             self.error_display.setText(f"An unexpected error occurred during validation: {e}")
             QMessageBox.critical(self, "Validation Error", f"An unexpected error occurred: {e}")
-            
+
     def _update_validate_button_state(self):
         if JSONSCHEMA_AVAILABLE and self._data is not None and self._current_schema is not None:
             self.validate_button.setEnabled(True)
         else:
             self.validate_button.setEnabled(False)
-        
+
         if self._data is not None:
             self.infer_check_button.setEnabled(True)
         else:
@@ -217,7 +245,7 @@ class JsonEditorWidget(QWidget):
                         continue
 
                     item_structure = {key: type(value).__name__ for key, value in item.items()}
-                    
+
                     model_keys = set(self._inferred_model_structure.keys())
                     item_keys = set(item_structure.keys())
 
@@ -229,7 +257,7 @@ class JsonEditorWidget(QWidget):
                     for key in common_keys:
                         if self._inferred_model_structure[key] != item_structure[key]:
                             type_mismatches[key] = f"Expected type '{self._inferred_model_structure[key]}', found '{item_structure[key]}'"
-                    
+
                     if missing_keys or extra_keys or type_mismatches:
                         results.append(f"--- Item at Index {i} ---")
                         if missing_keys: results.append(f"  Missing keys: {', '.join(sorted(list(missing_keys)))}")
@@ -250,7 +278,7 @@ class JsonEditorWidget(QWidget):
         else:
             self.error_display.setText(f"Data is not a JSON array or object (type: {type(self._data).__name__}). Cannot infer structure.")
             return
-        
+
         self.error_display.setText("\\n".join(results))
         if any(res.startswith("--- Item at Index") for res in results):
             QMessageBox.warning(self, "Structural Differences Found", "Differences found against the first item's structure. See details below.")
@@ -283,7 +311,11 @@ class JsonEditorWidget(QWidget):
         elif isinstance(value, list):
             for index, val in enumerate(value):
                 child_item = QTreeWidgetItem(parent_item_or_widget)
-                child_item.setText(0, str(index))
+                # Show ID next to index if it's a dict with an id field
+                display_text = str(index)
+                if isinstance(val, dict) and 'id' in val:
+                    display_text = f"{index} [{val['id']}]"
+                child_item.setText(0, display_text)
                 child_item.setFlags(child_item.flags() | Qt.ItemFlag.ItemIsEditable if not isinstance(val, (dict, list)) else child_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 child_item.setData(0, Qt.ItemDataRole.UserRole, index) # Store original index
                 if isinstance(val, (dict, list)):
@@ -299,7 +331,7 @@ class JsonEditorWidget(QWidget):
             item.setText(1, str(value))
             item.setText(2, self._get_type_string(value))
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
-            
+
     def _get_type_string(self, value):
         if value is None:
             return "null"
@@ -316,6 +348,96 @@ class JsonEditorWidget(QWidget):
         # For tree display, aligning with JSON types (string, number, boolean, object, array, null) is good.
         return type(value).__name__
 
+    def _show_context_menu(self, position):
+        """Show context menu for tree items"""
+        item = self.tree_widget.itemAt(position)
+        if item is None:
+            return
+
+        # Only show menu for editable leaf items
+        if item.childCount() > 0:
+            return
+
+        menu = QMenu(self)
+
+        # Get current value to determine menu options
+        current_value = item.text(1)
+        field_name = item.text(0)
+
+        # Text editor action for long text
+        if len(current_value) > 50 or '\n' in current_value or field_name.lower() in ['description', 'lore_notes', 'notes', 'details']:
+            edit_text_action = QAction("Edit in Dialog...", self)
+            edit_text_action.triggered.connect(lambda: self._edit_text_in_dialog(item))
+            menu.addAction(edit_text_action)
+
+        # Dropdown options for known enum fields
+        enum_options = self._get_enum_options(field_name)
+        if enum_options:
+            dropdown_action = QAction("Select from Options...", self)
+            dropdown_action.triggered.connect(lambda: self._show_dropdown_dialog(item, enum_options))
+            menu.addAction(dropdown_action)
+
+        if menu.actions():
+            menu.exec(self.tree_widget.mapToGlobal(position))
+
+    def _edit_text_in_dialog(self, item):
+        """Open dialog to edit text content"""
+        field_name = item.text(0)
+        current_text = item.text(1)
+
+        dialog = TextEditDialog(f"Edit {field_name}", current_text, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_text = dialog.get_text()
+            item.setText(1, new_text)
+            # Trigger the change handler
+            self._handle_item_changed(item, 1)
+
+    def _show_dropdown_dialog(self, item, options):
+        """Show dropdown dialog for enum fields"""
+        field_name = item.text(0)
+        current_value = item.text(1)
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Select {field_name}")
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+
+        combo = QComboBox()
+        combo.setEditable(True)  # Allow custom values
+        combo.addItems(options)
+        if current_value in options:
+            combo.setCurrentText(current_value)
+        else:
+            combo.setEditText(current_value)
+        layout.addWidget(combo)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_value = combo.currentText()
+            item.setText(1, new_value)
+            # Trigger the change handler
+            self._handle_item_changed(item, 1)
+
+    def _get_enum_options(self, field_name):
+        """Get dropdown options for known enum fields"""
+        enum_mappings = {
+            'rarity': ['common', 'uncommon', 'rare', 'epic', 'legendary'],
+            'status': ['pending', 'implemented', 'conceptual', 'planned', 'deprecated'],
+            'tech_tier': ['Tier 0', 'Tier 1', 'Tier 2', 'Tier 3', 'Tier 4'],
+            'energy_type': ['Resonant', 'Magitek', 'Gravitic', 'Thermal', 'Kinetic', 'Modular'],
+            'category': ['Modular', 'Physical', 'Utility', 'Station', 'Knowledge'],
+            'type': ['tech_module', 'weapon_melee_energy', 'armor_heavy_suit', 'tool_utility_handheld', 'consumable_utility_thermal'],
+            'origin_faction': ['United Systems', 'Drush Syndicate', 'Lokex Frame', 'Feap Wardens', 'The Shrow', 'Nethbound', 'Multiple', 'Unknown'],
+            'legal_status': ['Legal Globally', 'Restricted', 'Banned', 'Unknown'],
+        }
+
+        return enum_mappings.get(field_name.lower(), None)
+
     def _handle_item_changed(self, item, column):
         if self._is_populating: # Check flag
             return
@@ -331,12 +453,12 @@ class JsonEditorWidget(QWidget):
                 if parent:
                     key_or_index = current.data(0, Qt.ItemDataRole.UserRole)
                     path.insert(0, key_or_index)
-                else: 
-                    pass 
+                else:
+                    pass
                 current = parent
-            
-            data_node = self._data 
-            
+
+            data_node = self._data
+
             for i, p_item in enumerate(path[:-1]):
                 if isinstance(data_node, list) and isinstance(p_item, int) and p_item < len(data_node):
                     data_node = data_node[p_item]
@@ -345,11 +467,11 @@ class JsonEditorWidget(QWidget):
                 else:
                     print(f"Error: Path item '{p_item}' not found or invalid type in data structure at path {path[:i+1]}.")
                     return
-            
+
             try:
                 original_key_or_index = path[-1]
                 new_value_str = item.text(1)
-                
+
                 original_value = None
                 if isinstance(data_node, dict) and original_key_or_index in data_node:
                     original_value = data_node[original_key_or_index]
@@ -374,10 +496,10 @@ class JsonEditorWidget(QWidget):
                         # If original was string or type is ambiguous or new
                         elif '.' in new_value_str or 'e' in new_value_str.lower():
                              new_value = float(new_value_str)
-                        else: 
+                        else:
                             new_value = int(new_value_str)
                     except ValueError:
-                        new_value = new_value_str 
+                        new_value = new_value_str
 
                 if isinstance(data_node, dict):
                     data_node[original_key_or_index] = new_value
@@ -404,7 +526,7 @@ class JsonEditorWidget(QWidget):
         if parent_widget_item is None:
             count = self.tree_widget.topLevelItemCount()
             if count == 0:
-                return None 
+                return None
 
             is_list_root = True
             if count > 0:
@@ -414,8 +536,8 @@ class JsonEditorWidget(QWidget):
                     if not (key_text.isdigit() and int(key_text) == i):
                         is_list_root = False
                         break
-            else: 
-                if isinstance(self._data, list): 
+            else:
+                if isinstance(self._data, list):
                     return []
                 return {}
 
@@ -428,22 +550,22 @@ class JsonEditorWidget(QWidget):
                 data = {}
                 for i in range(count):
                     item = self.tree_widget.topLevelItem(i)
-                    key = item.text(0) 
+                    key = item.text(0)
                     data[key] = self._build_data_from_tree_item(item)
             return data
-        
-        return None 
+
+        return None
 
 
     def _build_data_from_tree_item(self, tree_item):
         num_children = tree_item.childCount()
-        item_type_text = tree_item.text(2) 
+        item_type_text = tree_item.text(2)
 
         if item_type_text == "object":
             obj = {}
             for i in range(num_children):
                 child = tree_item.child(i)
-                key = child.text(0) 
+                key = child.text(0)
                 obj[key] = self._build_data_from_tree_item(child)
             return obj
         elif item_type_text == "array":
@@ -452,8 +574,8 @@ class JsonEditorWidget(QWidget):
                 child = tree_item.child(i)
                 arr.append(self._build_data_from_tree_item(child))
             return arr
-        else: 
-            value_str = tree_item.text(1) 
+        else:
+            value_str = tree_item.text(1)
             if item_type_text == "null": return None
             if item_type_text == "boolean": return value_str.lower() == 'true'
             if item_type_text == "integer": # Distinguish from general "number"
@@ -465,17 +587,17 @@ class JsonEditorWidget(QWidget):
                         return float(value_str)
                     return int(value_str) # If it looks like an int, parse as int
                 except ValueError:
-                    return value_str 
+                    return value_str
             return value_str
 
 
     def save_file_content(self, file_path):
-        data_to_save = self._data 
+        data_to_save = self._data
 
-        if data_to_save is None : 
+        if data_to_save is None :
             QMessageBox.warning(self, "No Data", "No data loaded to save.")
             return False
-        
+
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data_to_save, f, indent=2, ensure_ascii=False)
@@ -493,15 +615,15 @@ class JsonEditorWidget(QWidget):
             self.save_as_file_dialog()
 
     def save_as_file_dialog(self):
-        if self._data is None: 
+        if self._data is None:
             QMessageBox.warning(self, "No Data", "No data loaded to save.")
             return
 
         default_name = os.path.basename(self._current_file_path) if self._current_file_path else "untitled.json"
-        default_dir = os.path.dirname(self._current_file_path) if self._current_file_path else os.getcwd() 
-        
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save JSON File As...", 
+        default_dir = os.path.dirname(self._current_file_path) if self._current_file_path else os.getcwd()
+
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save JSON File As...",
                                                    os.path.join(default_dir, default_name),
                                                    "JSON Files (*.json);;All Files (*)")
         if file_path:
-            self.save_file_content(file_path) 
+            self.save_file_content(file_path)

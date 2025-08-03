@@ -5,10 +5,12 @@ from sqlalchemy.dialects.postgresql import JSONB
 import sqlalchemy
 import os
 
+# Import Base from models
+from .models import Base
+
 # Database URL from environment or default to SQLite
 DATABASE_URL = os.environ.get('INVENTORY_DB_URL', 'sqlite:///inventory.db')
 engine = create_engine(DATABASE_URL)
-metadata = MetaData()
 
 def migrate():
     """Run database migrations."""
@@ -23,124 +25,8 @@ def migrate():
 
 def create_new_tables():
     """Create new tables for the enhanced schema."""
-    # Create base tables first
-    Table('items', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('item_id', String, unique=True),
-        Column('name', String),
-        Column('description', Text),
-        Column('tech_tier', String),
-        Column('energy_type', String),
-        Column('category', String),
-        Column('subcategory', String),
-        Column('type', String),
-        Column('rarity', String),
-        Column('durability', Integer),
-        Column('manufacturing_cost', Float),
-        Column('lore_notes', Text),
-        Column('origin_faction', String),
-        Column('function_script', String)
-    )
-    
-    Table('tags', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('name', String, unique=True)
-    )
-    
-    Table('materials', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('name', String, unique=True)
-    )
-    
-    Table('effects', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('name', String, unique=True),
-        Column('description', Text)
-    )
-    
-    Table('blueprints', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('name', String, unique=True),
-        Column('recipe_json', JSONB if sqlalchemy.engine.url.make_url(DATABASE_URL).get_backend_name() == 'postgresql' else String),
-        Column('manufacture_time', Float)
-    )
-    
-    # Create profile tables
-    Table('inventory_properties', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('stack_size', Integer),
-        Column('max_stack_size', Integer),
-        Column('slot_size', String),  # JSON stored as string
-        Column('slot_type', String),
-        Column('weight_kg', Float),
-        Column('volume_l', Float),
-        Column('item_id', Integer, ForeignKey('items.id'))
-    )
-    
-    Table('energy_profiles', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('type', String),
-        Column('input_energy', String),
-        Column('output', String),
-        Column('base_energy', Float),
-        Column('energy_drain', Float),
-        Column('peak_energy', Float),
-        Column('modifiers', String),  # JSON stored as string
-        Column('item_id', Integer, ForeignKey('items.id'))
-    )
-    
-    Table('thermal_profiles', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('sensitive', Boolean),
-        Column('operating_range_c', String),  # JSON stored as string
-        Column('failure_temp_c', Integer),
-        Column('cooling_required', Boolean),
-        Column('item_id', Integer, ForeignKey('items.id'))
-    )
-    
-    Table('resonance_profiles', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('frequency_hz', Float),
-        Column('resonance_type', String),
-        Column('resonant_modes', String),  # JSON stored as string
-        Column('item_id', Integer, ForeignKey('items.id'))
-    )
-    
-    Table('compute_models', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('processing_power', Float),
-        Column('memory_capacity', Float),
-        Column('network_bandwidth', Float),
-        Column('item_id', Integer, ForeignKey('items.id'))
-    )
-    
-    # Create association tables after all base tables exist
-    Table('item_tags', metadata,
-        Column('item_id', Integer, ForeignKey('items.id'), primary_key=True),
-        Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
-    )
-    
-    Table('item_materials', metadata,
-        Column('item_id', Integer, ForeignKey('items.id'), primary_key=True),
-        Column('material_id', Integer, ForeignKey('materials.id'), primary_key=True)
-    )
-    
-    Table('item_effects', metadata,
-        Column('item_id', Integer, ForeignKey('items.id'), primary_key=True),
-        Column('effect_id', Integer, ForeignKey('effects.id'), primary_key=True)
-    )
-    
-    Table('upgrade_paths', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('source_id', Integer, ForeignKey('items.id')),
-        Column('target_id', Integer, ForeignKey('items.id')),
-        Column('method', String),
-        Column('cost', Float),
-        Column('blueprint_id', Integer, ForeignKey('blueprints.id'))
-    )
-    
-    # Create all tables
-    metadata.create_all(engine)
+    # Create all tables defined in models.py using Base.metadata
+    Base.metadata.create_all(engine)
 
 def migrate_existing_data():
     """Migrate data from old schema to new schema."""
@@ -214,7 +100,23 @@ def migrate_existing_data():
         # Add new columns to inventory_properties
         conn.execute("""
             ALTER TABLE inventory_properties
-            ADD COLUMN IF NOT EXISTS slot_type VARCHAR
+            ADD COLUMN IF NOT EXISTS slot_type VARCHAR,
+            ADD COLUMN IF NOT EXISTS tech_attributes JSONB
+        """)
+            ADD COLUMN IF NOT EXISTS phase_state VARCHAR,
+            ADD COLUMN IF NOT EXISTS storage_capacity FLOAT,
+            ADD COLUMN IF NOT EXISTS efficiency FLOAT,
+            ADD COLUMN IF NOT EXISTS release_rate FLOAT,
+            ADD COLUMN IF NOT EXISTS momentum_conversion FLOAT,
+            ADD COLUMN IF NOT EXISTS max_angular_velocity_dps FLOAT,
+            ADD COLUMN IF NOT EXISTS momentum_transfer_efficiency FLOAT,
+            ADD COLUMN IF NOT EXISTS inertia_modulation_factor FLOAT,
+            ADD COLUMN IF NOT EXISTS ion_flow_rate_max_mol_s FLOAT,
+            ADD COLUMN IF NOT EXISTS max_supported_modules_simultaneously INTEGER,
+            ADD COLUMN IF NOT EXISTS module_compatibility_database_version VARCHAR,
+            ADD COLUMN IF NOT EXISTS module_hot_swap_protocol_timeout_ms INTEGER,
+            ADD COLUMN IF NOT EXISTS swap_time_reduction_s FLOAT,
+            ADD COLUMN IF NOT EXISTS efficiency_bonus_percent_per_module_match FLOAT
         """)
         
         # Add new columns to energy_profiles
@@ -222,9 +124,149 @@ def migrate_existing_data():
             ALTER TABLE energy_profiles
             ADD COLUMN IF NOT EXISTS base_energy FLOAT,
             ADD COLUMN IF NOT EXISTS energy_drain FLOAT,
-            ADD COLUMN IF NOT EXISTS peak_energy FLOAT
+            ADD COLUMN IF NOT EXISTS peak_energy FLOAT,
+            ADD COLUMN IF NOT EXISTS tech_attributes JSONB
+        """)
+            ADD COLUMN IF NOT EXISTS power_output_gw FLOAT,
+            ADD COLUMN IF NOT EXISTS energy_conversion_efficiency_target FLOAT,
+            ADD COLUMN IF NOT EXISTS max_ftl_speed_c_equivalent FLOAT,
+            ADD COLUMN IF NOT EXISTS charge_time_minutes FLOAT,
+            ADD COLUMN IF NOT EXISTS max_jump_range_ly_single FLOAT,
+            ADD COLUMN IF NOT EXISTS navigation_accuracy_error_margin_percent FLOAT,
+            ADD COLUMN IF NOT EXISTS bubble_stability_threshold_min FLOAT,
+            ADD COLUMN IF NOT EXISTS max_force_newtons FLOAT,
+            ADD COLUMN IF NOT EXISTS range_m FLOAT,
+            ADD COLUMN IF NOT EXISTS beam_width_m FLOAT,
+            ADD COLUMN IF NOT EXISTS max_beam_range_m FLOAT,
+            ADD COLUMN IF NOT EXISTS beam_focus_cone_angle_degrees FLOAT,
+            ADD COLUMN IF NOT EXISTS power_allocation_efficiency FLOAT,
+            ADD COLUMN IF NOT EXISTS lift_capacity_kg FLOAT,
+            ADD COLUMN IF NOT EXISTS force_newtons FLOAT,
+            ADD COLUMN IF NOT EXISTS mana_efficiency FLOAT,
+            ADD COLUMN IF NOT EXISTS spell_stability FLOAT,
+            ADD COLUMN IF NOT EXISTS conversion_ratio FLOAT,
+            ADD COLUMN IF NOT EXISTS field_strength FLOAT,
+            ADD COLUMN IF NOT EXISTS spatial_resolution FLOAT,
+            ADD COLUMN IF NOT EXISTS quantum_stability FLOAT,
+            ADD COLUMN IF NOT EXISTS field_range FLOAT
         """)
         
+        # Add new columns to thermal_profiles
+        conn.execute("""
+            ALTER TABLE thermal_profiles
+            ADD COLUMN IF NOT EXISTS heat_dissipated_kj FLOAT,
+            ADD COLUMN IF NOT EXISTS min_temp_c FLOAT,
+            ADD COLUMN IF NOT EXISTS max_temp_c FLOAT,
+            ADD COLUMN IF NOT EXISTS thermal_efficiency_cop FLOAT,
+            ADD COLUMN IF NOT EXISTS target_temperature_range_c JSONB,
+            ADD COLUMN IF NOT EXISTS max_cooling_capacity_kw FLOAT,
+            ADD COLUMN IF NOT EXISTS max_heating_capacity_kw FLOAT,
+            ADD COLUMN IF NOT EXISTS cold_factor FLOAT
+        """)
+        
+        # Add new columns to resonance_profiles
+        conn.execute("""
+            ALTER TABLE resonance_profiles
+            ADD COLUMN IF NOT EXISTS resonance_signature JSONB,
+            ADD COLUMN IF NOT EXISTS harmonic_index FLOAT,
+            ADD COLUMN IF NOT EXISTS frequency_matrix JSONB,
+            ADD COLUMN IF NOT EXISTS interference_map JSONB,
+            ADD COLUMN IF NOT EXISTS oscillation_frequency_target_hz FLOAT,
+            ADD COLUMN IF NOT EXISTS portal_stability_threshold_min FLOAT,
+            ADD COLUMN IF NOT EXISTS resonance_frequency_target_hz FLOAT,
+            ADD COLUMN IF NOT EXISTS harmonic_series JSONB,
+            ADD COLUMN IF NOT EXISTS resonance_quality FLOAT
+        """)
+        
+        # Add new columns to compute_models
+        conn.execute("""
+            ALTER TABLE compute_models
+            ADD COLUMN IF NOT EXISTS mass_limit FLOAT,
+            ADD COLUMN IF NOT EXISTS duration FLOAT,
+            ADD COLUMN IF NOT EXISTS stability_rating FLOAT,
+            ADD COLUMN IF NOT EXISTS range_per_hop FLOAT,
+            ADD COLUMN IF NOT EXISTS cooldown FLOAT,
+            ADD COLUMN IF NOT EXISTS phase_sync FLOAT,
+            ADD COLUMN IF NOT EXISTS time_window FLOAT,
+            ADD COLUMN IF NOT EXISTS memory_payload INTEGER,
+            ADD COLUMN IF NOT EXISTS loop_cost FLOAT,
+            ADD COLUMN IF NOT EXISTS speed_multiplier FLOAT,
+            ADD COLUMN IF NOT EXISTS radius FLOAT,
+            ADD COLUMN IF NOT EXISTS drift_penalty FLOAT,
+            ADD COLUMN IF NOT EXISTS entropy_output FLOAT,
+            ADD COLUMN IF NOT EXISTS subversion_depth FLOAT,
+            ADD COLUMN IF NOT EXISTS charge_limit INTEGER,
+            ADD COLUMN IF NOT EXISTS anchor_stability FLOAT,
+            ADD COLUMN IF NOT EXISTS reacquire_time FLOAT,
+            ADD COLUMN IF NOT EXISTS max_mass FLOAT,
+            ADD COLUMN IF NOT EXISTS distortion_index FLOAT,
+            ADD COLUMN IF NOT EXISTS collapse_risk FLOAT,
+            ADD COLUMN IF NOT EXISTS target_lock FLOAT,
+            ADD COLUMN IF NOT EXISTS reflection_delay FLOAT,
+            ADD COLUMN IF NOT EXISTS decoherence_rate FLOAT,
+            ADD COLUMN IF NOT EXISTS fork_count INTEGER,
+            ADD COLUMN IF NOT EXISTS merge_cost FLOAT,
+            ADD COLUMN IF NOT EXISTS risk_threshold FLOAT,
+            ADD COLUMN IF NOT EXISTS decay_rate FLOAT,
+            ADD COLUMN IF NOT EXISTS replica_strength FLOAT,
+            ADD COLUMN IF NOT EXISTS usage_limit INTEGER,
+            ADD COLUMN IF NOT EXISTS target_species JSONB,
+            ADD COLUMN IF NOT EXISTS signal_pattern JSONB,
+            ADD COLUMN IF NOT EXISTS battery_life FLOAT,
+            ADD COLUMN IF NOT EXISTS entangle_rate FLOAT,
+            ADD COLUMN IF NOT EXISTS ethical_rating FLOAT,
+            ADD COLUMN IF NOT EXISTS capture_radius FLOAT,
+            ADD COLUMN IF NOT EXISTS power_drain FLOAT,
+            ADD COLUMN IF NOT EXISTS ecological_disruption FLOAT,
+            ADD COLUMN IF NOT EXISTS projection_duration FLOAT,
+            ADD COLUMN IF NOT EXISTS decoy_type VARCHAR,
+            ADD COLUMN IF NOT EXISTS field_signature JSONB,
+            ADD COLUMN IF NOT EXISTS release_cycle FLOAT,
+            ADD COLUMN IF NOT EXISTS biomass_capacity FLOAT,
+            ADD COLUMN IF NOT EXISTS tension_threshold FLOAT,
+            ADD COLUMN IF NOT EXISTS species_filter JSONB,
+            ADD COLUMN IF NOT EXISTS trap_window FLOAT,
+            ADD COLUMN IF NOT EXISTS gravity_field FLOAT,
+            ADD COLUMN IF NOT EXISTS scent_profile JSONB,
+            ADD COLUMN IF NOT EXISTS coverage_area FLOAT,
+            ADD COLUMN IF NOT EXISTS species_ids JSONB,
+            ADD COLUMN IF NOT EXISTS camouflage_mode VARCHAR,
+            ADD COLUMN IF NOT EXISTS behavior_tree JSONB,
+            ADD COLUMN IF NOT EXISTS flight_time FLOAT,
+            ADD COLUMN IF NOT EXISTS node_count INTEGER,
+            ADD COLUMN IF NOT EXISTS ai_model VARCHAR,
+            ADD COLUMN IF NOT EXISTS recovery_protocol VARCHAR,
+            ADD COLUMN IF NOT EXISTS collection_type VARCHAR,
+            ADD COLUMN IF NOT EXISTS biomass_rate FLOAT,
+            ADD COLUMN IF NOT EXISTS preservation_quality FLOAT,
+            ADD COLUMN IF NOT EXISTS vibration_profile JSONB,
+            ADD COLUMN IF NOT EXISTS depth_range FLOAT,
+            ADD COLUMN IF NOT EXISTS creature_type VARCHAR
+        """)
+        
+        # Add tech_attributes to thermal_profiles
+        conn.execute("""
+            ALTER TABLE thermal_profiles
+            ADD COLUMN IF NOT EXISTS tech_attributes JSONB
+        """)
+        
+        # Add tech_attributes to resonance_profiles
+        conn.execute("""
+            ALTER TABLE resonance_profiles
+            ADD COLUMN IF NOT EXISTS tech_attributes JSONB
+        """)
+        
+        # Add tech_attributes to compute_models
+        conn.execute("""
+            ALTER TABLE compute_models
+            ADD COLUMN IF NOT EXISTS tech_attributes JSONB
+        """)
+        
+        # Add tech_category to items
+        conn.execute("""
+            ALTER TABLE items
+            ADD COLUMN IF NOT EXISTS tech_category VARCHAR
+        """)
     except Exception as e:
         print(f"Error during migration: {e}")
         conn.rollback()

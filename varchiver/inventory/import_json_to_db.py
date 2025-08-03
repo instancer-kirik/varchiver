@@ -151,6 +151,21 @@ for item_data in data['items']:
     # Inventory Properties
     inv_props_data = item_data.get('inventory_properties')
     if inv_props_data:
+        # Extract specialized inventory fields that might be nested
+        if isinstance(inv_props_data, dict):
+            # Handle specialized fields that might be in nested structures
+            for specialized_field in [
+                'phase_state', 'storage_capacity', 'efficiency', 'release_rate', 'momentum_conversion',
+                'max_angular_velocity_dps', 'momentum_transfer_efficiency', 'inertia_modulation_factor',
+                'ion_flow_rate_max_mol_s', 'max_supported_modules_simultaneously',
+                'module_compatibility_database_version', 'module_hot_swap_protocol_timeout_ms',
+                'swap_time_reduction_s', 'efficiency_bonus_percent_per_module_match'
+            ]:
+                # Check if the field might be in a nested structure
+                if specialized_field not in inv_props_data and 'params' in inv_props_data and isinstance(inv_props_data['params'], dict):
+                    if specialized_field in inv_props_data['params']:
+                        inv_props_data[specialized_field] = inv_props_data['params'][specialized_field]
+                        
         if item.inventory_properties:
             for key, value in inv_props_data.items():
                 setattr(item.inventory_properties, key, value)
@@ -163,6 +178,22 @@ for item_data in data['items']:
     # Energy Profile
     energy_data = item_data.get('energy_profile')
     if energy_data:
+        # Extract specialized tech fields that might be nested
+        if isinstance(energy_data, dict):
+            # Handle specialized fields that might be in nested structures
+            for specialized_field in [
+                'power_output_gw', 'energy_conversion_efficiency_target', 'max_ftl_speed_c_equivalent',
+                'charge_time_minutes', 'max_jump_range_ly_single', 'navigation_accuracy_error_margin_percent',
+                'bubble_stability_threshold_min', 'max_force_newtons', 'range_m', 'beam_width_m',
+                'max_beam_range_m', 'beam_focus_cone_angle_degrees', 'power_allocation_efficiency',
+                'lift_capacity_kg', 'force_newtons', 'mana_efficiency', 'spell_stability',
+                'conversion_ratio', 'field_strength', 'spatial_resolution', 'quantum_stability', 'field_range'
+            ]:
+                # Check if the field might be in a nested structure
+                if specialized_field not in energy_data and 'params' in energy_data and isinstance(energy_data['params'], dict):
+                    if specialized_field in energy_data['params']:
+                        energy_data[specialized_field] = energy_data['params'][specialized_field]
+                        
         if item.energy_profile:
             for key, value in energy_data.items():
                 setattr(item.energy_profile, key, value)
@@ -175,6 +206,18 @@ for item_data in data['items']:
     # Thermal Profile
     thermal_data = item_data.get('thermal_profile')
     if thermal_data:
+        # Extract specialized thermal fields that might be nested
+        if isinstance(thermal_data, dict):
+            # Handle specialized fields that might be in nested structures
+            for specialized_field in [
+                'heat_dissipated_kj', 'min_temp_c', 'max_temp_c', 'thermal_efficiency_cop',
+                'target_temperature_range_c', 'max_cooling_capacity_kw', 'max_heating_capacity_kw', 'cold_factor'
+            ]:
+                # Check if the field might be in a nested structure
+                if specialized_field not in thermal_data and 'params' in thermal_data and isinstance(thermal_data['params'], dict):
+                    if specialized_field in thermal_data['params']:
+                        thermal_data[specialized_field] = thermal_data['params'][specialized_field]
+                        
         if item.thermal_profile:
             for key, value in thermal_data.items():
                 setattr(item.thermal_profile, key, value)
@@ -187,6 +230,19 @@ for item_data in data['items']:
     # Resonance Profile
     resonance_data = item_data.get('resonance_profile')
     if resonance_data:
+        # Extract specialized resonance fields that might be nested
+        if isinstance(resonance_data, dict):
+            # Handle specialized fields that might be in nested structures
+            for specialized_field in [
+                'resonance_signature', 'harmonic_index', 'frequency_matrix', 'interference_map',
+                'oscillation_frequency_target_hz', 'portal_stability_threshold_min', 
+                'resonance_frequency_target_hz', 'harmonic_series', 'resonance_quality'
+            ]:
+                # Check if the field might be in a nested structure
+                if specialized_field not in resonance_data and 'params' in resonance_data and isinstance(resonance_data['params'], dict):
+                    if specialized_field in resonance_data['params']:
+                        resonance_data[specialized_field] = resonance_data['params'][specialized_field]
+                        
         if item.resonance_profile:
             for key, value in resonance_data.items():
                 setattr(item.resonance_profile, key, value)
@@ -199,6 +255,42 @@ for item_data in data['items']:
     # Compute Model
     compute_data = item_data.get('compute_model')
     if compute_data:
+        # Extract specialized compute fields from params if they exist
+        if isinstance(compute_data, dict) and 'params' in compute_data and isinstance(compute_data['params'], dict):
+            # Add all params as top-level attributes for the specialized tech fields
+            for param_key, param_value in compute_data['params'].items():
+                if param_key not in compute_data:  # Don't overwrite if already exists at top level
+                    compute_data[param_key] = param_value
+            
+            # Handle specific field categories and their specialized parameters
+            specialized_fields = [
+                # Locomotion/Mobility Tech
+                'mass_limit', 'duration', 'stability_rating', 'range_per_hop', 'cooldown', 'phase_sync',
+                # Time Tech
+                'time_window', 'memory_payload', 'loop_cost', 'speed_multiplier', 'radius', 'drift_penalty',
+                'entropy_output', 'subversion_depth',
+                # Teleportation/Phasing
+                'charge_limit', 'anchor_stability', 'reacquire_time', 'max_mass', 'distortion_index',
+                'collapse_risk', 'target_lock', 'reflection_delay', 'decoherence_rate',
+                # Meta/Exotic Systems
+                'fork_count', 'merge_cost', 'risk_threshold', 'decay_rate', 'replica_strength', 'usage_limit',
+                # Fishing Tech
+                'target_species', 'signal_pattern', 'battery_life', 'entangle_rate', 'ethical_rating',
+                'capture_radius', 'power_drain', 'ecological_disruption', 'projection_duration',
+                'decoy_type', 'field_signature', 'release_cycle', 'biomass_capacity',
+                # Trapping Tech
+                'tension_threshold', 'species_filter', 'trap_window', 'gravity_field', 'scent_profile',
+                'coverage_area', 'species_ids', 'camouflage_mode', 'behavior_tree', 'flight_time',
+                # Hybrid Systems
+                'node_count', 'ai_model', 'recovery_protocol', 'collection_type', 'biomass_rate',
+                'preservation_quality', 'vibration_profile', 'depth_range', 'creature_type'
+            ]
+            
+            # Ensure any specialized field in params gets promoted to the top level
+            for field in specialized_fields:
+                if field in compute_data['params'] and field not in compute_data:
+                    compute_data[field] = compute_data['params'][field]
+            
         if item.compute_model:
             for key, value in compute_data.items():
                 setattr(item.compute_model, key, value)

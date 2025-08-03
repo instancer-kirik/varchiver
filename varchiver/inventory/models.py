@@ -113,6 +113,8 @@ class InventoryProperties(Base):
     slot_type = Column(String, default='standard', nullable=True)
     weight_kg = Column(Float, nullable=True)
     volume_l = Column(Float, nullable=True)
+    # Store all specialized tech attributes in a single JSONB field
+    tech_attributes = Column(JSONType, nullable=True)  # Specialized tech-specific attributes
     item_id = Column(Integer, ForeignKey('items.id'), unique=True) # An item has one inv prop
     # item relationship defined in Item class via back_populates
 
@@ -130,6 +132,8 @@ class EnergyProfile(Base):
     peak_energy_on_jump_initiation = Column(Float, nullable=True)  # For FTL drives etc.
     peak_energy_on_activation = Column(Float, nullable=True) # Energy surge on device activation
     modifiers = Column(JSONType, nullable=True)  # list of strings
+    # Store all specialized tech attributes in a single JSONB field
+    tech_attributes = Column(JSONType, nullable=True)  # Specialized tech-specific attributes
     item_id = Column(Integer, ForeignKey('items.id'), unique=True) # An item has one energy profile
     # item relationship defined in Item class via back_populates
 
@@ -140,6 +144,8 @@ class ThermalProfile(Base):
     operating_range_c = Column(JSONType, nullable=True)  # [min, max]
     failure_temp_c = Column(Integer, nullable=True)
     cooling_required = Column(Boolean, default=False)
+    # Store all specialized tech attributes in a single JSONB field
+    tech_attributes = Column(JSONType, nullable=True)  # Specialized tech-specific attributes
     item_id = Column(Integer, ForeignKey('items.id'), unique=True) # An item has one thermal profile
     # item relationship defined in Item class via back_populates
 
@@ -149,6 +155,8 @@ class ResonanceProfile(Base):
     frequency_hz = Column(Float, nullable=True)
     resonance_type = Column(String, nullable=True)
     resonant_modes = Column(JSONType, nullable=True)  # list of strings
+    # Store all specialized tech attributes in a single JSONB field
+    tech_attributes = Column(JSONType, nullable=True)  # Specialized tech-specific attributes
     item_id = Column(Integer, ForeignKey('items.id'), unique=True) # An item has one resonance profile
     # item relationship defined in Item class via back_populates
 
@@ -156,7 +164,9 @@ class ComputeModel(Base):
     __tablename__ = 'compute_models'
     id = Column(Integer, primary_key=True)
     function_id = Column(String, nullable=True)
-    params = Column(JSONType, nullable=True)
+    params = Column(JSONType, nullable=True)  # Keep this for backward compatibility
+    # Store all specialized tech attributes in a single JSONB field
+    tech_attributes = Column(JSONType, nullable=True)  # Specialized tech-specific attributes
     item_id = Column(Integer, ForeignKey('items.id'), unique=True) # An item has one compute model
     # item relationship defined in Item class via back_populates
 
@@ -164,6 +174,7 @@ class Item(Base):
     __tablename__ = 'items'
     id = Column(Integer, primary_key=True) # Auto-incrementing primary key for the DB
     item_id = Column(String, index=True)  # User-defined unique ID from JSON, e.g., "resonator_t1"
+    tech_category = Column(String, nullable=True)  # 'mobility', 'time', 'teleportation', etc.
 
     name = Column(String, index=True)
     description = Column(Text, nullable=True)
