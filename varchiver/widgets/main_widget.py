@@ -67,36 +67,79 @@ class MainWidget(QWidget):
         self.theme_manager = ThemeManager()
         self.theme_manager.apply_theme()
 
+        # Initialize widgets and modes configuration
+        self._init_widgets()
+        self._init_modes_config()
+
+        # Initialize UI
+        self.setup_ui()
+
+    def _init_widgets(self):
+        """Initialize all mode widgets"""
         # Initialize Git widget and manager
         self.git_manager = GitManager()
         self.git_widget = GitWidget()
         self.git_widget.repo_changed.connect(self.on_repository_changed)
         self.git_widget.sequester_path_changed.connect(self.on_sequester_path_changed)
         self.git_widget.artifacts_path_changed.connect(self.on_artifacts_path_changed)
-        self.git_widget.setVisible(False)  # Initially hidden
 
-        # Initialize variable calendar widget
+        # Initialize other widgets
         self.variable_calendar = VariableCalendarWidget()
-        self.variable_calendar.setVisible(False)
-
-        # Initialize Supabase widget
         self.supabase_widget = SupabaseWidget()
-        self.supabase_widget.setVisible(False)
-
-        # Initialize inventory widget
         self.inventory_widget = InventoryWidget()
-        self.inventory_widget.setVisible(False)
-
-        # Initialize JSON Editor widget
         self.json_editor_widget = JsonEditorWidget()
-        self.json_editor_widget.setVisible(False)
-
-        # Initialize Glossary Manager widget
         self.glossary_manager_widget = GlossaryManagerWidget()
-        self.glossary_manager_widget.setVisible(False)
 
-        # Initialize UI
-        self.setup_ui()
+    def _init_modes_config(self):
+        """Initialize modes configuration"""
+        self.modes = {
+            'Archive': {
+                'description': 'Normal archiving with skip patterns',
+                'widgets_visible': [],
+                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
+                                 'inventory_widget', 'json_editor_widget', 'glossary_manager_widget'],
+                'special_groups': {'archive_group': True, 'recent_group': True}
+            },
+            'Dev Tools': {
+                'description': 'Development utilities and configuration management',
+                'widgets_visible': ['git_widget', 'supabase_widget'],
+                'widgets_hidden': ['variable_calendar', 'inventory_widget', 'json_editor_widget', 'glossary_manager_widget'],
+                'special_groups': {'archive_group': False, 'recent_group': False}
+            },
+            'Variable Calendar': {
+                'description': 'Variable tracking and visualization',
+                'widgets_visible': ['variable_calendar'],
+                'widgets_hidden': ['git_widget', 'supabase_widget', 'inventory_widget',
+                                 'json_editor_widget', 'glossary_manager_widget'],
+                'special_groups': {'archive_group': False, 'recent_group': False}
+            },
+            'Inventory': {
+                'description': 'Cubok Inventory Manager for gear and tech items',
+                'widgets_visible': ['inventory_widget'],
+                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
+                                 'json_editor_widget', 'glossary_manager_widget'],
+                'special_groups': {'archive_group': False, 'recent_group': False}
+            },
+            'JSON Editor': {
+                'description': 'Editor for large JSON files',
+                'widgets_visible': ['json_editor_widget'],
+                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
+                                 'inventory_widget', 'glossary_manager_widget'],
+                'special_groups': {'archive_group': False, 'recent_group': False}
+            },
+            'Glossary': {
+                'description': 'Terminology and glossary management',
+                'widgets_visible': ['glossary_manager_widget'],
+                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
+                                 'inventory_widget', 'json_editor_widget'],
+                'special_groups': {'archive_group': False, 'recent_group': False}
+            }
+        }
+
+        # Set all widgets initially hidden
+        for widget_name in ['git_widget', 'variable_calendar', 'supabase_widget',
+                           'inventory_widget', 'json_editor_widget', 'glossary_manager_widget']:
+            getattr(self, widget_name).setVisible(False)
 
     def setup_ui(self):
         """Initialize the UI components."""
@@ -109,23 +152,14 @@ class MainWidget(QWidget):
         # Add theme toggle and release manager next to mode selector
         mode_header = QHBoxLayout()
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems([
-            'Archive',           # Normal archiving with skip patterns
-            'Dev Tools',        # Development tools and utilities
-            'Variable Calendar', # Variable tracking and visualization
-            'Inventory',         # Cubok Inventory Manager
-            'JSON Editor',      # New JSON Editor mode
-            'Glossary'          # Terminology and glossary management
-        ])
-        self.mode_combo.setToolTip(
-            'Operation mode:\n'
-            'Archive: Normal archiving with skip patterns\n'
-            'Dev Tools: Development utilities and configuration management\n'
-            'Variable Calendar: Variable tracking and visualization\n'
-            'Inventory: Cubok Inventory Manager for gear and tech items\n'
-            'JSON Editor: Editor for large JSON files\n'
-            'Glossary: Terminology and glossary management'
-        )
+        mode_names = list(self.modes.keys())
+        self.mode_combo.addItems(mode_names)
+
+        # Build tooltip from modes config
+        tooltip_lines = ['Operation mode:']
+        for mode_name, config in self.modes.items():
+            tooltip_lines.append(f'{mode_name}: {config["description"]}')
+        self.mode_combo.setToolTip('\n'.join(tooltip_lines))
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
         mode_header.addWidget(self.mode_combo)
 
@@ -171,10 +205,8 @@ class MainWidget(QWidget):
         self.inventory_widget.setVisible(False)
         main_layout.addWidget(self.inventory_widget)
 
-        # Add JSON Editor widget
+        # Add all mode widgets
         main_layout.addWidget(self.json_editor_widget)
-
-        # Add Glossary Manager widget
         main_layout.addWidget(self.glossary_manager_widget)
 
         # Create archive group
@@ -431,58 +463,8 @@ class MainWidget(QWidget):
         # Update theme button
         self.update_theme_button()
 
-        # Initially hide archive group in Dev Tools mode
-        if self.mode_combo.currentText() == "Dev Tools":
-            self.archive_group.hide()
-            self.git_widget.show()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.show()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-        elif self.mode_combo.currentText() == "Variable Calendar":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.show()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-        elif self.mode_combo.currentText() == "Inventory":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.show()
-            self.json_editor_widget.hide()
-        elif self.mode_combo.currentText() == "JSON Editor":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.show()
-            self.glossary_manager_widget.hide()
-        elif self.mode_combo.currentText() == "Glossary":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.show()
-        else:
-            self.archive_group.show()
-            self.git_widget.hide()
-            self.recent_group.show()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.hide()
+        # Set initial mode
+        self._apply_mode(self.mode_combo.currentText())
 
     def update_compression_label(self):
         """Update the compression label based on slider value"""
@@ -1410,62 +1392,63 @@ class MainWidget(QWidget):
             clipboard.setText(self.error_label.text())
             QMessageBox.information(self, "Error Copied", "Error details have been copied to clipboard")
 
-    def on_mode_changed(self, mode: str):
-        """Handle mode selection changes."""
+    def on_mode_changed(self, mode):
+        """Handle mode change"""
+        self._apply_mode(mode)
+
+    def _apply_mode(self, mode):
+        """Apply mode configuration"""
+        if mode not in self.modes:
+            mode = 'Archive'  # Default fallback
+
+        config = self.modes[mode]
+
+        # Handle special widgets first
         if mode == "Dev Tools":
             self.show_git_ui()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.show()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.hide()
-        elif mode == "Variable Calendar":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.show()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.hide()
-        elif mode == "Inventory":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.show()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.hide()
-        elif mode == "JSON Editor":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.show()
-            self.glossary_manager_widget.hide()
-        elif mode == "Glossary":
-            self.git_widget.hide()
-            self.archive_group.hide()
-            self.recent_group.hide()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.show()
-        else:  # Archive mode
+        else:
             self.hide_git_ui()
-            self.archive_group.show()
-            self.recent_group.show()
-            self.variable_calendar.hide()
-            self.supabase_widget.hide()
-            self.inventory_widget.hide()
-            self.json_editor_widget.hide()
-            self.glossary_manager_widget.hide()
+
+        # Hide all widgets first
+        all_widget_names = ['git_widget', 'variable_calendar', 'supabase_widget',
+                           'inventory_widget', 'json_editor_widget', 'glossary_manager_widget']
+        for widget_name in all_widget_names:
+            getattr(self, widget_name).setVisible(False)
+
+        # Show required widgets
+        for widget_name in config['widgets_visible']:
+            if hasattr(self, widget_name):
+                getattr(self, widget_name).setVisible(True)
+
+        # Handle special groups
+        for group_name, visible in config['special_groups'].items():
+            if hasattr(self, group_name):
+                group_widget = getattr(self, group_name)
+                group_widget.setVisible(visible)
+
+        # Manage window size
+        self._adjust_window_size_for_mode(mode)
+
+    def _adjust_window_size_for_mode(self, mode):
+        """Adjust window size based on mode requirements"""
+        if mode == "Dev Tools":
+            # Git widget needs more space
+            screen = QApplication.primaryScreen().geometry()
+            self.resize(self.width(), int(screen.height() * 0.7))
+        elif mode in ["JSON Editor", "Glossary"]:
+            # These modes need substantial space
+            screen = QApplication.primaryScreen().geometry()
+            self.resize(int(screen.width() * 0.8), int(screen.height() * 0.8))
+        else:
+            # Compact modes
+            self.resize(800, 600)
+
+        # Ensure window fits on screen
+        screen = QApplication.primaryScreen().geometry()
+        if self.width() > screen.width():
+            self.resize(screen.width() - 100, self.height())
+        if self.height() > screen.height():
+            self.resize(self.width(), screen.height() - 100)
 
     def show_git_ui(self):
         """Show Git-related UI elements"""

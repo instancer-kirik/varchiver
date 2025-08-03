@@ -16,6 +16,149 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QAction, QFont
 
 
+class ColumnMappingDialog(QDialog):
+    """Dialog for mapping CSV columns to glossary fields"""
+
+    def __init__(self, csv_columns: List[str], parent=None):
+        super().__init__(parent)
+        self.csv_columns = csv_columns
+        self.mapping = {}
+        self.comparison_key = 'term'
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle("Map CSV Columns")
+        self.setFixedSize(500, 400)
+
+        layout = QVBoxLayout(self)
+
+        # Instructions
+        instructions = QLabel("Map your CSV columns to glossary fields:")
+        instructions.setWordWrap(True)
+        layout.addWidget(instructions)
+
+        # Mapping form
+        form_widget = QWidget()
+        form_layout = QFormLayout(form_widget)
+
+        # Standard glossary fields
+        self.field_mappings = {}
+        glossary_fields = [
+            ('term', 'Term (Primary Key)', True),
+            ('type', 'Type/Category Type', False),
+            ('category', 'Category', False),
+            ('description', 'Description', False),
+            ('source', 'Source', False),
+            ('related_terms', 'Related Terms (semicolon-separated)', False),
+            ('etymology_notes', 'Etymology Notes', False)
+        ]
+
+        for field, label, required in glossary_fields:
+            combo = QComboBox()
+            combo.addItem("-- Skip --")
+            combo.addItems(self.csv_columns)
+
+            # Try to auto-detect matching columns
+            for i, col in enumerate(self.csv_columns):
+                if field.lower() in col.lower() or col.lower() in field.lower():
+                    combo.setCurrentIndex(i + 1)
+                    break
+
+            self.field_mappings[field] = combo
+
+            if required:
+                label += " *"
+            form_layout.addRow(label, combo)
+
+        layout.addWidget(form_widget)
+
+        # Comparison key selection
+        key_group = QGroupBox("Comparison Key for CSV Merging")
+        key_layout = QVBoxLayout(key_group)
+
+        self.key_combo = QComboBox()
+        self.key_combo.addItems(['term', 'id', 'name', 'title'])
+        key_layout.addWidget(QLabel("Field to use as unique identifier:"))
+        key_layout.addWidget(self.key_combo)
+
+        layout.addWidget(key_group)
+
+        # Buttons
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_mapping(self) -> Tuple[Dict[str, str], str]:
+        """Returns (field_mapping, comparison_key)"""
+        mapping = {}
+        for field, combo in self.field_mappings.items():
+            if combo.currentIndex() > 0:  # Not "-- Skip --"
+                csv_column = combo.currentText()
+                mapping[field] = csv_column
+
+        comparison_key = self.key_combo.currentText()
+        return mapping, comparison_key
+
+
+class CsvStructureDetector:
+    """Utility class for detecting and analyzing CSV structure"""
+
+    @staticmethod
+    def detect_structure(file_path: Path) -> Dict[str, Any]:
+        """Analyze CSV structure and return metadata"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                # Read first few lines to detect structure
+                sample = f.read(8192)
+                f.seek(0)
+
+                # Detect delimiter
+                sniffer = csv.Sniffer()
+                delimiter = sniffer.sniff(sample).delimiter
+
+                # Get column names
+                reader = csv.DictReader(f, delimiter=delimiter)
+                columns = list(reader.fieldnames) if reader.fieldnames else []
+
+                # Count rows
+                f.seek(0)
+                row_count = sum(1 for _ in reader) if columns else 0
+
+                # Detect potential key columns
+                potential_keys = []
+                for col in columns:
+                    col_lower = col.lower()
+                    if any(key_word in col_lower for key_word in ['id', 'key', 'term', 'name', 'title']):
+                        potential_keys.append(col)
+
+                return {
+                    'columns': columns,
+                    'delimiter': delimiter,
+                    'row_count': row_count,
+                    'potential_keys': potential_keys,
+                    'encoding': 'utf-8'
+                }
+        except Exception as e:
+            return {
+                'error': str(e),
+                'columns': [],
+                'delimiter': ',',
+                'row_count': 0,
+                'potential_keys': []
+            }
+
+    @staticmethod
+    def preview_data(file_path: Path, max_rows: int = 5) -> List[Dict[str, str]]:
+        """Get a preview of CSV data"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                return list(reader)[:max_rows]
+        except Exception:
+            return []
+
+
 class GlossaryEntry:
     """Data class for glossary entries"""
     def __init__(self, term: str = "", entry_type: str = "", category: str = "",
@@ -164,67 +307,74 @@ class GlossaryManagerWidget(QWidget):
         layout = QVBoxLayout(self)
 
         # Toolbar
-        toolbar_layout = QHBoxLayout()
+        # File operations toolbar
+        file_toolbar_layout = QHBoxLayout()
 
-        self.new_btn = QPushButton("New Glossary")
+        # Primary actions (most common)
+        self.open_csv_btn = QPushButton("Open CSV")
+        self.open_csv_btn.clicked.connect(self.open_csv_file)
+        self.open_csv_btn.setToolTip("Load glossary from CSV file")
+        file_toolbar_layout.addWidget(self.open_csv_btn)
+
+        self.save_csv_btn = QPushButton("Save CSV")
+        self.save_csv_btn.clicked.connect(self.save_csv_file)
+        self.save_csv_btn.setEnabled(False)
+        self.save_csv_btn.setToolTip("Save current glossary to CSV file")
+        file_toolbar_layout.addWidget(self.save_csv_btn)
+
+        file_toolbar_layout.addWidget(QLabel("|"))  # Separator
+
+
+
+        file_toolbar_layout.addStretch()
+
+        # Utility actions (right side)
+        self.new_btn = QPushButton("New CSV")
         self.new_btn.clicked.connect(self.new_glossary)
-        toolbar_layout.addWidget(self.new_btn)
+        self.new_btn.setToolTip("Create new empty CSV glossary")
+        file_toolbar_layout.addWidget(self.new_btn)
 
-        self.open_btn = QPushButton("Open")
-        self.open_btn.clicked.connect(self.open_file)
-        toolbar_layout.addWidget(self.open_btn)
+        layout.addLayout(file_toolbar_layout)
 
-        self.save_btn = QPushButton("Save")
-        self.save_btn.clicked.connect(self.save_file)
-        toolbar_layout.addWidget(self.save_btn)
-
-        self.save_as_btn = QPushButton("Save As")
-        self.save_as_btn.clicked.connect(self.save_as_file)
-        toolbar_layout.addWidget(self.save_as_btn)
-
-        toolbar_layout.addStretch()
-
-        self.export_csv_btn = QPushButton("Export CSV")
-        self.export_csv_btn.clicked.connect(self.export_csv)
-        toolbar_layout.addWidget(self.export_csv_btn)
-
-        self.import_csv_btn = QPushButton("Import CSV")
-        self.import_csv_btn.clicked.connect(self.import_csv)
-        toolbar_layout.addWidget(self.import_csv_btn)
-
-        layout.addLayout(toolbar_layout)
-
-        # Search and filter
+        # Search and filter row
         search_layout = QHBoxLayout()
 
+        # Search box (prominent)
         self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("Search terms...")
+        self.search_edit.setPlaceholderText("Search terms and descriptions...")
         self.search_edit.textChanged.connect(self.filter_entries)
-        search_layout.addWidget(QLabel("Search:"))
         search_layout.addWidget(self.search_edit)
 
+        # Filter dropdowns (compact)
         self.type_filter = QComboBox()
         self.type_filter.addItem("All Types")
         self.type_filter.currentTextChanged.connect(self.filter_entries)
-        search_layout.addWidget(QLabel("Type:"))
+        self.type_filter.setToolTip("Filter by term type")
         search_layout.addWidget(self.type_filter)
 
         self.status_filter = QComboBox()
         self.status_filter.addItem("All Status")
         self.status_filter.currentTextChanged.connect(self.filter_entries)
-        search_layout.addWidget(QLabel("Status:"))
+        self.status_filter.setToolTip("Filter by implementation status")
         search_layout.addWidget(self.status_filter)
 
-        # Button to set item database path
+        layout.addLayout(search_layout)
+
+        # Tools row (secondary actions)
+        tools_layout = QHBoxLayout()
+
         self.set_db_btn = QPushButton("Set Item Database")
         self.set_db_btn.clicked.connect(self.set_item_database)
-        search_layout.addWidget(self.set_db_btn)
+        self.set_db_btn.setToolTip("Point to JSON item database for status inference")
+        tools_layout.addWidget(self.set_db_btn)
 
-        self.compare_csv_btn = QPushButton("Compare CSVs")
+        self.compare_csv_btn = QPushButton("Compare CSV Files")
         self.compare_csv_btn.clicked.connect(self.compare_csv_files)
-        search_layout.addWidget(self.compare_csv_btn)
+        self.compare_csv_btn.setToolTip("Compare two CSV files with flexible column mapping")
+        tools_layout.addWidget(self.compare_csv_btn)
 
-        layout.addLayout(search_layout)
+        tools_layout.addStretch()
+        layout.addLayout(tools_layout)
 
         # Main content area
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -311,123 +461,136 @@ class GlossaryManagerWidget(QWidget):
         self.update_ui_state()
 
     def new_glossary(self):
-        """Create a new glossary"""
-        if self.confirm_unsaved_changes():
-            self.glossary_data.clear()
-            self.current_file = None
-            self.refresh_entries_tree()
-            self.update_ui_state()
-            self.status_label.setText("New glossary created")
+        """Create a new empty glossary"""
+        if self.glossary_data:
+            reply = QMessageBox.question(
+                self, "New Glossary",
+                "This will clear the current glossary. Continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
 
-    def open_file(self):
-        """Open a glossary file"""
-        if not self.confirm_unsaved_changes():
-            return
+        self.glossary_data.clear()
+        self.current_file = None
+        self.refresh_entries_tree()
+        self.update_ui_state()
+        self.status_label.setText("New empty glossary created")
 
+    def open_csv_file(self):
+        """Open a CSV glossary file with structure preview and column mapping"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Glossary", "",
-            "JSON files (*.json);;CSV files (*.csv);;All files (*)"
+            self, "Open CSV Glossary", "", "CSV files (*.csv)"
         )
-
         if file_path:
             try:
                 path = Path(file_path)
-                if path.suffix.lower() == '.csv':
-                    self.load_csv(path)
-                else:
-                    self.load_json(path)
+
+                # Show CSV preview first
+                if not self._show_csv_preview(path):
+                    return
+
+                # Load with flexible column mapping
+                self.load_csv(path)
                 self.current_file = path
                 self.refresh_entries_tree()
                 self.update_ui_state()
-                self.status_label.setText(f"Loaded {path.name}")
+                self.status_label.setText(f"Loaded {len(self.glossary_data)} terms from {path.name}")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
+                QMessageBox.critical(self, "Error", f"Failed to load CSV file: {str(e)}")
 
-    def save_file(self):
-        """Save the current glossary"""
-        if self.current_file is None:
-            self.save_as_file()
+
+
+
+    def save_csv_file(self):
+        """Save current glossary to CSV file"""
+        if self.current_file and self.current_file.suffix.lower() == '.csv':
+            # Save to current CSV file
+            try:
+                self.save_csv(self.current_file)
+                self.status_label.setText(f"Saved {len(self.glossary_data)} terms to {self.current_file.name}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save CSV: {str(e)}")
         else:
-            try:
-                if self.current_file.suffix.lower() == '.csv':
-                    self.save_csv(self.current_file)
-                else:
-                    self.save_json(self.current_file)
-                self.status_label.setText(f"Saved {self.current_file.name}")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
-
-    def save_as_file(self):
-        """Save the glossary as a new file"""
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Glossary As", "",
-            "JSON files (*.json);;CSV files (*.csv)"
-        )
-
-        if file_path:
-            try:
-                path = Path(file_path)
-                if path.suffix.lower() == '.csv':
+            # Save As CSV
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "Save CSV Glossary", "", "CSV files (*.csv)"
+            )
+            if file_path:
+                try:
+                    path = Path(file_path)
                     self.save_csv(path)
-                else:
-                    self.save_json(path)
-                self.current_file = path
-                self.status_label.setText(f"Saved as {path.name}")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+                    self.current_file = path
+                    self.update_ui_state()
+                    self.status_label.setText(f"Saved {len(self.glossary_data)} terms to {path.name}")
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to save CSV: {str(e)}")
 
-    def load_json(self, file_path: Path):
-        """Load glossary from JSON file"""
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+
+
+    def load_csv(self, file_path: Path, column_mapping: Dict[str, str] = None):
+        """Load glossary from CSV file with flexible column mapping"""
+        # Detect CSV structure
+        structure = CsvStructureDetector.detect_structure(file_path)
+
+        if 'error' in structure:
+            QMessageBox.critical(self, "CSV Error", f"Error reading CSV: {structure['error']}")
+            return
+
+        # If no mapping provided, show mapping dialog
+        if column_mapping is None:
+            if not structure['columns']:
+                QMessageBox.warning(self, "Empty CSV", "The CSV file appears to be empty or invalid.")
+                return
+
+            dialog = ColumnMappingDialog(structure['columns'], self)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            column_mapping, _ = dialog.get_mapping()
+
+        # Ensure we have at least a term mapping
+        if 'term' not in column_mapping:
+            QMessageBox.warning(self, "Missing Term Field",
+                              "You must map at least the 'term' field to load entries.")
+            return
 
         self.glossary_data.clear()
 
-        if isinstance(data, list):
-            # List format
-            for entry_data in data:
-                entry = GlossaryEntry.from_dict(entry_data)
-                self.glossary_data[entry.term] = entry
-        elif isinstance(data, dict):
-            # Dict format
-            for term, entry_data in data.items():
-                if isinstance(entry_data, dict):
-                    entry_data['term'] = term
-                    entry = GlossaryEntry.from_dict(entry_data)
-                else:
-                    # Simple string description
-                    entry = GlossaryEntry(term=term, description=str(entry_data))
-                self.glossary_data[term] = entry
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f, delimiter=structure['delimiter'])
+                loaded_count = 0
 
-    def save_json(self, file_path: Path):
-        """Save glossary to JSON file"""
-        data = [entry.to_dict() for entry in self.glossary_data.values()]
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+                for row in reader:
+                    # Use mapped column names
+                    term_col = column_mapping.get('term', 'term')
+                    term = row.get(term_col, '').strip()
 
-    def load_csv(self, file_path: Path):
-        """Load glossary from CSV file"""
-        self.glossary_data.clear()
+                    if term:
+                        # Handle related terms with flexible mapping
+                        related_terms = []
+                        related_col = column_mapping.get('related_terms')
+                        if related_col and related_col in row and row[related_col]:
+                            related_terms = [t.strip() for t in row[related_col].split(';') if t.strip()]
 
-        with open(file_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                term = row.get('term', '').strip()
-                if term:
-                    related_terms = []
-                    if 'related_terms' in row and row['related_terms']:
-                        related_terms = [t.strip() for t in row['related_terms'].split(';') if t.strip()]
+                        entry = GlossaryEntry(
+                            term=term,
+                            entry_type=row.get(column_mapping.get('type', 'type'), '').strip(),
+                            category=row.get(column_mapping.get('category', 'category'), '').strip(),
+                            description=row.get(column_mapping.get('description', 'description'), '').strip(),
+                            source=row.get(column_mapping.get('source', 'source'), '').strip(),
+                            related_terms=related_terms,
+                            etymology_notes=row.get(column_mapping.get('etymology_notes', 'etymology_notes'), '').strip()
+                        )
+                        self.glossary_data[term] = entry
+                        loaded_count += 1
 
-                    entry = GlossaryEntry(
-                        term=term,
-                        entry_type=row.get('type', '').strip(),
-                        category=row.get('category', '').strip(),
-                        description=row.get('description', '').strip(),
-                        source=row.get('source', '').strip(),
-                        related_terms=related_terms,
-                        etymology_notes=row.get('etymology_notes', '').strip()
-                    )
-                    self.glossary_data[term] = entry
+                QMessageBox.information(self, "CSV Loaded",
+                                      f"Successfully loaded {loaded_count} entries from CSV.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Loading Error", f"Failed to load CSV: {str(e)}")
 
     def save_csv(self, file_path: Path):
         """Save glossary to CSV file"""
@@ -441,56 +604,7 @@ class GlossaryManagerWidget(QWidget):
                 row['related_terms'] = '; '.join(row['related_terms'])
                 writer.writerow(row)
 
-    def import_csv(self):
-        """Import entries from CSV file"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Import CSV", "", "CSV files (*.csv)"
-        )
 
-        if file_path:
-            try:
-                imported_count = 0
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        term = row.get('term', '').strip()
-                        if term and term not in self.glossary_data:
-                            related_terms = []
-                            if 'related_terms' in row and row['related_terms']:
-                                related_terms = [t.strip() for t in row['related_terms'].split(';') if t.strip()]
-
-                            entry = GlossaryEntry(
-                                term=term,
-                                entry_type=row.get('type', '').strip(),
-                                category=row.get('category', '').strip(),
-                                description=row.get('description', '').strip(),
-                                status=row.get('status', 'pending').strip(),
-                                source=row.get('source', '').strip(),
-                                related_terms=related_terms,
-                                etymology_notes=row.get('etymology_notes', '').strip()
-                            )
-                            self.glossary_data[term] = entry
-                            imported_count += 1
-
-                self.refresh_entries_tree()
-                self.update_ui_state()
-                self.status_label.setText(f"Imported {imported_count} entries")
-
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to import CSV: {str(e)}")
-
-    def export_csv(self):
-        """Export current glossary to CSV"""
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Export CSV", "", "CSV files (*.csv)"
-        )
-
-        if file_path:
-            try:
-                self.save_csv(Path(file_path))
-                self.status_label.setText(f"Exported to {Path(file_path).name}")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export CSV: {str(e)}")
 
     def add_entry(self):
         """Add a new glossary entry"""
@@ -628,14 +742,15 @@ class GlossaryManagerWidget(QWidget):
         return detail_count >= 2
 
     def compare_csv_files(self):
-        """Compare CSV files and show missing terms"""
-        # Get two CSV files to compare
+        """Compare CSV files with flexible column mapping"""
+        # Get first CSV file
         file1, _ = QFileDialog.getOpenFileName(
             self, "Select First CSV File", "", "CSV files (*.csv)"
         )
         if not file1:
             return
 
+        # Get second CSV file
         file2, _ = QFileDialog.getOpenFileName(
             self, "Select Second CSV File", "", "CSV files (*.csv)"
         )
@@ -643,31 +758,80 @@ class GlossaryManagerWidget(QWidget):
             return
 
         try:
+            # Detect structure for both files
+            structure1 = CsvStructureDetector.detect_structure(Path(file1))
+            structure2 = CsvStructureDetector.detect_structure(Path(file2))
+
+            if 'error' in structure1 or 'error' in structure2:
+                QMessageBox.critical(self, "CSV Error", "Error reading one or both CSV files.")
+                return
+
+            # Get column mapping for first file
+            dialog1 = ColumnMappingDialog(structure1['columns'], self)
+            dialog1.setWindowTitle("Map Columns for First CSV File")
+            if dialog1.exec() != QDialog.DialogCode.Accepted:
+                return
+            mapping1, key1 = dialog1.get_mapping()
+
+            # Get column mapping for second file
+            dialog2 = ColumnMappingDialog(structure2['columns'], self)
+            dialog2.setWindowTitle("Map Columns for Second CSV File")
+            if dialog2.exec() != QDialog.DialogCode.Accepted:
+                return
+            mapping2, key2 = dialog2.get_mapping()
+
             # Load terms from both files
-            terms1 = self._load_csv_terms_for_comparison(Path(file1))
-            terms2 = self._load_csv_terms_for_comparison(Path(file2))
+            terms1 = self._load_csv_terms_for_comparison(Path(file1), structure1, mapping1, key1)
+            terms2 = self._load_csv_terms_for_comparison(Path(file2), structure2, mapping2, key2)
 
             # Compare and show results
-            self._show_csv_comparison_results(Path(file1), Path(file2), terms1, terms2)
+            self._show_csv_comparison_results(Path(file1), Path(file2), terms1, terms2, key1, key2)
 
         except Exception as e:
             QMessageBox.critical(self, "Comparison Error", f"Failed to compare CSV files: {str(e)}")
 
-    def _load_csv_terms_for_comparison(self, csv_path: Path) -> Dict[str, Dict[str, str]]:
-        """Load terms from CSV file for comparison"""
+    def _load_csv_terms_for_comparison(self, csv_path: Path, structure: Dict,
+                                     mapping: Dict[str, str], comparison_key: str) -> Dict[str, Dict[str, str]]:
+        """Load terms from CSV file for comparison with flexible mapping"""
         terms = {}
+
+        # Determine which column to use as the key
+        key_column = mapping.get(comparison_key, comparison_key)
+        if key_column not in structure['columns']:
+            # Fallback to first available key
+            for fallback in ['term', 'id', 'name', 'title']:
+                fallback_col = mapping.get(fallback, fallback)
+                if fallback_col in structure['columns']:
+                    key_column = fallback_col
+                    break
+
         with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
+            reader = csv.DictReader(f, delimiter=structure['delimiter'])
             for row in reader:
-                term = row.get('term', '').strip()
-                if term:
-                    terms[term.lower()] = row
+                key_value = row.get(key_column, '').strip()
+                if key_value:
+                    terms[key_value.lower()] = row
         return terms
+
+    def _get_display_value(self, row_data: Dict[str, str], key_field: str, fallback: str) -> str:
+        """Get display value for a row using the specified key field"""
+        # Try the key field first
+        if key_field in row_data and row_data[key_field]:
+            return row_data[key_field]
+
+        # Try common fallback fields
+        for field in ['term', 'name', 'title', 'id']:
+            if field in row_data and row_data[field]:
+                return row_data[field]
+
+        # Use the fallback key
+        return fallback
 
     def _show_csv_comparison_results(self, file1: Path, file2: Path,
                                    terms1: Dict[str, Dict[str, str]],
-                                   terms2: Dict[str, Dict[str, str]]):
-        """Show CSV comparison results in a dialog"""
+                                   terms2: Dict[str, Dict[str, str]],
+                                   key1: str = 'term', key2: str = 'term'):
+        """Show CSV comparison results in a dialog with flexible keys"""
 
         # Calculate differences
         only_in_1 = set(terms1.keys()) - set(terms2.keys())
@@ -701,34 +865,41 @@ Total unique terms: {len(terms1) + len(terms2) - len(common_terms)}
         # Tab 1: Missing from file 2
         if only_in_1:
             missing_text = QTextEdit()
-            missing_content = f"Terms in {file1.name} but NOT in {file2.name}:\n\n"
-            for term in sorted(only_in_1):
-                row_data = terms1[term]
-                original_term = row_data.get('term', term)
-                missing_content += f"• {original_term}\n"
+            missing_content = f"Items in {file1.name} but NOT in {file2.name}:\n\n"
+            for term_key in sorted(only_in_1):
+                row_data = terms1[term_key]
+                # Get the actual display value using flexible key mapping
+                display_value = self._get_display_value(row_data, key1, term_key)
+                missing_content += f"• {display_value}\n"
                 missing_content += f"  Type: {row_data.get('type', 'N/A')}\n"
                 missing_content += f"  Category: {row_data.get('category', 'N/A')}\n"
-                missing_content += f"  Description: {row_data.get('description', 'N/A')[:100]}...\n\n"
+                description = row_data.get('description', 'N/A')
+                if description and len(description) > 100:
+                    description = description[:100] + "..."
+                missing_content += f"  Description: {description}\n\n"
 
             missing_text.setPlainText(missing_content)
-            missing_text.setReadOnly(True)
-            tab_widget.addTab(missing_text, f"Missing from {file2.name} ({len(only_in_1)})")
+            tab_widget.addTab(missing_text, f"Missing from {file2.name}")
 
         # Tab 2: Missing from file 1
         if only_in_2:
-            extra_text = QTextEdit()
-            extra_content = f"Terms in {file2.name} but NOT in {file1.name}:\n\n"
-            for term in sorted(only_in_2):
-                row_data = terms2[term]
-                original_term = row_data.get('term', term)
-                extra_content += f"• {original_term}\n"
-                extra_content += f"  Type: {row_data.get('type', 'N/A')}\n"
-                extra_content += f"  Category: {row_data.get('category', 'N/A')}\n"
-                extra_content += f"  Description: {row_data.get('description', 'N/A')[:100]}...\n\n"
+            missing_text2 = QTextEdit()
+            missing_content2 = f"Items in {file2.name} but NOT in {file1.name}:\n\n"
+            for term_key in sorted(only_in_2):
+                row_data = terms2[term_key]
+                # Get the actual display value using flexible key mapping
+                display_value = self._get_display_value(row_data, key2, term_key)
+                missing_content2 += f"• {display_value}\n"
+                missing_content2 += f"  Type: {row_data.get('type', 'N/A')}\n"
+                missing_content2 += f"  Category: {row_data.get('category', 'N/A')}\n"
+                description = row_data.get('description', 'N/A')
+                if description and len(description) > 100:
+                    description = description[:100] + "..."
+                missing_content2 += f"  Description: {description}\n\n"
 
-            extra_text.setPlainText(extra_content)
-            extra_text.setReadOnly(True)
-            tab_widget.addTab(extra_text, f"Missing from {file1.name} ({len(only_in_2)})")
+            missing_text2.setPlainText(missing_content2)
+            missing_text2.setReadOnly(True)
+            tab_widget.addTab(missing_text2, f"Missing from {file1.name}")
 
         # Tab 3: Common terms
         common_text = QTextEdit()
@@ -764,7 +935,7 @@ Total unique terms: {len(terms1) + len(terms2) - len(common_terms)}
 
     def _export_missing_terms(self, missing_terms: Set[str], terms_data: Dict[str, Dict[str, str]],
                             source_file: Path, target_file: Path):
-        """Export missing terms to a CSV file"""
+        """Export missing terms to a CSV file preserving original structure"""
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Export Missing Terms", f"missing_from_{target_file.stem}.csv", "CSV files (*.csv)"
         )
@@ -773,28 +944,111 @@ Total unique terms: {len(terms1) + len(terms2) - len(common_terms)}
             return
 
         try:
+            # Detect original CSV structure to preserve field names
+            structure = CsvStructureDetector.detect_structure(source_file)
+            fieldnames = structure['columns'] if structure['columns'] else ['term', 'type', 'category', 'description', 'source']
+
             with open(file_path, 'w', newline='', encoding='utf-8') as f:
-                fieldnames = ['term', 'type', 'category', 'description', 'source', 'related_terms', 'etymology_notes']
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=structure.get('delimiter', ','))
                 writer.writeheader()
 
-                for term in sorted(missing_terms):
-                    row_data = terms_data[term]
-                    clean_row = {
-                        'term': row_data.get('term', ''),
-                        'type': row_data.get('type', ''),
-                        'category': row_data.get('category', ''),
-                        'description': row_data.get('description', ''),
-                        'source': row_data.get('source', 'varchiver'),
-                        'related_terms': row_data.get('related_terms', ''),
-                        'etymology_notes': row_data.get('etymology_notes', '')
-                    }
+                for term_key in sorted(missing_terms):
+                    row_data = terms_data[term_key]
+                    # Write row preserving original field names and structure
+                    clean_row = {}
+                    for field in fieldnames:
+                        clean_row[field] = row_data.get(field, '')
                     writer.writerow(clean_row)
 
-            QMessageBox.information(self, "Export Complete", f"Exported {len(missing_terms)} missing terms to:\n{file_path}")
+            QMessageBox.information(self, "Export Complete",
+                                  f"Exported {len(missing_terms)} missing terms to {Path(file_path).name}")
 
         except Exception as e:
             QMessageBox.critical(self, "Export Error", f"Failed to export missing terms: {str(e)}")
+
+    def _show_csv_preview(self, file_path: Path) -> bool:
+        """Show CSV structure preview dialog and return True if user wants to proceed"""
+        # Detect structure
+        structure = CsvStructureDetector.detect_structure(file_path)
+
+        if 'error' in structure:
+            QMessageBox.critical(self, "CSV Error", f"Error reading CSV: {structure['error']}")
+            return False
+
+        # Get preview data
+        preview_data = CsvStructureDetector.preview_data(file_path, max_rows=5)
+
+        # Create preview dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"CSV Preview: {file_path.name}")
+        dialog.setModal(True)
+        dialog.resize(800, 600)
+
+        layout = QVBoxLayout(dialog)
+
+        # Structure info
+        info_text = f"""
+<b>CSV Structure Analysis:</b><br>
+File: {file_path.name}<br>
+Columns: {len(structure['columns'])}<br>
+Rows: {structure['row_count']}<br>
+Delimiter: '{structure['delimiter']}'<br>
+Potential key fields: {', '.join(structure['potential_keys']) if structure['potential_keys'] else 'None detected'}
+        """
+        info_label = QLabel(info_text)
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+
+        # Column list
+        columns_group = QGroupBox("Detected Columns")
+        columns_layout = QVBoxLayout(columns_group)
+        columns_text = QTextEdit()
+        columns_text.setMaximumHeight(100)
+        columns_content = "Columns found:\n" + "\n".join(f"• {col}" for col in structure['columns'])
+        columns_text.setPlainText(columns_content)
+        columns_text.setReadOnly(True)
+        columns_layout.addWidget(columns_text)
+        layout.addWidget(columns_group)
+
+        # Preview table
+        if preview_data:
+            preview_group = QGroupBox("Data Preview (first 5 rows)")
+            preview_layout = QVBoxLayout(preview_group)
+
+            table = QTableWidget()
+            table.setColumnCount(len(structure['columns']))
+            table.setHorizontalHeaderLabels(structure['columns'])
+            table.setRowCount(len(preview_data))
+
+            for row_idx, row_data in enumerate(preview_data):
+                for col_idx, col_name in enumerate(structure['columns']):
+                    value = row_data.get(col_name, '')
+                    # Truncate long values for display
+                    if len(value) > 50:
+                        value = value[:47] + "..."
+                    table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
+
+            # Resize columns to content
+            table.resizeColumnsToContents()
+            table.setMaximumHeight(200)
+            preview_layout.addWidget(table)
+            layout.addWidget(preview_group)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+
+        proceed_btn = QPushButton("Proceed with Column Mapping")
+        proceed_btn.setDefault(True)
+        proceed_btn.clicked.connect(dialog.accept)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+
+        button_layout.addWidget(proceed_btn)
+        button_layout.addWidget(cancel_btn)
+        layout.addLayout(button_layout)
+
+        return dialog.exec() == QDialog.DialogCode.Accepted
 
     def refresh_entries_tree(self):
         """Refresh the entries tree widget"""
@@ -888,9 +1142,7 @@ Total unique terms: {len(terms1) + len(terms2) - len(common_terms)}
     def update_ui_state(self):
         """Update UI state based on current data"""
         has_data = bool(self.glossary_data)
-        self.save_btn.setEnabled(has_data and self.current_file is not None)
-        self.save_as_btn.setEnabled(has_data)
-        self.export_csv_btn.setEnabled(has_data)
+        self.save_csv_btn.setEnabled(has_data)
 
         has_selection = self.entries_tree.currentItem() is not None
         self.edit_entry_btn.setEnabled(has_selection)
