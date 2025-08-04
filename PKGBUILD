@@ -28,21 +28,21 @@ optdepends=(
     'python-rarfile: for RAR archive support'
 )
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=("2e16477b299c95f0b05067ed84feb3bc78884b141bcffd0c7a55b9ac2c08ffe9")  # Will be updated by release manager
+sha256sums=("9db0ff30bd2335bba3b34cb8d8157ddf1131fd694b0ff9f16a95c7ab2c5717da")  # Will be updated by release manager
 
 build() {
     cd "$srcdir/$pkgname-$pkgver"
-    
+
     # Clean up any existing virtual environment
     rm -rf .venv
-    
+
     # Create and activate virtual environment
     python -m venv .venv
     source .venv/bin/activate
-    
+
     # Install dependencies
     pip install --no-cache-dir -e .
-    
+
     # Build executable with explicit module includes
     pyinstaller --clean --onefile --name varchiver \
         --hidden-import varchiver \
@@ -52,28 +52,28 @@ build() {
         --add-data "$pkgname:$pkgname" \
         --collect-all PyQt6 \
         bootstrap.py
-    
+
     # Deactivate virtual environment
     deactivate
 }
 
 package() {
     cd "$srcdir/$pkgname-$pkgver"
-    
+
     # Create necessary directories
     install -dm755 "$pkgdir/usr/share/$pkgname"
-    
+
     # Install executable
     install -Dm755 dist/varchiver "$pkgdir/usr/bin/varchiver"
-    
+
     # Install desktop file and icon
     install -Dm644 varchiver.desktop "$pkgdir/usr/share/applications/varchiver.desktop"
     install -Dm644 varchiver.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/varchiver.svg"
-    
+
     # Install license and readme
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
-    
+
     # Set correct permissions
     chmod -R 755 "$pkgdir/usr/share/$pkgname"
     find "$pkgdir/usr/share/$pkgname" -type f -exec chmod 644 {} \;
