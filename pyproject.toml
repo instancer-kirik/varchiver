@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "varchiver"
-version = "0.6.15"
+version = "0.6.16"
 description = "Advanced Archive Management Tool"
-authors = [{name = "instancer-kirik", email = "kirik@instance.select"}]
-license = {text = "Proprietary"}
+authors = [{ name = "instancer-kirik", email = "kirik@instance.select" }]
+license = { text = "Proprietary" }
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
@@ -22,13 +22,11 @@ dependencies = [
     "supabase>=2.15.1",
     "sqlalchemy>=2.0.41",
     "psycopg2-binary>=2.9.10",
+    "PyYAML>=6.0.0",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pyinstaller>=6.11.1",
-    "pyarmor>=8.5.12",
-]
+dev = ["pyinstaller>=6.11.1", "pyarmor>=8.5.12"]
 
 [project.scripts]
 varchiver = "varchiver.main:main"
