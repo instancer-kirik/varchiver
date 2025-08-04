@@ -26,6 +26,8 @@ def parse_args(args):
                        default='skip', help='Collision handling strategy')
     parser.add_argument('--preserve-permissions', action='store_true',
                        help='Preserve file permissions')
+    parser.add_argument('--release', '-r', action='store_true',
+                       help='Open release manager')
     return parser.parse_args(args)
 
 def main(args=None):
@@ -43,10 +45,18 @@ def main(args=None):
         app.setApplicationName(PROJECT_CONFIGS['name'])
         app.setApplicationVersion(PROJECT_CONFIGS['version'])
         app.setStyle('Fusion')
-        
+
         # Set application icon
         icon = QIcon.fromTheme('archive-manager', QIcon.fromTheme('package'))
         app.setWindowIcon(icon)
+
+    # Handle release manager mode
+    if args.release:
+        from .utils.release_manager import ReleaseManager
+        release_manager = ReleaseManager()
+        release_manager.setWindowIcon(app.windowIcon())
+        release_manager.show()
+        return app.exec()
 
     # Create main widget
     widget = MainWidget()
@@ -91,11 +101,11 @@ def main(args=None):
                     archive_type = get_archive_type(file_path)
                     if archive_type:
                         valid_files.append(file_path)
-            
+
             if valid_files:
                 # Open first file and queue the rest
                 widget._open_archive(valid_files[0])
-                
+
                 # Queue remaining files for extraction if any
                 if len(valid_files) > 1:
                     for file_path in valid_files[1:]:
