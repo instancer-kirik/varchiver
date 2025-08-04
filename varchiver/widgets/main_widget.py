@@ -37,7 +37,7 @@ from .supabase_widget import SupabaseWidget
 from .supabase_config_dialog import SupabaseConfigDialog
 from .inventory_widget import InventoryWidget
 from .json_editor_widget import JsonEditorWidget
-from .glossary_manager_widget import GlossaryManagerWidget
+from .csv_viewer import CsvViewerWidget
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
@@ -88,7 +88,7 @@ class MainWidget(QWidget):
         self.supabase_widget = SupabaseWidget()
         self.inventory_widget = InventoryWidget()
         self.json_editor_widget = JsonEditorWidget()
-        self.glossary_manager_widget = GlossaryManagerWidget()
+        self.csv_viewer_widget = CsvViewerWidget()
 
     def _init_modes_config(self):
         """Initialize modes configuration"""
@@ -97,39 +97,39 @@ class MainWidget(QWidget):
                 'description': 'Normal archiving with skip patterns',
                 'widgets_visible': [],
                 'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'inventory_widget', 'json_editor_widget', 'glossary_manager_widget'],
+                                 'inventory_widget', 'json_editor_widget', 'csv_viewer_widget'],
                 'special_groups': {'archive_group': True, 'recent_group': True}
             },
             'Dev Tools': {
                 'description': 'Development utilities and configuration management',
                 'widgets_visible': ['git_widget', 'supabase_widget'],
-                'widgets_hidden': ['variable_calendar', 'inventory_widget', 'json_editor_widget', 'glossary_manager_widget'],
+                'widgets_hidden': ['variable_calendar', 'inventory_widget', 'json_editor_widget', 'csv_viewer_widget'],
                 'special_groups': {'archive_group': False, 'recent_group': False}
             },
             'Variable Calendar': {
                 'description': 'Variable tracking and visualization',
                 'widgets_visible': ['variable_calendar'],
                 'widgets_hidden': ['git_widget', 'supabase_widget', 'inventory_widget',
-                                 'json_editor_widget', 'glossary_manager_widget'],
+                                 'json_editor_widget', 'csv_viewer_widget'],
                 'special_groups': {'archive_group': False, 'recent_group': False}
             },
             'Inventory': {
                 'description': 'Cubok Inventory Manager for gear and tech items',
                 'widgets_visible': ['inventory_widget'],
                 'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'json_editor_widget', 'glossary_manager_widget'],
+                                 'json_editor_widget', 'csv_viewer_widget'],
                 'special_groups': {'archive_group': False, 'recent_group': False}
             },
             'JSON Editor': {
                 'description': 'Editor for large JSON files',
                 'widgets_visible': ['json_editor_widget'],
                 'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'inventory_widget', 'glossary_manager_widget'],
+                                 'inventory_widget', 'csv_viewer_widget'],
                 'special_groups': {'archive_group': False, 'recent_group': False}
             },
-            'Glossary': {
-                'description': 'Terminology and glossary management',
-                'widgets_visible': ['glossary_manager_widget'],
+            'CSV Viewer': {
+                'description': 'CSV file viewing and editing',
+                'widgets_visible': ['csv_viewer_widget'],
                 'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
                                  'inventory_widget', 'json_editor_widget'],
                 'special_groups': {'archive_group': False, 'recent_group': False}
@@ -138,7 +138,7 @@ class MainWidget(QWidget):
 
         # Set all widgets initially hidden
         for widget_name in ['git_widget', 'variable_calendar', 'supabase_widget',
-                           'inventory_widget', 'json_editor_widget', 'glossary_manager_widget']:
+                           'inventory_widget', 'json_editor_widget', 'csv_viewer_widget']:
             getattr(self, widget_name).setVisible(False)
 
     def setup_ui(self):
@@ -207,7 +207,7 @@ class MainWidget(QWidget):
 
         # Add all mode widgets
         main_layout.addWidget(self.json_editor_widget)
-        main_layout.addWidget(self.glossary_manager_widget)
+        main_layout.addWidget(self.csv_viewer_widget)
 
         # Create archive group
         self.archive_group = QGroupBox("Archive Operations")
@@ -411,17 +411,21 @@ class MainWidget(QWidget):
         main_layout.addWidget(self.archive_group)
 
         # Status label for detailed progress
-        self.status_label = QLabel(" ")
+        self.status_label = QLabel("")
         self.status_label.setStyleSheet("""
             QLabel {
-                color: #666666;
-                padding: 10px;
-                font-size: 12px;
-                background-color: #AACCCC;
-                border-radius: 4px;
+                color: #2E7D7D;
+                padding: 4px 8px;
+                font-size: 11px;
+                border: 1px solid #AACCCC;
+                border-radius: 3px;
+                background-color: transparent;
+                min-height: 16px;
             }
         """)
         self.status_label.setWordWrap(True)
+        self.status_label.setMaximumHeight(50)
+        self.status_label.hide()  # Hidden by default
         main_layout.addWidget(self.status_label)
 
         # Progress bar for loading feedback
@@ -444,13 +448,18 @@ class MainWidget(QWidget):
         self.error_label.setWordWrap(True)
         self.error_label.setStyleSheet("""
             QLabel {
-                color: #ffffff;
-                background-color: #d32f2f;
-                padding: 8px;
-                border-radius: 4px;
+                color: #d32f2f;
+                border: 1px solid #d32f2f;
+                padding: 4px 8px;
+                border-radius: 3px;
                 font-weight: bold;
+                background-color: transparent;
+                font-size: 11px;
+                min-height: 16px;
             }
         """)
+        self.error_label.setMaximumHeight(60)
+        self.error_label.hide()  # Hidden by default
         error_layout.addWidget(self.error_label)
 
         self.copy_error_button = QPushButton("Copy Error")
@@ -633,12 +642,21 @@ class MainWidget(QWidget):
     def update_status(self, status):
         """Update status message"""
         self.status_label.setText(status)
+        if status.strip():
+            self.status_label.show()
+        else:
+            self.status_label.hide()
 
     def show_error(self, message):
         """Show error message"""
         self.error_label.setText(message)
-        self.error_label.setVisible(True)
-        self.copy_error_button.setVisible(True)
+        if message.strip():
+            self.error_label.show()
+            self.copy_error_button.setVisible(True)
+        else:
+            self.error_label.hide()
+            self.copy_error_button.setVisible(False)
+
         self.browse_button.setEnabled(True)
         self.status_label.setText("Error loading archive.")
         self.progress_bar.setVisible(False)
@@ -1411,7 +1429,7 @@ class MainWidget(QWidget):
 
         # Hide all widgets first
         all_widget_names = ['git_widget', 'variable_calendar', 'supabase_widget',
-                           'inventory_widget', 'json_editor_widget', 'glossary_manager_widget']
+                           'inventory_widget', 'json_editor_widget', 'csv_viewer_widget']
         for widget_name in all_widget_names:
             getattr(self, widget_name).setVisible(False)
 
