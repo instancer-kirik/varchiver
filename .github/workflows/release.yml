@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install system dependencies
         run: |
@@ -92,7 +92,7 @@ jobs:
             --icon-file=AppDir/usr/share/icons/hicolor/scalable/apps/varchiver.svg
 
           # Rename AppImage to expected name
-          mv varchiver*.AppImage varchiver-${VERSION}-x86_64.AppImage
+          mv Varchiver*.AppImage varchiver-${VERSION}-x86_64.AppImage
 
       - name: Test AppImage
         run: |
@@ -157,7 +157,7 @@ jobs:
       - name: Checkout main repository
         uses: actions/checkout@v4
         with:
-          ref: master  # Get the updated PKGBUILD
+          ref: master # Get the updated PKGBUILD
           fetch-depth: 0
 
       - name: Set up SSH for AUR
