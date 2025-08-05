@@ -1071,9 +1071,9 @@ class ReleaseManager(QWidget):
         self.check_changes_cb = QCheckBox("Check for unpushed changes")
         self.update_version_cb = QCheckBox("Update version numbers")
         self.build_packages_cb = QCheckBox("Build source package")
-        self.build_appimage_cb = QCheckBox("Build AppImage")
-        self.create_release_cb = QCheckBox("Create GitHub release")
-        self.update_aur_cb = QCheckBox("Update AUR package")
+        self.build_appimage_cb = QCheckBox("Build AppImage (automated via GitHub Actions)")
+        self.create_release_cb = QCheckBox("Create GitHub release (triggers automation)")
+        self.update_aur_cb = QCheckBox("Update AUR package (automated via GitHub Actions)")
 
         # Add tasks to layout
         task_layout.addWidget(self.check_changes_cb)

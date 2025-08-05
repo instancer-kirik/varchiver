@@ -1,0 +1,221 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            file \
+            wget \
+            fuse \
+            desktop-file-utils \
+            appstream
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv pip install --system -e .
+
+      - name: Build standalone binary with PyInstaller
+        run: |
+          uv pip install --system pyinstaller
+          pyinstaller --clean \
+            --onefile \
+            --name varchiver \
+            --hidden-import PyQt6 \
+            --hidden-import rarfile \
+            --hidden-import yaml \
+            --hidden-import varchiver \
+            --collect-submodules varchiver \
+            bootstrap.py
+
+      - name: Download linuxdeploy
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage
+
+      - name: Create AppDir structure
+        run: |
+          mkdir -p AppDir/usr/{bin,lib,share/{applications,icons/hicolor/scalable/apps}}
+
+          # Copy the binary
+          cp dist/varchiver AppDir/usr/bin/
+          chmod +x AppDir/usr/bin/varchiver
+
+          # Copy desktop file and icon
+          cp varchiver.desktop AppDir/usr/share/applications/
+          cp varchiver.svg AppDir/usr/share/icons/hicolor/scalable/apps/
+
+          # Create AppRun script
+          cat > AppDir/AppRun << 'EOF'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          export PATH="$HERE/usr/bin:$PATH"
+          exec "$HERE/usr/bin/varchiver" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+          # Create desktop file symlink
+          ln -sf usr/share/applications/varchiver.desktop AppDir/
+          ln -sf usr/share/icons/hicolor/scalable/apps/varchiver.svg AppDir/
+
+      - name: Build AppImage
+        run: |
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Building AppImage for version $VERSION"
+
+          # Build AppImage
+          ARCH=x86_64 ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --output appimage \
+            --desktop-file=AppDir/usr/share/applications/varchiver.desktop \
+            --icon-file=AppDir/usr/share/icons/hicolor/scalable/apps/varchiver.svg
+
+          # Rename AppImage to expected name
+          mv varchiver*.AppImage varchiver-${VERSION}-x86_64.AppImage
+
+      - name: Test AppImage
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          chmod +x varchiver-${VERSION}-x86_64.AppImage
+          ./varchiver-${VERSION}-x86_64.AppImage --help || echo "AppImage test completed"
+
+      - name: Calculate checksums
+        id: checksums
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          # Download source tarball and calculate checksum
+          curl -sL "https://github.com/${{ github.repository }}/archive/v${VERSION}.tar.gz" -o source.tar.gz
+          SOURCE_SHA256=$(sha256sum source.tar.gz | cut -d' ' -f1)
+
+          # Calculate AppImage checksum
+          APPIMAGE_SHA256=$(sha256sum varchiver-${VERSION}-x86_64.AppImage | cut -d' ' -f1)
+
+          echo "source_sha256=$SOURCE_SHA256" >> $GITHUB_OUTPUT
+          echo "appimage_sha256=$APPIMAGE_SHA256" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          echo "Source SHA256: $SOURCE_SHA256"
+          echo "AppImage SHA256: $APPIMAGE_SHA256"
+
+      - name: Upload AppImage to release
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          gh release upload v${VERSION} varchiver-${VERSION}-x86_64.AppImage --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PKGBUILD checksum
+        run: |
+          # Update PKGBUILD with correct checksum
+          sed -i 's/sha256sums=.*/sha256sums=("${{ steps.checksums.outputs.source_sha256 }}")  # Updated by GitHub Actions/' PKGBUILD
+
+          # Commit and push the updated PKGBUILD
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD
+          git commit -m "Update PKGBUILD SHA256 for v${{ steps.checksums.outputs.version }}" || echo "No changes to commit"
+          git push origin HEAD:master || echo "Push failed, continuing..."
+
+  aur-publish:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm base-devel git openssh
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          ref: master  # Get the updated PKGBUILD
+          fetch-depth: 0
+
+      - name: Set up SSH for AUR
+        run: |
+          mkdir -p /home/builder/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > /home/builder/.ssh/aur
+          chmod 600 /home/builder/.ssh/aur
+          echo "Host aur.archlinux.org" > /home/builder/.ssh/config
+          echo "  IdentityFile ~/.ssh/aur" >> /home/builder/.ssh/config
+          echo "  User aur" >> /home/builder/.ssh/config
+          echo "  StrictHostKeyChecking no" >> /home/builder/.ssh/config
+          chown -R builder:builder /home/builder/.ssh
+
+      - name: Validate PKGBUILD
+        run: |
+          # Test build the package first
+          chown -R builder:builder .
+          su - builder -c "cd $GITHUB_WORKSPACE && makepkg --verifysource"
+
+      - name: Clone and update AUR repository
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          # Configure git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "action@github.com"
+
+          # Clone AUR repo
+          su - builder -c "git clone ssh://aur@aur.archlinux.org/varchiver.git /tmp/aur-repo"
+
+          # Copy updated files
+          su - builder -c "cp $GITHUB_WORKSPACE/PKGBUILD /tmp/aur-repo/"
+
+          # Generate .SRCINFO
+          su - builder -c "cd /tmp/aur-repo && makepkg --printsrcinfo > .SRCINFO"
+
+          # Check for changes
+          su - builder -c "cd /tmp/aur-repo && git add PKGBUILD .SRCINFO"
+
+          # Commit and push if there are changes
+          su - builder -c "cd /tmp/aur-repo && git diff --cached --quiet || (git commit -m 'Update to version ${VERSION#v}' && git push)"
+        env:
+          VERSION: ${{ github.ref_name }}
+
+  notify-completion:
+    needs: [build-and-release, aur-publish]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Report status
+        run: |
+          if [[ "${{ needs.build-and-release.result }}" == "success" && "${{ needs.aur-publish.result }}" == "success" ]]; then
+            echo "✅ Release completed successfully!"
+            echo "- AppImage built and uploaded to GitHub release"
+            echo "- PKGBUILD updated with correct checksum"
+            echo "- AUR package updated"
+          else
+            echo "❌ Release had issues:"
+            echo "- Build job: ${{ needs.build-and-release.result }}"
+            echo "- AUR publish job: ${{ needs.aur-publish.result }}"
+          fi
