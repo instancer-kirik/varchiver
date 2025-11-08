@@ -1,0 +1,2062 @@
+{
+  "project_ref": "lxohxewitissdhgzhjtj",
+  "supabase_url": "https://lxohxewitissdhgzhjtj.supabase.co",
+  "total_tables": 48,
+  "accessible_tables": 48,
+  "tables": {
+    "contract_collaborators": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_collaborators",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_tags": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_tags",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "5532a0f3-95eb-4f12-b748-2c9df7b8e3c4",
+          "name": "Economic",
+          "color": "forest"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "5532a0f3-95eb-4f12-b748-2c9df7b8e3c4"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "Economic"
+        },
+        {
+          "name": "color",
+          "type": "str",
+          "sample": "forest"
+        }
+      ]
+    },
+    "project_content_items": {
+      "discovery_method": "openapi",
+      "endpoint": "/project_content_items",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_comments": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_comments",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_task_recurrence": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_task_recurrence",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "clearance_tasks": {
+      "discovery_method": "openapi",
+      "endpoint": "/clearance_tasks",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "timesheets": {
+      "discovery_method": "openapi",
+      "endpoint": "/timesheets",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 1,
+      "sample_data": [
+        {
+          "id": "199cacff-80e9-4b9d-85ca-545b9b7cd34d",
+          "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+          "week_start_date": "2025-10-06",
+          "status": "approved",
+          "submitted_at": "2025-10-12T14:52:45.122+00:00",
+          "approved_at": "2025-10-12T14:52:45.122+00:00",
+          "approved_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+          "total_hours": 0.0030930555555555555,
+          "notes": "",
+          "created_at": "2025-10-12T14:52:46.359215+00:00",
+          "updated_at": "2025-10-13T01:20:36.28189+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "199cacff-80e9-4b9d-85ca-545b9b7cd34d"
+        },
+        {
+          "name": "employee_id",
+          "type": "str",
+          "sample": "568296f6-27cd-4107-a38e-d6ca5714b97e"
+        },
+        {
+          "name": "week_start_date",
+          "type": "str",
+          "sample": "2025-10-06"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "approved"
+        },
+        {
+          "name": "submitted_at",
+          "type": "str",
+          "sample": "2025-10-12T14:52:45.122+00:00"
+        },
+        {
+          "name": "approved_at",
+          "type": "str",
+          "sample": "2025-10-12T14:52:45.122+00:00"
+        },
+        {
+          "name": "approved_by",
+          "type": "str",
+          "sample": "568296f6-27cd-4107-a38e-d6ca5714b97e"
+        },
+        {
+          "name": "total_hours",
+          "type": "float",
+          "sample": "0.0030930555555555555"
+        },
+        {
+          "name": "notes",
+          "type": "str",
+          "sample": ""
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-10-12T14:52:46.359215+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-10-13T01:20:36.28189+00:00"
+        }
+      ]
+    },
+    "roundtuit_task_updates": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_task_updates",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_governance": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_governance",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "2c455cba-9861-4579-8643-8f3211775a94",
+          "model": "Participatory Democracy Enhancement",
+          "unit": null,
+          "structure_type": null,
+          "roles": [
+            "Citizen Assembly",
+            "Expert Council",
+            "Government Liaison",
+            "Implementation Team"
+          ],
+          "rotation_policy": "Citizen assembly members rotate annually with partial continuity",
+          "decision_method": null,
+          "participant_roles": null,
+          "decision_process": "Deliberative process with expert input and transparency requirements",
+          "tools_used": null,
+          "notes": null,
+          "tags": [
+            "In-Planning"
+          ],
+          "connections": [
+            "d4",
+            "c4"
+          ]
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "2c455cba-9861-4579-8643-8f3211775a94"
+        },
+        {
+          "name": "model",
+          "type": "str",
+          "sample": "Participatory Democracy Enhancement"
+        },
+        {
+          "name": "unit",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "structure_type",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "roles",
+          "type": "list",
+          "sample": "['Citizen Assembly', 'Expert Council', 'Government"
+        },
+        {
+          "name": "rotation_policy",
+          "type": "str",
+          "sample": "Citizen assembly members rotate annually with part"
+        },
+        {
+          "name": "decision_method",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "participant_roles",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "decision_process",
+          "type": "str",
+          "sample": "Deliberative process with expert input and transpa"
+        },
+        {
+          "name": "tools_used",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "notes",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['In-Planning']"
+        },
+        {
+          "name": "connections",
+          "type": "list",
+          "sample": "['d4', 'c4']"
+        }
+      ]
+    },
+    "contract_document_signatories": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_document_signatories",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_homesteads": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_homesteads",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4",
+          "name": "tester's Homestead",
+          "description": null,
+          "created_by": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+          "created_at": "2025-06-21T00:28:06.772565+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "tester's Homestead"
+        },
+        {
+          "name": "description",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-06-21T00:28:06.772565+00:00"
+        }
+      ]
+    },
+    "resource_allocations": {
+      "discovery_method": "openapi",
+      "endpoint": "/resource_allocations",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_family_members": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_family_members",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "f53f9ee3-6c1e-4868-8347-476fe3c394c5",
+          "user_id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+          "homestead_id": null,
+          "name": "dog",
+          "role": "dog",
+          "avatar": "\ud83e\udd20",
+          "can_assign": false,
+          "capacity_limit": 4,
+          "prefers_outdoor": false,
+          "avoids_repetition": false,
+          "emotional_triggers": [],
+          "is_available": true,
+          "current_mood": "distracted",
+          "created_at": "2025-06-21T00:29:33.401683+00:00",
+          "updated_at": "2025-06-21T00:29:33.401683+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "f53f9ee3-6c1e-4868-8347-476fe3c394c5"
+        },
+        {
+          "name": "user_id",
+          "type": "str",
+          "sample": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1"
+        },
+        {
+          "name": "homestead_id",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "dog"
+        },
+        {
+          "name": "role",
+          "type": "str",
+          "sample": "dog"
+        },
+        {
+          "name": "avatar",
+          "type": "str",
+          "sample": "\ud83e\udd20"
+        },
+        {
+          "name": "can_assign",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "capacity_limit",
+          "type": "int",
+          "sample": "4"
+        },
+        {
+          "name": "prefers_outdoor",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "avoids_repetition",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "emotional_triggers",
+          "type": "list",
+          "sample": "[]"
+        },
+        {
+          "name": "is_available",
+          "type": "bool",
+          "sample": "True"
+        },
+        {
+          "name": "current_mood",
+          "type": "str",
+          "sample": "distracted"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-06-21T00:29:33.401683+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-06-21T00:29:33.401683+00:00"
+        }
+      ]
+    },
+    "assets": {
+      "discovery_method": "openapi",
+      "endpoint": "/assets",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 1,
+      "sample_data": [
+        {
+          "id": "f289014b-66f8-4c99-b6ff-0db3fc299a44",
+          "name": "aaaaaaaa",
+          "type": "a",
+          "status": "available",
+          "acquisition_date": "2025-05-27T23:54:46.804667+00:00",
+          "acquisition_cost": null,
+          "current_value": null,
+          "location": null,
+          "assigned_to": null,
+          "contract_id": null,
+          "notes": null,
+          "created_at": "2025-05-27T23:54:46.804667+00:00",
+          "updated_at": "2025-05-27T23:54:46.804667+00:00",
+          "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+          "amortization_method": null,
+          "useful_life_years": null,
+          "salvage_value": null,
+          "depreciation_rate": null,
+          "accumulated_depreciation": 0.0,
+          "last_depreciation_date": null,
+          "depreciation_frequency": "monthly"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "f289014b-66f8-4c99-b6ff-0db3fc299a44"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "aaaaaaaa"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "a"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "available"
+        },
+        {
+          "name": "acquisition_date",
+          "type": "str",
+          "sample": "2025-05-27T23:54:46.804667+00:00"
+        },
+        {
+          "name": "acquisition_cost",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "current_value",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "location",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "assigned_to",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "contract_id",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "notes",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-05-27T23:54:46.804667+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-05-27T23:54:46.804667+00:00"
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        },
+        {
+          "name": "amortization_method",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "useful_life_years",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "salvage_value",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "depreciation_rate",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "accumulated_depreciation",
+          "type": "float",
+          "sample": "0.0"
+        },
+        {
+          "name": "last_depreciation_date",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "depreciation_frequency",
+          "type": "str",
+          "sample": "monthly"
+        }
+      ]
+    },
+    "profiles": {
+      "discovery_method": "openapi",
+      "endpoint": "/profiles",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+          "email": "thewigglemonster@gmail.com",
+          "full_name": "tester",
+          "homestead_name": null,
+          "created_at": "2025-06-21T00:28:06.772565+00:00",
+          "updated_at": "2025-06-21T00:28:06.772565+00:00",
+          "role": "user"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1"
+        },
+        {
+          "name": "email",
+          "type": "str",
+          "sample": "thewigglemonster@gmail.com"
+        },
+        {
+          "name": "full_name",
+          "type": "str",
+          "sample": "tester"
+        },
+        {
+          "name": "homestead_name",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-06-21T00:28:06.772565+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-06-21T00:28:06.772565+00:00"
+        },
+        {
+          "name": "role",
+          "type": "str",
+          "sample": "user"
+        }
+      ]
+    },
+    "contracts": {
+      "discovery_method": "openapi",
+      "endpoint": "/contracts",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+          "title": "Advisory Agreement",
+          "description": "Agreement for startup advisors outlining compensation, expectations, and term of service.",
+          "type": "Advisors",
+          "status": "Draft",
+          "created": "2025-04-07T14:35:49.126+00:00",
+          "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+          "end_date": null,
+          "collaborative_editing_enabled": false,
+          "has_ambiguities": false,
+          "has_breach_warnings": true
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204"
+        },
+        {
+          "name": "title",
+          "type": "str",
+          "sample": "Advisory Agreement"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "sample": "Agreement for startup advisors outlining compensat"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "Advisors"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "Draft"
+        },
+        {
+          "name": "created",
+          "type": "str",
+          "sample": "2025-04-07T14:35:49.126+00:00"
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        },
+        {
+          "name": "end_date",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "collaborative_editing_enabled",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "has_ambiguities",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "has_breach_warnings",
+          "type": "bool",
+          "sample": "True"
+        }
+      ]
+    },
+    "contract_parties": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_parties",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "ce0c8025-464b-46e7-ad25-c30d7f1874aa",
+          "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+          "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+          "role": "Company",
+          "email": null,
+          "status": "active",
+          "obligations": [
+            "Provide equity compensation",
+            "Regular updates"
+          ],
+          "rights": [
+            "Receive advisor services",
+            "Confidentiality"
+          ],
+          "joined_at": "2025-04-07T14:35:49.296753+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "ce0c8025-464b-46e7-ad25-c30d7f1874aa"
+        },
+        {
+          "name": "contract_id",
+          "type": "str",
+          "sample": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204"
+        },
+        {
+          "name": "user_id",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        },
+        {
+          "name": "role",
+          "type": "str",
+          "sample": "Company"
+        },
+        {
+          "name": "email",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "active"
+        },
+        {
+          "name": "obligations",
+          "type": "list",
+          "sample": "['Provide equity compensation', 'Regular updates']"
+        },
+        {
+          "name": "rights",
+          "type": "list",
+          "sample": "['Receive advisor services', 'Confidentiality']"
+        },
+        {
+          "name": "joined_at",
+          "type": "str",
+          "sample": "2025-04-07T14:35:49.296753+00:00"
+        }
+      ]
+    },
+    "contract_timeline_events": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_timeline_events",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 2,
+      "sample_data": [
+        {
+          "id": "51542460-ee28-430e-872b-36eac391b86d",
+          "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+          "date": "2025-04-07",
+          "event": "Contract created from template",
+          "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "51542460-ee28-430e-872b-36eac391b86d"
+        },
+        {
+          "name": "contract_id",
+          "type": "str",
+          "sample": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204"
+        },
+        {
+          "name": "date",
+          "type": "str",
+          "sample": "2025-04-07"
+        },
+        {
+          "name": "event",
+          "type": "str",
+          "sample": "Contract created from template"
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        }
+      ]
+    },
+    "roundtuit_tasks": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_tasks",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "cbe35971-4a73-4223-bff8-d3503009e804",
+          "homestead_id": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4",
+          "title": "test",
+          "description": null,
+          "status": "todo",
+          "urgency": "high",
+          "origin": "emergency",
+          "location": "General",
+          "weather_sensitive": false,
+          "assigner_id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+          "effort": 1,
+          "emotional_weight": "moderate",
+          "last_attempted_by": null,
+          "spontaneity_notes": null,
+          "due_date": null,
+          "date_added": "2025-06-22T11:48:27.665283+00:00",
+          "tags": [
+            "fire",
+            "urgent"
+          ],
+          "created_at": "2025-06-22T11:48:27.665283+00:00",
+          "updated_at": "2025-06-22T11:48:27.665283+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "cbe35971-4a73-4223-bff8-d3503009e804"
+        },
+        {
+          "name": "homestead_id",
+          "type": "str",
+          "sample": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4"
+        },
+        {
+          "name": "title",
+          "type": "str",
+          "sample": "test"
+        },
+        {
+          "name": "description",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "todo"
+        },
+        {
+          "name": "urgency",
+          "type": "str",
+          "sample": "high"
+        },
+        {
+          "name": "origin",
+          "type": "str",
+          "sample": "emergency"
+        },
+        {
+          "name": "location",
+          "type": "str",
+          "sample": "General"
+        },
+        {
+          "name": "weather_sensitive",
+          "type": "bool",
+          "sample": "False"
+        },
+        {
+          "name": "assigner_id",
+          "type": "str",
+          "sample": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1"
+        },
+        {
+          "name": "effort",
+          "type": "int",
+          "sample": "1"
+        },
+        {
+          "name": "emotional_weight",
+          "type": "str",
+          "sample": "moderate"
+        },
+        {
+          "name": "last_attempted_by",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "spontaneity_notes",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "due_date",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "date_added",
+          "type": "str",
+          "sample": "2025-06-22T11:48:27.665283+00:00"
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['fire', 'urgent']"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-06-22T11:48:27.665283+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-06-22T11:48:27.665283+00:00"
+        }
+      ]
+    },
+    "employees": {
+      "discovery_method": "openapi",
+      "endpoint": "/employees",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "94b4200b-f590-42b0-8282-87bdd73ad347",
+          "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+          "name": "Homestead A",
+          "email": "thisismyname@gmail.com",
+          "role": "employee",
+          "is_active": true,
+          "pay_rate": null,
+          "created_at": "2025-10-06T13:31:35.725768+00:00",
+          "updated_at": "2025-10-06T13:31:35.725768+00:00",
+          "manager_id": null
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "94b4200b-f590-42b0-8282-87bdd73ad347"
+        },
+        {
+          "name": "user_id",
+          "type": "str",
+          "sample": "f0abd2f7-7f74-4925-b41f-fb075ce17d92"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "Homestead A"
+        },
+        {
+          "name": "email",
+          "type": "str",
+          "sample": "thisismyname@gmail.com"
+        },
+        {
+          "name": "role",
+          "type": "str",
+          "sample": "employee"
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "sample": "True"
+        },
+        {
+          "name": "pay_rate",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-10-06T13:31:35.725768+00:00"
+        },
+        {
+          "name": "updated_at",
+          "type": "str",
+          "sample": "2025-10-06T13:31:35.725768+00:00"
+        },
+        {
+          "name": "manager_id",
+          "type": "unknown",
+          "sample": null
+        }
+      ]
+    },
+    "roundtuit_homestead_members": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_homestead_members",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_resource_flows": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_resource_flows",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "f8064238-3515-4a0f-b8db-22423e46497e",
+          "resource": "Funding for Green Transition",
+          "source": "Carbon tax, Green bonds, Federal appropriations",
+          "storage": "National Climate Investment Fund",
+          "sharing": "Competitive grants, Direct investments, Tax incentives",
+          "distribution_method": null,
+          "usage_tracking": null,
+          "regeneration": "Revenue from successful projects reinvested in fund",
+          "regeneration_practice": null,
+          "tags": [
+            "Economic",
+            "In-Planning"
+          ],
+          "connections": [
+            "d1"
+          ]
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "f8064238-3515-4a0f-b8db-22423e46497e"
+        },
+        {
+          "name": "resource",
+          "type": "str",
+          "sample": "Funding for Green Transition"
+        },
+        {
+          "name": "source",
+          "type": "str",
+          "sample": "Carbon tax, Green bonds, Federal appropriations"
+        },
+        {
+          "name": "storage",
+          "type": "str",
+          "sample": "National Climate Investment Fund"
+        },
+        {
+          "name": "sharing",
+          "type": "str",
+          "sample": "Competitive grants, Direct investments, Tax incent"
+        },
+        {
+          "name": "distribution_method",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "usage_tracking",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "regeneration",
+          "type": "str",
+          "sample": "Revenue from successful projects reinvested in fun"
+        },
+        {
+          "name": "regeneration_practice",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['Economic', 'In-Planning']"
+        },
+        {
+          "name": "connections",
+          "type": "list",
+          "sample": "['d1']"
+        }
+      ]
+    },
+    "roundtuit_task_blockers": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_task_blockers",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_domains": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_domains",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "cc1dca3c-c64a-40d5-b05b-153c8325dd43",
+          "name": "Sustainable Economy",
+          "type": "economic",
+          "category": "Infrastructure",
+          "subcategory": "Green Energy",
+          "description": "Transitioning the US economy to sustainable energy and practices",
+          "ownership": "Public-Private Partnership",
+          "transition_plan": "Phase out fossil fuels by 2040, invest in renewable infrastructure",
+          "leasing_opening": null,
+          "sustainable_practices": "Carbon capture, renewable energy mandates, circular economy",
+          "notes": null,
+          "tags": [
+            "Economic",
+            "In-Planning"
+          ],
+          "connections": [
+            "c1",
+            "r1"
+          ]
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "cc1dca3c-c64a-40d5-b05b-153c8325dd43"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "Sustainable Economy"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "economic"
+        },
+        {
+          "name": "category",
+          "type": "str",
+          "sample": "Infrastructure"
+        },
+        {
+          "name": "subcategory",
+          "type": "str",
+          "sample": "Green Energy"
+        },
+        {
+          "name": "description",
+          "type": "str",
+          "sample": "Transitioning the US economy to sustainable energy"
+        },
+        {
+          "name": "ownership",
+          "type": "str",
+          "sample": "Public-Private Partnership"
+        },
+        {
+          "name": "transition_plan",
+          "type": "str",
+          "sample": "Phase out fossil fuels by 2040, invest in renewabl"
+        },
+        {
+          "name": "leasing_opening",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "sustainable_practices",
+          "type": "str",
+          "sample": "Carbon capture, renewable energy mandates, circula"
+        },
+        {
+          "name": "notes",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['Economic', 'In-Planning']"
+        },
+        {
+          "name": "connections",
+          "type": "list",
+          "sample": "['c1', 'r1']"
+        }
+      ]
+    },
+    "feedback": {
+      "discovery_method": "openapi",
+      "endpoint": "/feedback",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "asset_utilization": {
+      "discovery_method": "openapi",
+      "endpoint": "/asset_utilization",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "projects": {
+      "discovery_method": "openapi",
+      "endpoint": "/projects",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "document_signatures": {
+      "discovery_method": "openapi",
+      "endpoint": "/document_signatures",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "timesheet_edits": {
+      "discovery_method": "openapi",
+      "endpoint": "/timesheet_edits",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_task_assignees": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_task_assignees",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "8f6a811e-aa7d-4016-8e2d-01ba0d9db7f9",
+          "task_id": "ab3f7ac7-010a-4b6d-a482-2edbc34045f3",
+          "user_id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+          "assigned_at": "2025-06-24T23:27:06.168238+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "8f6a811e-aa7d-4016-8e2d-01ba0d9db7f9"
+        },
+        {
+          "name": "task_id",
+          "type": "str",
+          "sample": "ab3f7ac7-010a-4b6d-a482-2edbc34045f3"
+        },
+        {
+          "name": "user_id",
+          "type": "str",
+          "sample": "fb32037c-4483-40d1-a830-e74f4ac3348c"
+        },
+        {
+          "name": "assigned_at",
+          "type": "str",
+          "sample": "2025-06-24T23:27:06.168238+00:00"
+        }
+      ]
+    },
+    "rights_detective_queries": {
+      "discovery_method": "openapi",
+      "endpoint": "/rights_detective_queries",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "queue_attendees": {
+      "discovery_method": "openapi",
+      "endpoint": "/queue_attendees",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "contract_comments": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_comments",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "contract_party_signatures": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_party_signatures",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_interrupts": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_interrupts",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "civ_connections": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_connections",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "49754e7a-b360-4fef-9d46-94b458ae8436",
+          "source": "d1",
+          "target": "c1",
+          "type": "coordinated by"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "49754e7a-b360-4fef-9d46-94b458ae8436"
+        },
+        {
+          "name": "source",
+          "type": "str",
+          "sample": "d1"
+        },
+        {
+          "name": "target",
+          "type": "str",
+          "sample": "c1"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "coordinated by"
+        }
+      ]
+    },
+    "civ_conflict_resolution": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_conflict_resolution",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "7e975dfb-f95c-4dcd-9bb0-441796def121",
+          "type": "partisan",
+          "conflict_type": null,
+          "process": "Structured Dialogue Process",
+          "example": null,
+          "guidelines": "Focus on shared values, evidence-based discussion, professionally facilitated",
+          "preferred_process": null,
+          "facilitators": "National Mediation Center",
+          "follow_up": null,
+          "restorative_outcome": null,
+          "tags": [
+            "Urgent"
+          ],
+          "connections": [
+            "c3",
+            "c4"
+          ]
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "7e975dfb-f95c-4dcd-9bb0-441796def121"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "partisan"
+        },
+        {
+          "name": "conflict_type",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "process",
+          "type": "str",
+          "sample": "Structured Dialogue Process"
+        },
+        {
+          "name": "example",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "guidelines",
+          "type": "str",
+          "sample": "Focus on shared values, evidence-based discussion,"
+        },
+        {
+          "name": "preferred_process",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "facilitators",
+          "type": "str",
+          "sample": "National Mediation Center"
+        },
+        {
+          "name": "follow_up",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "restorative_outcome",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['Urgent']"
+        },
+        {
+          "name": "connections",
+          "type": "list",
+          "sample": "['c3', 'c4']"
+        }
+      ]
+    },
+    "punches": {
+      "discovery_method": "openapi",
+      "endpoint": "/punches",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "55f1b56e-dabe-4b20-bac9-ff5c0d1c993d",
+          "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+          "punch_type": "clock_in",
+          "timestamp": "2025-10-05T01:11:41.042+00:00",
+          "created_at": "2025-10-05T01:11:41.594105+00:00",
+          "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+          "source": "mobile_web",
+          "location_data": null
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "55f1b56e-dabe-4b20-bac9-ff5c0d1c993d"
+        },
+        {
+          "name": "employee_id",
+          "type": "str",
+          "sample": "568296f6-27cd-4107-a38e-d6ca5714b97e"
+        },
+        {
+          "name": "punch_type",
+          "type": "str",
+          "sample": "clock_in"
+        },
+        {
+          "name": "timestamp",
+          "type": "str",
+          "sample": "2025-10-05T01:11:41.042+00:00"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-10-05T01:11:41.594105+00:00"
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "568296f6-27cd-4107-a38e-d6ca5714b97e"
+        },
+        {
+          "name": "source",
+          "type": "str",
+          "sample": "mobile_web"
+        },
+        {
+          "name": "location_data",
+          "type": "unknown",
+          "sample": null
+        }
+      ]
+    },
+    "civ_contributions": {
+      "discovery_method": "openapi",
+      "endpoint": "/civ_contributions",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "03fb6bbf-52ab-4e33-9f65-314c7cc425a5",
+          "person": "Maya Johnson",
+          "name": null,
+          "skillset": null,
+          "skills": [
+            "Policy development",
+            "Systems thinking",
+            "Stakeholder engagement"
+          ],
+          "current_role_name": "Economic Transition Advisor",
+          "contributions": "Develops green economy frameworks, coordinates between sectors, advises on policy",
+          "needs": "Additional research support, cross-sector collaboration",
+          "goal_alignment": null,
+          "notes": null,
+          "tags": [
+            "Economic"
+          ],
+          "connections": [
+            "d1",
+            "g2"
+          ]
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "03fb6bbf-52ab-4e33-9f65-314c7cc425a5"
+        },
+        {
+          "name": "person",
+          "type": "str",
+          "sample": "Maya Johnson"
+        },
+        {
+          "name": "name",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "skillset",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "skills",
+          "type": "list",
+          "sample": "['Policy development', 'Systems thinking', 'Stakeh"
+        },
+        {
+          "name": "current_role_name",
+          "type": "str",
+          "sample": "Economic Transition Advisor"
+        },
+        {
+          "name": "contributions",
+          "type": "str",
+          "sample": "Develops green economy frameworks, coordinates bet"
+        },
+        {
+          "name": "needs",
+          "type": "str",
+          "sample": "Additional research support, cross-sector collabor"
+        },
+        {
+          "name": "goal_alignment",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "notes",
+          "type": "unknown",
+          "sample": null
+        },
+        {
+          "name": "tags",
+          "type": "list",
+          "sample": "['Economic']"
+        },
+        {
+          "name": "connections",
+          "type": "list",
+          "sample": "['d1', 'g2']"
+        }
+      ]
+    },
+    "user_roles": {
+      "discovery_method": "openapi",
+      "endpoint": "/user_roles",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "4672f6f4-caca-4056-8bc5-81f9f7775c2f",
+          "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+          "role": "employee",
+          "created_at": "2025-10-11T02:39:42.293411+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "4672f6f4-caca-4056-8bc5-81f9f7775c2f"
+        },
+        {
+          "name": "user_id",
+          "type": "str",
+          "sample": "f0abd2f7-7f74-4925-b41f-fb075ce17d92"
+        },
+        {
+          "name": "role",
+          "type": "str",
+          "sample": "employee"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-10-11T02:39:42.293411+00:00"
+        }
+      ]
+    },
+    "contract_documents": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_documents",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 3,
+      "sample_data": [
+        {
+          "id": "9077ffe5-7fac-42d3-b255-6875f9076695",
+          "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+          "name": "Advisory Agreement",
+          "type": "DOCX",
+          "uploaded": "2025-04-07T14:35:49.425+00:00",
+          "status": "draft",
+          "version": 1,
+          "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+          "content": "{\"content\":\"Template document for Advisory Agreement\"}",
+          "created_at": "2025-04-07T14:35:49.425+00:00",
+          "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+          "last_edited_at": "2025-04-07T14:35:49.425+00:00"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "sample": "9077ffe5-7fac-42d3-b255-6875f9076695"
+        },
+        {
+          "name": "contract_id",
+          "type": "str",
+          "sample": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "sample": "Advisory Agreement"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "sample": "DOCX"
+        },
+        {
+          "name": "uploaded",
+          "type": "str",
+          "sample": "2025-04-07T14:35:49.425+00:00"
+        },
+        {
+          "name": "status",
+          "type": "str",
+          "sample": "draft"
+        },
+        {
+          "name": "version",
+          "type": "int",
+          "sample": "1"
+        },
+        {
+          "name": "last_edited_by",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        },
+        {
+          "name": "content",
+          "type": "str",
+          "sample": "{\"content\":\"Template document for Advisory Agreeme"
+        },
+        {
+          "name": "created_at",
+          "type": "str",
+          "sample": "2025-04-07T14:35:49.425+00:00"
+        },
+        {
+          "name": "created_by",
+          "type": "str",
+          "sample": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+        },
+        {
+          "name": "last_edited_at",
+          "type": "str",
+          "sample": "2025-04-07T14:35:49.425+00:00"
+        }
+      ]
+    },
+    "content_items": {
+      "discovery_method": "openapi",
+      "endpoint": "/content_items",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "contract_document_comments": {
+      "discovery_method": "openapi",
+      "endpoint": "/contract_document_comments",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "queues": {
+      "discovery_method": "openapi",
+      "endpoint": "/queues",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "platform_integrations": {
+      "discovery_method": "openapi",
+      "endpoint": "/platform_integrations",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_profiles": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_profiles",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "attribution_requirements": {
+      "discovery_method": "openapi",
+      "endpoint": "/attribution_requirements",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    },
+    "roundtuit_user_availability": {
+      "discovery_method": "openapi",
+      "endpoint": "/roundtuit_user_availability",
+      "methods": [
+        "get",
+        "post",
+        "delete",
+        "patch"
+      ],
+      "accessible": true,
+      "row_count": 0,
+      "sample_data": [],
+      "columns": []
+    }
+  }
+}

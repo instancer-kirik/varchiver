@@ -1,0 +1,21 @@
+{
+  "export_info": {
+    "project_ref": "xlmibzeenudmkqgiyaif",
+    "project_url": "https://xlmibzeenudmkqgiyaif.supabase.co",
+    "export_method": "rest_api",
+    "timestamp": "2025-10-30T23:25:00.214811",
+    "format": "json"
+  },
+  "options": {
+    "include_data": true,
+    "schemas": [
+      "public"
+    ],
+    "tables": []
+  },
+  "files": [
+    "complete_export_prod/xlmibzeenudmkqgiyaif_schema_api_20251030_232438.json",
+    "complete_export_prod/xlmibzeenudmkqgiyaif_data_api_20251030_232438.json"
+  ],
+  "success": true
+}

@@ -10,12 +10,37 @@ import shutil
 import psutil
 import json
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QProgressBar, QTextEdit, QComboBox,
-    QGroupBox, QCheckBox, QDialog, QGridLayout, QFrame,
-    QInputDialog, QLineEdit, QMessageBox, QFileDialog, QFormLayout, QSlider,
-    QTreeWidget, QTreeWidgetItem, QHeaderView, QApplication, QStyle, QDialogButtonBox,
-    QProgressDialog, QTreeView, QTabWidget, QMenu, QListWidget, QScrollArea
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QProgressBar,
+    QTextEdit,
+    QComboBox,
+    QGroupBox,
+    QCheckBox,
+    QDialog,
+    QGridLayout,
+    QFrame,
+    QInputDialog,
+    QLineEdit,
+    QMessageBox,
+    QFileDialog,
+    QFormLayout,
+    QSlider,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QHeaderView,
+    QApplication,
+    QStyle,
+    QDialogButtonBox,
+    QProgressDialog,
+    QTreeView,
+    QTabWidget,
+    QMenu,
+    QListWidget,
+    QScrollArea,
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QDir, QUrl, QEvent, QSettings
 from PyQt6.QtGui import QAction, QTextCursor
@@ -38,12 +63,14 @@ from .supabase_config_dialog import SupabaseConfigDialog
 from .inventory_widget import InventoryWidget
 from .json_editor_widget import JsonEditorWidget
 from .csv_viewer import CsvViewerWidget
+from .supamerge_widget import SupamergeWidget
+
 
 class MainWidget(QWidget):
     def __init__(self, parent=None):
         """Initialize the main widget"""
         super().__init__(parent)
-        self.setWindowTitle('Varchiver')
+        self.setWindowTitle("Varchiver")
 
         # Initialize instance variables
         self.archive_path = None  # Path to current archive
@@ -57,7 +84,9 @@ class MainWidget(QWidget):
 
         # Initialize recent archives
         self.recent_archives = []
-        self.recent_archives_file = os.path.expanduser('~/.config/varchiver/recent_archives.json')
+        self.recent_archives_file = os.path.expanduser(
+            "~/.config/varchiver/recent_archives.json"
+        )
         self.load_recent_archives()
 
         # Check RAR availability
@@ -89,56 +118,114 @@ class MainWidget(QWidget):
         self.inventory_widget = InventoryWidget()
         self.json_editor_widget = JsonEditorWidget()
         self.csv_viewer_widget = CsvViewerWidget()
+        self.supamerge_widget = SupamergeWidget()
 
     def _init_modes_config(self):
         """Initialize modes configuration"""
         self.modes = {
-            'Archive': {
-                'description': 'Normal archiving with skip patterns',
-                'widgets_visible': [],
-                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'inventory_widget', 'json_editor_widget', 'csv_viewer_widget'],
-                'special_groups': {'archive_group': True, 'recent_group': True}
+            "Archive": {
+                "description": "Normal archiving with skip patterns",
+                "widgets_visible": [],
+                "widgets_hidden": [
+                    "git_widget",
+                    "variable_calendar",
+                    "supabase_widget",
+                    "inventory_widget",
+                    "json_editor_widget",
+                    "csv_viewer_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": True, "recent_group": True},
             },
-            'Dev Tools': {
-                'description': 'Development utilities and configuration management',
-                'widgets_visible': ['git_widget', 'supabase_widget'],
-                'widgets_hidden': ['variable_calendar', 'inventory_widget', 'json_editor_widget', 'csv_viewer_widget'],
-                'special_groups': {'archive_group': False, 'recent_group': False}
+            "Dev Tools": {
+                "description": "Development utilities and configuration management",
+                "widgets_visible": ["git_widget", "supabase_widget"],
+                "widgets_hidden": [
+                    "variable_calendar",
+                    "inventory_widget",
+                    "json_editor_widget",
+                    "csv_viewer_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
             },
-            'Variable Calendar': {
-                'description': 'Variable tracking and visualization',
-                'widgets_visible': ['variable_calendar'],
-                'widgets_hidden': ['git_widget', 'supabase_widget', 'inventory_widget',
-                                 'json_editor_widget', 'csv_viewer_widget'],
-                'special_groups': {'archive_group': False, 'recent_group': False}
+            "Variable Calendar": {
+                "description": "Variable tracking and visualization",
+                "widgets_visible": ["variable_calendar"],
+                "widgets_hidden": [
+                    "git_widget",
+                    "supabase_widget",
+                    "inventory_widget",
+                    "json_editor_widget",
+                    "csv_viewer_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
             },
-            'Inventory': {
-                'description': 'Cubok Inventory Manager for gear and tech items',
-                'widgets_visible': ['inventory_widget'],
-                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'json_editor_widget', 'csv_viewer_widget'],
-                'special_groups': {'archive_group': False, 'recent_group': False}
+            "Inventory": {
+                "description": "Cubok Inventory Manager for gear and tech items",
+                "widgets_visible": ["inventory_widget"],
+                "widgets_hidden": [
+                    "git_widget",
+                    "variable_calendar",
+                    "supabase_widget",
+                    "json_editor_widget",
+                    "csv_viewer_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
             },
-            'JSON Editor': {
-                'description': 'Editor for large JSON files',
-                'widgets_visible': ['json_editor_widget'],
-                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'inventory_widget', 'csv_viewer_widget'],
-                'special_groups': {'archive_group': False, 'recent_group': False}
+            "JSON Editor": {
+                "description": "Editor for large JSON files",
+                "widgets_visible": ["json_editor_widget"],
+                "widgets_hidden": [
+                    "git_widget",
+                    "variable_calendar",
+                    "supabase_widget",
+                    "inventory_widget",
+                    "csv_viewer_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
             },
-            'CSV Viewer': {
-                'description': 'CSV file viewing and editing',
-                'widgets_visible': ['csv_viewer_widget'],
-                'widgets_hidden': ['git_widget', 'variable_calendar', 'supabase_widget',
-                                 'inventory_widget', 'json_editor_widget'],
-                'special_groups': {'archive_group': False, 'recent_group': False}
-            }
+            "CSV Viewer": {
+                "description": "CSV file viewing and editing",
+                "widgets_visible": ["csv_viewer_widget"],
+                "widgets_hidden": [
+                    "git_widget",
+                    "variable_calendar",
+                    "supabase_widget",
+                    "inventory_widget",
+                    "json_editor_widget",
+                    "supamerge_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
+            },
+            "Supamerge": {
+                "description": "Supabase project migration and merging tool",
+                "widgets_visible": ["supamerge_widget"],
+                "widgets_hidden": [
+                    "git_widget",
+                    "variable_calendar",
+                    "supabase_widget",
+                    "inventory_widget",
+                    "json_editor_widget",
+                    "csv_viewer_widget",
+                ],
+                "special_groups": {"archive_group": False, "recent_group": False},
+            },
         }
 
         # Set all widgets initially hidden
-        for widget_name in ['git_widget', 'variable_calendar', 'supabase_widget',
-                           'inventory_widget', 'json_editor_widget', 'csv_viewer_widget']:
+        for widget_name in [
+            "git_widget",
+            "variable_calendar",
+            "supabase_widget",
+            "inventory_widget",
+            "json_editor_widget",
+            "csv_viewer_widget",
+            "supamerge_widget",
+        ]:
             getattr(self, widget_name).setVisible(False)
 
     def setup_ui(self):
@@ -156,10 +243,10 @@ class MainWidget(QWidget):
         self.mode_combo.addItems(mode_names)
 
         # Build tooltip from modes config
-        tooltip_lines = ['Operation mode:']
+        tooltip_lines = ["Operation mode:"]
         for mode_name, config in self.modes.items():
-            tooltip_lines.append(f'{mode_name}: {config["description"]}')
-        self.mode_combo.setToolTip('\n'.join(tooltip_lines))
+            tooltip_lines.append(f"{mode_name}: {config['description']}")
+        self.mode_combo.setToolTip("\n".join(tooltip_lines))
         self.mode_combo.currentTextChanged.connect(self.on_mode_changed)
         mode_header.addWidget(self.mode_combo)
 
@@ -208,6 +295,7 @@ class MainWidget(QWidget):
         # Add all mode widgets
         main_layout.addWidget(self.json_editor_widget)
         main_layout.addWidget(self.csv_viewer_widget)
+        main_layout.addWidget(self.supamerge_widget)
 
         # Create archive group
         self.archive_group = QGroupBox("Archive Operations")
@@ -218,20 +306,26 @@ class MainWidget(QWidget):
 
         # Browse button
         self.browse_button = QPushButton("Browse")
-        self.browse_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogStart))
+        self.browse_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogStart)
+        )
         self.browse_button.clicked.connect(self.browse_archive_dialog)
         toolbar.addWidget(self.browse_button)
 
         # Info button
         self.info_button = QPushButton("Info")
-        self.info_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogInfoView))
+        self.info_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogInfoView)
+        )
         self.info_button.setEnabled(False)
         self.info_button.clicked.connect(self.show_archive_info)
         toolbar.addWidget(self.info_button)
 
         # Create archive button
         self.create_button = QPushButton("Create Archive")
-        self.create_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+        self.create_button.setIcon(
+            self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+        )
         self.create_button.clicked.connect(self.compress_files_dialog)
         toolbar.addWidget(self.create_button)
 
@@ -240,7 +334,9 @@ class MainWidget(QWidget):
 
         # Queue Extract button
         self.queue_extract_button = QPushButton("Queue Extract")
-        self.queue_extract_button.clicked.connect(lambda: self.extract_archive_dialog(queue=True))
+        self.queue_extract_button.clicked.connect(
+            lambda: self.extract_archive_dialog(queue=True)
+        )
         extract_button_section.addWidget(self.queue_extract_button)
 
         # Start Extract button
@@ -294,8 +390,12 @@ class MainWidget(QWidget):
         custom_layout.addWidget(custom_label)
 
         self.skip_patterns_edit = QLineEdit()
-        self.skip_patterns_edit.setPlaceholderText("Additional patterns to skip (comma-separated)")
-        self.skip_patterns_edit.setToolTip("Enter additional patterns to skip, separated by commas")
+        self.skip_patterns_edit.setPlaceholderText(
+            "Additional patterns to skip (comma-separated)"
+        )
+        self.skip_patterns_edit.setToolTip(
+            "Enter additional patterns to skip, separated by commas"
+        )
         custom_layout.addWidget(self.skip_patterns_edit)
 
         skip_layout.addLayout(custom_layout)
@@ -361,16 +461,18 @@ class MainWidget(QWidget):
         collision_layout.addWidget(collision_desc)
 
         self.collision_combo = QComboBox()
-        self.collision_combo.addItems([
-            'ask',      # Ask for each file
-            'skip',     # Skip existing files
-            'rename',   # Rename new files
-            'newer',    # Keep newer files
-            'older',    # Keep older files
-            'larger',   # Keep larger files
-            'smaller',  # Keep smaller files
-            'overwrite' # Always overwrite
-        ])
+        self.collision_combo.addItems(
+            [
+                "ask",  # Ask for each file
+                "skip",  # Skip existing files
+                "rename",  # Rename new files
+                "newer",  # Keep newer files
+                "older",  # Keep older files
+                "larger",  # Keep larger files
+                "smaller",  # Keep smaller files
+                "overwrite",  # Always overwrite
+            ]
+        )
 
         # Style the combo box to be more prominent
         self.collision_combo.setStyleSheet("""
@@ -403,7 +505,9 @@ class MainWidget(QWidget):
         # Create tree view for file display
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Name", "Size", "Modified", "Ratio"])
-        self._tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._tree.header().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.ResizeToContents
+        )
         self._tree.setAlternatingRowColors(True)
         self._tree.itemDoubleClicked.connect(self._on_tree_item_double_clicked)
         archive_layout.addWidget(self._tree)
@@ -444,7 +548,7 @@ class MainWidget(QWidget):
             }
         """)
 
-        self.error_label = QLabel('')
+        self.error_label = QLabel("")
         self.error_label.setWordWrap(True)
         self.error_label.setStyleSheet("""
             QLabel {
@@ -516,7 +620,7 @@ class MainWidget(QWidget):
             # Add mounted devices to sidebar
             sidebar = []
             for device in self._get_mounted_devices():
-                url = QUrl.fromLocalFile(device['path'])
+                url = QUrl.fromLocalFile(device["path"])
                 sidebar.append(url)
             dialog.setSidebarUrls(sidebar)
 
@@ -524,7 +628,9 @@ class MainWidget(QWidget):
             dir_button = QPushButton("Toggle Directory Mode", dialog)
             dir_button.setCheckable(True)
             dir_button.setChecked(False)
-            dir_button.clicked.connect(lambda checked: self._toggle_dialog_mode(dialog, checked))
+            dir_button.clicked.connect(
+                lambda checked: self._toggle_dialog_mode(dialog, checked)
+            )
 
             # Add the button to the dialog's layout
             layout = dialog.layout()
@@ -541,7 +647,9 @@ class MainWidget(QWidget):
             # Find the tree view and connect double-click handler
             tree_view = dialog.findChild(QTreeView)
             if tree_view:
-                tree_view.doubleClicked.connect(lambda index: self._handle_double_click(dialog, index))
+                tree_view.doubleClicked.connect(
+                    lambda index: self._handle_double_click(dialog, index)
+                )
 
             # Set name filters
             dialog.setNameFilter(
@@ -553,13 +661,17 @@ class MainWidget(QWidget):
                 if selected_path:
                     # Store the selected path and update UI
                     self.current_archive_path = selected_path
-                    self.status_label.setText(f"Selected: {os.path.basename(selected_path)}")
+                    self.status_label.setText(
+                        f"Selected: {os.path.basename(selected_path)}"
+                    )
 
                     # If it's a directory, create a list of files
                     if os.path.isdir(selected_path):
                         self.current_archive = [selected_path]
                         self._populate_tree(self.current_archive)
-                        self.status_label.setText(f"Directory selected: {selected_path}")
+                        self.status_label.setText(
+                            f"Directory selected: {selected_path}"
+                        )
                     else:
                         # Handle as archive
                         self._open_archive(selected_path)
@@ -625,7 +737,9 @@ class MainWidget(QWidget):
         self._tree.clear()
         self._populate_tree(contents)
         self.progress_bar.setVisible(False)
-        self.status_label.setText(f"Archive: {os.path.basename(self.current_archive_path)}")
+        self.status_label.setText(
+            f"Archive: {os.path.basename(self.current_archive_path)}"
+        )
         self.browse_button.setEnabled(True)
 
     def _on_error(self, error_msg):
@@ -686,7 +800,10 @@ class MainWidget(QWidget):
             layout.addLayout(output_layout)
 
             # Add password field only for RAR and 7z archives
-            if any(self.current_archive_path.lower().endswith(ext) for ext in ['.rar', '.7z']):
+            if any(
+                self.current_archive_path.lower().endswith(ext)
+                for ext in [".rar", ".7z"]
+            ):
                 password_layout = QHBoxLayout()
                 password_label = QLabel("Password (if needed):", dialog)
                 password_edit = QLineEdit(dialog)
@@ -699,8 +816,9 @@ class MainWidget(QWidget):
 
             # Add buttons
             button_box = QDialogButtonBox(
-                QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-                dialog
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                dialog,
             )
             button_box.accepted.connect(dialog.accept)
             button_box.rejected.connect(dialog.reject)
@@ -709,20 +827,24 @@ class MainWidget(QWidget):
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 # Queue the extraction
                 extraction_info = {
-                    'archive_name': self.current_archive_path,
-                    'output_dir': output_edit.text(),
-                    'password': password_edit.text() if password_edit else None,
-                    'collision_strategy': self.collision_combo.currentText(),
-                    'preserve_permissions': self.preserve_permissions.isChecked(),
-                    'skip_patterns': self.get_active_skip_patterns()
+                    "archive_name": self.current_archive_path,
+                    "output_dir": output_edit.text(),
+                    "password": password_edit.text() if password_edit else None,
+                    "collision_strategy": self.collision_combo.currentText(),
+                    "preserve_permissions": self.preserve_permissions.isChecked(),
+                    "skip_patterns": self.get_active_skip_patterns(),
                 }
                 if queue:
                     self.extraction_queue.append(extraction_info)
                     self.start_extract_button.setEnabled(True)
-                    self.update_status(f"Queued extraction of {os.path.basename(self.current_archive_path)}")
+                    self.update_status(
+                        f"Queued extraction of {os.path.basename(self.current_archive_path)}"
+                    )
                 else:
                     self.extract_archive(**extraction_info)
-                    self.update_status(f"Extracting {os.path.basename(self.current_archive_path)}")
+                    self.update_status(
+                        f"Extracting {os.path.basename(self.current_archive_path)}"
+                    )
 
         except Exception as e:
             self.show_error(f"Error setting up extraction: {str(e)}")
@@ -746,12 +868,22 @@ class MainWidget(QWidget):
         # Update button state
         self.start_extract_button.setEnabled(bool(self.extraction_queue))
 
-    def extract_archive(self, archive_name, output_dir=None, password=None, skip_patterns=None,
-                       collision_strategy=None, preserve_permissions=None, file_list=None):
+    def extract_archive(
+        self,
+        archive_name,
+        output_dir=None,
+        password=None,
+        skip_patterns=None,
+        collision_strategy=None,
+        preserve_permissions=None,
+        file_list=None,
+    ):
         """Extract files from an archive"""
         try:
             # Create progress dialog
-            progress_dialog = QProgressDialog("Extracting files...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog(
+                "Extracting files...", "Cancel", 0, 100, self
+            )
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setAutoClose(True)
             progress_dialog.setAutoReset(True)
@@ -765,15 +897,19 @@ class MainWidget(QWidget):
                 skip_patterns,
                 password,
                 preserve_permissions,
-                file_list
+                file_list,
             )
 
             # Connect signals
             self.current_thread.progress.connect(progress_dialog.setValue)
             self.current_thread.status.connect(self.update_status)
             self.current_thread.error.connect(self.handle_error)
-            self.current_thread.finished.connect(lambda path: self._on_extract_complete())
-            self.current_thread.finished.connect(lambda path: progress_dialog.setValue(100))
+            self.current_thread.finished.connect(
+                lambda path: self._on_extract_complete()
+            )
+            self.current_thread.finished.connect(
+                lambda path: progress_dialog.setValue(100)
+            )
             self.current_thread.finished.connect(lambda path: progress_dialog.close())
 
             # Disable controls during extraction
@@ -836,7 +972,9 @@ class MainWidget(QWidget):
         # Create file dialog
         dialog = QFileDialog(self)
         dialog.setWindowTitle("Choose Files/Directories to Archive")
-        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)  # Allow selecting multiple files
+        dialog.setFileMode(
+            QFileDialog.FileMode.ExistingFiles
+        )  # Allow selecting multiple files
         dialog.setOption(QFileDialog.Option.DontUseNativeDialog)
         dialog.setOption(QFileDialog.Option.DontUseCustomDirectoryIcons)
 
@@ -883,7 +1021,9 @@ class MainWidget(QWidget):
             if dialog.fileMode() == QFileDialog.FileMode.Directory:
                 selected_files = [dialog.selectedFiles()[0]]  # Single directory mode
             else:
-                selected_files = dialog.selectedFiles()  # Multiple files/directories mode
+                selected_files = (
+                    dialog.selectedFiles()
+                )  # Multiple files/directories mode
 
             if not selected_files:
                 return
@@ -911,7 +1051,11 @@ class MainWidget(QWidget):
             save_dialog.setDirectory(os.path.dirname(selected_files[0]))
 
             # Connect filter change signal
-            save_dialog.filterSelected.connect(lambda selected_filter: self.on_filter_selected(save_dialog, selected_filter))
+            save_dialog.filterSelected.connect(
+                lambda selected_filter: self.on_filter_selected(
+                    save_dialog, selected_filter
+                )
+            )
 
             if save_dialog.exec() != QDialog.DialogCode.Accepted:
                 return
@@ -922,39 +1066,60 @@ class MainWidget(QWidget):
             # Check if we need elevated privileges
             needs_elevation = not os.access(archive_dir, os.W_OK)
             if os.path.exists(archive_name):
-                needs_elevation = needs_elevation or not os.access(archive_name, os.W_OK)
+                needs_elevation = needs_elevation or not os.access(
+                    archive_name, os.W_OK
+                )
                 # Ask for confirmation to overwrite
-                reply = QMessageBox.question(self, "Confirm Overwrite",
+                reply = QMessageBox.question(
+                    self,
+                    "Confirm Overwrite",
                     f"File already exists: {archive_name}\nDo you want to overwrite it?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
                 if reply == QMessageBox.StandardButton.No:
                     return
 
             # Ask for elevated privileges if needed
             if needs_elevation:
-                reply = QMessageBox.question(self, "Elevated Privileges Required",
+                reply = QMessageBox.question(
+                    self,
+                    "Elevated Privileges Required",
                     f"Cannot write to selected location: {archive_name}\n"
                     "Do you want to try with elevated privileges?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
 
                 if reply == QMessageBox.StandardButton.No:
                     return
 
                 try:
                     # Test if we can write to directory with elevated privileges
-                    subprocess.run(['pkexec', 'touch', os.path.join(archive_dir, '.varchiver_test')], check=True)
-                    subprocess.run(['pkexec', 'rm', os.path.join(archive_dir, '.varchiver_test')], check=True)
+                    subprocess.run(
+                        [
+                            "pkexec",
+                            "touch",
+                            os.path.join(archive_dir, ".varchiver_test"),
+                        ],
+                        check=True,
+                    )
+                    subprocess.run(
+                        ["pkexec", "rm", os.path.join(archive_dir, ".varchiver_test")],
+                        check=True,
+                    )
 
                     # Remove existing file if it exists
                     if os.path.exists(archive_name):
-                        subprocess.run(['pkexec', 'rm', '-f', archive_name], check=True)
+                        subprocess.run(["pkexec", "rm", "-f", archive_name], check=True)
 
                     # Store that we'll need elevated privileges for this path
                     self._needs_elevation = True
 
                 except subprocess.CalledProcessError:
-                    QMessageBox.critical(self, "Error",
-                        "Failed to get elevated privileges. Please choose a different location.")
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        "Failed to get elevated privileges. Please choose a different location.",
+                    )
                     return
                 except Exception as e:
                     QMessageBox.critical(self, "Error", str(e))
@@ -962,7 +1127,12 @@ class MainWidget(QWidget):
             else:
                 self._needs_elevation = False
 
-            password, ok = QInputDialog.getText(self, "Password", "Set password (optional):", QLineEdit.EchoMode.Password)
+            password, ok = QInputDialog.getText(
+                self,
+                "Password",
+                "Set password (optional):",
+                QLineEdit.EchoMode.Password,
+            )
             if ok:
                 self.compress_files(selected_files, archive_name, password)
             else:
@@ -971,8 +1141,16 @@ class MainWidget(QWidget):
             # Store password for later use when opening the archive
             self.password = password if password and ok else None
 
-    def compress_files(self, files, archive_name=None, password=None, compression_level=None,
-                      skip_patterns=None, collision_strategy=None, preserve_permissions=None):
+    def compress_files(
+        self,
+        files,
+        archive_name=None,
+        password=None,
+        compression_level=None,
+        skip_patterns=None,
+        collision_strategy=None,
+        preserve_permissions=None,
+    ):
         """Compress files into an archive"""
         try:
             if not files:
@@ -990,7 +1168,9 @@ class MainWidget(QWidget):
                 preserve_permissions = self.preserve_permissions.isChecked()
 
             # Show progress dialog
-            progress_dialog = QProgressDialog("Compressing files...", "Cancel", 0, 100, self)
+            progress_dialog = QProgressDialog(
+                "Compressing files...", "Cancel", 0, 100, self
+            )
             progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
             progress_dialog.setAutoClose(True)
             progress_dialog.setAutoReset(True)
@@ -1004,7 +1184,7 @@ class MainWidget(QWidget):
                 compression_level=compression_level,
                 skip_patterns=skip_patterns,
                 collision_strategy=collision_strategy,
-                preserve_permissions=preserve_permissions
+                preserve_permissions=preserve_permissions,
             )
 
             # Connect signals
@@ -1029,15 +1209,19 @@ class MainWidget(QWidget):
 
             if os.path.isdir(path):
                 # Just add a dummy item to show the expand arrow
-                root_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon))
+                root_item.setIcon(
+                    0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon)
+                )
                 dummy = QTreeWidgetItem()
                 root_item.addChild(dummy)
                 # Connect the expand signal if not already connected
-                if not hasattr(self, '_expand_connected'):
+                if not hasattr(self, "_expand_connected"):
                     self._tree.itemExpanded.connect(self._load_directory_contents)
                     self._expand_connected = True
             else:
-                root_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+                root_item.setIcon(
+                    0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+                )
 
     def _load_directory_contents(self, item):
         """Load directory contents when expanding a directory in the tree view"""
@@ -1061,12 +1245,16 @@ class MainWidget(QWidget):
                 child_item.setData(0, Qt.ItemDataRole.UserRole, entry.path)
 
                 if entry.is_dir():
-                    child_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon))
+                    child_item.setIcon(
+                        0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon)
+                    )
                     # Add dummy item to show expand arrow
                     dummy = QTreeWidgetItem()
                     child_item.addChild(dummy)
                 else:
-                    child_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+                    child_item.setIcon(
+                        0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+                    )
         except PermissionError:
             error_item = QTreeWidgetItem(item)
             error_item.setText(0, "Permission denied")
@@ -1078,7 +1266,9 @@ class MainWidget(QWidget):
 
     def _add_directory_contents(self, parent_item, directory_path):
         """Recursively add directory contents to the tree view"""
-        parent_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon))
+        parent_item.setIcon(
+            0, self.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon)
+        )
 
         try:
             for entry in os.scandir(directory_path):
@@ -1089,7 +1279,9 @@ class MainWidget(QWidget):
                 if entry.is_dir():
                     self._add_directory_contents(child_item, entry.path)
                 else:
-                    child_item.setIcon(0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon))
+                    child_item.setIcon(
+                        0, self.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
+                    )
         except PermissionError:
             error_item = QTreeWidgetItem("Permission denied")
             error_item.setDisabled(True)
@@ -1123,13 +1315,15 @@ class MainWidget(QWidget):
                 extensions["RAR Archives (*.rar)"] = ".rar"
 
             if selected_filter in extensions:
-                current_name = os.path.splitext(dialog.selectedFiles()[0] if dialog.selectedFiles() else "archive")[0]
+                current_name = os.path.splitext(
+                    dialog.selectedFiles()[0] if dialog.selectedFiles() else "archive"
+                )[0]
                 dialog.selectFile(current_name + extensions[selected_filter])
 
     def show_archive_info(self):
         """Show supported archive formats and file type information"""
         dialog = QDialog(self)
-        dialog.setWindowTitle('Archive Information')
+        dialog.setWindowTitle("Archive Information")
         dialog.setMinimumWidth(400)
 
         layout = QVBoxLayout()
@@ -1228,7 +1422,9 @@ class MainWidget(QWidget):
         self.error_label.setText(f"Error: {message}")
         self.copy_error_button.setVisible(True)
         if is_permission_error:
-            self.error_label.setText(f"Error: {message}\nNote: This may be a permissions issue. Try running with elevated privileges.")
+            self.error_label.setText(
+                f"Error: {message}\nNote: This may be a permissions issue. Try running with elevated privileges."
+            )
 
     def closeEvent(self, event: QEvent) -> None:
         """Handle window close event"""
@@ -1248,25 +1444,41 @@ class MainWidget(QWidget):
 
         # Get custom patterns
         if self.skip_patterns_edit.text().strip():
-            active_patterns.extend(p.strip() for p in self.skip_patterns_edit.text().split(','))
+            active_patterns.extend(
+                p.strip() for p in self.skip_patterns_edit.text().split(",")
+            )
 
         return active_patterns
 
     def select_multiple_directories(self):
         """Select multiple directories for archiving"""
-        directories = QFileDialog.getExistingDirectory(self, "Select Directories", "", QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks)
+        directories = QFileDialog.getExistingDirectory(
+            self,
+            "Select Directories",
+            "",
+            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks,
+        )
         if directories:
             # Process the selected directories
-            print("Selected directories:", directories)  # Replace with actual logic to handle directories
+            print(
+                "Selected directories:", directories
+            )  # Replace with actual logic to handle directories
 
     def select_files_and_directories(self):
         """Select both files and directories for archiving"""
         # Select files
-        files, _ = QFileDialog.getOpenFileNames(self, "Select Files", "", "All Files (*)")
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Select Files", "", "All Files (*)"
+        )
 
         # Select directories
         directories = []
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory", "", QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks)
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select Directory",
+            "",
+            QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks,
+        )
         if directory:
             directories.append(directory)
 
@@ -1275,7 +1487,9 @@ class MainWidget(QWidget):
 
         if selected_items:
             # Process the selected files and directories
-            print("Selected items:", selected_items)  # Replace with actual logic to handle the selection
+            print(
+                "Selected items:", selected_items
+            )  # Replace with actual logic to handle the selection
         return selected_items
 
     def handle_interrupt(self):
@@ -1305,8 +1519,10 @@ class MainWidget(QWidget):
 
     def update_theme_button(self):
         """Update theme button text based on current theme."""
-        if hasattr(self, 'theme_button'):
-            self.theme_button.setText("Dark Mode" if self.theme_manager.is_dark_theme() else "Light Mode")
+        if hasattr(self, "theme_button"):
+            self.theme_button.setText(
+                "Dark Mode" if self.theme_manager.is_dark_theme() else "Light Mode"
+            )
 
     def show_file_preview(self, mode="create"):
         """Show file preview dialog"""
@@ -1314,10 +1530,7 @@ class MainWidget(QWidget):
             if mode == "create":
                 # Get files to preview for archiving
                 files = QFileDialog.getOpenFileNames(
-                    self,
-                    "Select Files or Directories to Preview",
-                    "",
-                    "All Files (*)"
+                    self, "Select Files or Directories to Preview", "", "All Files (*)"
                 )[0]
             elif mode == "git":
                 # Get repository directory to preview
@@ -1351,8 +1564,7 @@ class MainWidget(QWidget):
         if selected_files:
             # Get output directory
             output_dir = QFileDialog.getExistingDirectory(
-                self,
-                "Select Output Directory"
+                self, "Select Output Directory"
             )
             if output_dir:
                 try:
@@ -1361,7 +1573,7 @@ class MainWidget(QWidget):
                         output_dir=output_dir,
                         password=self.password,
                         skip_patterns=self.get_active_skip_patterns(),
-                        file_list=selected_files
+                        file_list=selected_files,
                     )
                 except Exception as e:
                     self.handle_error(f"Error during extraction: {str(e)}")
@@ -1372,24 +1584,24 @@ class MainWidget(QWidget):
         self.browse_button.setEnabled(enabled)
 
         # Optional buttons - check before enabling
-        if hasattr(self, 'queue_extract_button'):
+        if hasattr(self, "queue_extract_button"):
             self.queue_extract_button.setEnabled(enabled)
-        if hasattr(self, 'queue_compress_button'):
+        if hasattr(self, "queue_compress_button"):
             self.queue_compress_button.setEnabled(enabled)
-        if hasattr(self, 'compression_slider'):
+        if hasattr(self, "compression_slider"):
             self.compression_slider.setEnabled(enabled)
-        if hasattr(self, 'extract_all_button'):
+        if hasattr(self, "extract_all_button"):
             self.extract_all_button.setEnabled(enabled)
-        if hasattr(self, 'extract_selected_button'):
+        if hasattr(self, "extract_selected_button"):
             self.extract_selected_button.setEnabled(enabled)
-        if hasattr(self, 'tree_view'):
+        if hasattr(self, "tree_view"):
             self.tree_view.setEnabled(enabled)
 
     def show_release_manager(self):
         """Show the release manager tab."""
         # Switch to Dev Tools mode if not already
-        if self.mode_combo.currentText() != 'Dev Tools':
-            self.mode_combo.setCurrentText('Dev Tools')
+        if self.mode_combo.currentText() != "Dev Tools":
+            self.mode_combo.setCurrentText("Dev Tools")
 
         # Show Git widget if hidden
         if not self.git_widget.isVisible():
@@ -1408,7 +1620,9 @@ class MainWidget(QWidget):
         if self.error_label.text():
             clipboard = QApplication.clipboard()
             clipboard.setText(self.error_label.text())
-            QMessageBox.information(self, "Error Copied", "Error details have been copied to clipboard")
+            QMessageBox.information(
+                self, "Error Copied", "Error details have been copied to clipboard"
+            )
 
     def on_mode_changed(self, mode):
         """Handle mode change"""
@@ -1417,7 +1631,7 @@ class MainWidget(QWidget):
     def _apply_mode(self, mode):
         """Apply mode configuration"""
         if mode not in self.modes:
-            mode = 'Archive'  # Default fallback
+            mode = "Archive"  # Default fallback
 
         config = self.modes[mode]
 
@@ -1428,18 +1642,25 @@ class MainWidget(QWidget):
             self.hide_git_ui()
 
         # Hide all widgets first
-        all_widget_names = ['git_widget', 'variable_calendar', 'supabase_widget',
-                           'inventory_widget', 'json_editor_widget', 'csv_viewer_widget']
+        all_widget_names = [
+            "git_widget",
+            "variable_calendar",
+            "supabase_widget",
+            "inventory_widget",
+            "json_editor_widget",
+            "csv_viewer_widget",
+            "supamerge_widget",
+        ]
         for widget_name in all_widget_names:
             getattr(self, widget_name).setVisible(False)
 
         # Show required widgets
-        for widget_name in config['widgets_visible']:
+        for widget_name in config["widgets_visible"]:
             if hasattr(self, widget_name):
                 getattr(self, widget_name).setVisible(True)
 
         # Handle special groups
-        for group_name, visible in config['special_groups'].items():
+        for group_name, visible in config["special_groups"].items():
             if hasattr(self, group_name):
                 group_widget = getattr(self, group_name)
                 group_widget.setVisible(visible)
@@ -1527,12 +1748,12 @@ class MainWidget(QWidget):
             for file_path in files:
                 if os.path.isfile(file_path):
                     extraction_info = {
-                        'archive_name': file_path,
-                        'output_dir': os.path.dirname(file_path),
-                        'password': None,
-                        'collision_strategy': self.collision_combo.currentText(),
-                        'preserve_permissions': self.preserve_permissions.isChecked(),
-                        'skip_patterns': self.get_active_skip_patterns()
+                        "archive_name": file_path,
+                        "output_dir": os.path.dirname(file_path),
+                        "password": None,
+                        "collision_strategy": self.collision_combo.currentText(),
+                        "preserve_permissions": self.preserve_permissions.isChecked(),
+                        "skip_patterns": self.get_active_skip_patterns(),
                     }
                     self.extraction_queue.append(extraction_info)
 
@@ -1593,7 +1814,7 @@ class MainWidget(QWidget):
         try:
             os.makedirs(os.path.dirname(self.recent_archives_file), exist_ok=True)
             if os.path.exists(self.recent_archives_file):
-                with open(self.recent_archives_file, 'r') as f:
+                with open(self.recent_archives_file, "r") as f:
                     self.recent_archives = json.load(f)
         except Exception as e:
             print(f"Error loading recent archives: {e}")
@@ -1602,7 +1823,7 @@ class MainWidget(QWidget):
     def save_recent_archives(self):
         """Save recent archives to file"""
         try:
-            with open(self.recent_archives_file, 'w') as f:
+            with open(self.recent_archives_file, "w") as f:
                 json.dump(self.recent_archives, f)
         except Exception as e:
             print(f"Error saving recent archives: {e}")
@@ -1612,6 +1833,7 @@ class MainWidget(QWidget):
         self.recent_archives = []
         self.update_recent_archives_ui()
         self.save_recent_archives()
+
 
 def main():
     app = QApplication(sys.argv)
@@ -1625,6 +1847,7 @@ def main():
 
     signal.signal(signal.SIGINT, lambda sig, frame: widget.handle_interrupt())
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

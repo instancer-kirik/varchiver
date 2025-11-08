@@ -1,0 +1,41 @@
+{
+  "export_info": {
+    "project_ref": "envprofile1",
+    "timestamp": "20251030_224347",
+    "format": "json",
+    "version": "1.0"
+  },
+  "options": {
+    "include_schema": true,
+    "include_data": false,
+    "include_policies": true,
+    "include_storage": false,
+    "include_auth": false,
+    "schemas": [
+      "public"
+    ],
+    "tables": [],
+    "output_format": "json",
+    "output_dir": "exports/EnvProfile1_20251030_224347"
+  },
+  "files": [
+    "exports/EnvProfile1_20251030_224347/envprofile1_schema_20251030_224347.json",
+    "exports/EnvProfile1_20251030_224347/envprofile1_policies_20251030_224347.json"
+  ],
+  "metadata": {
+    "format": "json",
+    "includes_schema": true,
+    "includes_data": false,
+    "includes_policies": true,
+    "schemas": [
+      "public"
+    ],
+    "tables": []
+  },
+  "instructions": {
+    "restore_dump": "Use pg_restore to restore .dump files",
+    "restore_sql": "Use psql < file.sql to restore .sql files",
+    "restore_json": "Use custom scripts to import JSON data",
+    "restore_yaml": "Use custom scripts to import YAML data"
+  }
+}

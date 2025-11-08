@@ -1,0 +1,68 @@
+# Supamerge Configuration Example
+# This file shows how to configure a migration between two Supabase projects
+
+# Source project configuration
+source:
+  project_ref: "your-source-project-ref"
+  supabase_url: "https://your-source-project.supabase.co"
+  anon_key: "${SOURCE_ANON_KEY}"
+  service_role_key: "${SOURCE_SERVICE_KEY}"
+
+# Target project configuration
+target:
+  project_ref: "your-target-project-ref"
+  supabase_url: "https://your-target-project.supabase.co"
+  anon_key: "${TARGET_ANON_KEY}"
+  service_role_key: "${TARGET_SERVICE_KEY}"
+
+# What to include in the migration
+include:
+  # Database schemas to migrate (comma-separated list)
+  schemas: ["public", "auth"]
+
+  # Include table data
+  include_data: true
+
+  # Include Row Level Security policies
+  include_policies: true
+
+  # Include storage buckets and files
+  include_storage: true
+
+# Migration options
+options:
+  # Create backup of target database before migration
+  backup_target_first: true
+
+  # Automatically handle conflicting table names
+  remap_conflicts: true
+
+  # Skip auth.users table migration (can cause issues)
+  skip_auth: false
+
+  # Preview mode - show what would be migrated without making changes
+  dry_run: false
+# Environment Variables Guide:
+# Set these environment variables before running:
+#
+# Source Project:
+# export SOURCE_ANON_KEY="eyJ..."
+# export SOURCE_SERVICE_KEY="eyJ..."
+#
+# Target Project:
+# export TARGET_ANON_KEY="eyJ..."
+# export TARGET_SERVICE_KEY="eyJ..."
+#
+# Usage Examples:
+#
+# 1. Validate configuration:
+#    supamerge validate --config supamerge_example.yaml
+#
+# 2. Run dry-run migration:
+#    supamerge migrate --config supamerge_example.yaml --dry-run
+#
+# 3. Run actual migration:
+#    supamerge migrate --config supamerge_example.yaml
+#
+# 4. Quick migration from environment variables:
+#    supamerge migrate --from-env SOURCE --to-env TARGET --backup --include-data

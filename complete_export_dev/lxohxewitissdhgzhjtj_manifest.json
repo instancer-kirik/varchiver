@@ -1,0 +1,21 @@
+{
+  "export_info": {
+    "project_ref": "lxohxewitissdhgzhjtj",
+    "project_url": "https://lxohxewitissdhgzhjtj.supabase.co",
+    "export_method": "rest_api",
+    "timestamp": "2025-10-30T23:23:57.145476",
+    "format": "json"
+  },
+  "options": {
+    "include_data": true,
+    "schemas": [
+      "public"
+    ],
+    "tables": []
+  },
+  "files": [
+    "complete_export_dev/lxohxewitissdhgzhjtj_schema_api_20251030_232348.json",
+    "complete_export_dev/lxohxewitissdhgzhjtj_data_api_20251030_232348.json"
+  ],
+  "success": true
+}

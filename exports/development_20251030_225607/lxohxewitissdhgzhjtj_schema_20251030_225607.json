@@ -1,0 +1,6 @@
+{
+  "public": {
+    "tables": {},
+    "note": "Limited schema extraction via REST API"
+  }
+}

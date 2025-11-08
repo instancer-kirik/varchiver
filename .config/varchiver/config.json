@@ -1,17 +1,29 @@
 {
-    "database": {
-        "type": "postgresql",
-        "host": "localhost",
-        "port": 5432,
-        "dbname": "varchiver",
-        "user": "varchiver",
-        "password": "varchiver"
-    },
-    "variable_calendar": {
-        "default_view": "calendar",
-        "date_format": "%Y-%m-%d",
-        "time_format": "%H:%M:%S",
-        "auto_refresh": true,
-        "refresh_interval": 60
+  "database": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "dbname": "varchiver",
+    "user": "postgres",
+    "password": ""
+  },
+  "variable_calendar": {
+    "default_view": "calendar",
+    "date_format": "%Y-%m-%d",
+    "time_format": "%H:%M:%S",
+    "auto_refresh": true,
+    "refresh_interval": 60
+  },
+  "supabase_connections": [
+    {
+      "name": "Findry",
+      "url": "",
+      "use_env": true,
+      "publishable_key": "",
+      "secret_key": "",
+      "anon_key": "",
+      "service_role_key": ""
     }
+  ],
+  "active_supabase_connection_name": null
 }

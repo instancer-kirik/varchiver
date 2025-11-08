@@ -1,4 +1,10 @@
 
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.template
+
 # AppImage related
 # Build artifacts
 # Build directories

@@ -1,0 +1,23 @@
+include:
+  include_data: true
+  include_policies: true
+  include_storage: true
+  schemas:
+  - public
+options:
+  backup_target_first: true
+  dry_run: false
+  remap_conflicts: true
+  skip_auth: false
+source:
+  anon_key: $SUPABASE_ANON_KEY_SOURCE
+  db_url: $SUPABASE_DB_URL_SOURCE
+  project_ref: your-source-project-ref
+  service_role_key: $SUPABASE_SERVICE_KEY_SOURCE
+  supabase_url: https://your-source-project.supabase.co
+target:
+  anon_key: $SUPABASE_ANON_KEY_TARGET
+  db_url: $SUPABASE_DB_URL_TARGET
+  project_ref: your-target-project-ref
+  service_role_key: $SUPABASE_SERVICE_KEY_TARGET
+  supabase_url: https://your-target-project.supabase.co

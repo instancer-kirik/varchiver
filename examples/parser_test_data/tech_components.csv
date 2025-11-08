@@ -1,0 +1,16 @@
+id,name,tech_tier,category,type,weight_kg,stack_size,rarity,description,manufacturer,power_consumption,compatibility_level
+resonator_t1,Basic Resonator,Tier 1,Modular,tech_module,0.8,5,common,Entry-level resonance amplifier for basic energy systems,VitaTech Industries,12.5,universal
+magitek_core_t2,Advanced Magitek Core,Tier 2,Modular,tech_module,2.1,3,rare,Hybrid magical-technological processing unit with enhanced throughput,Arcane Dynamics,45.2,tier_2_plus
+crystal_t3,Prismatic Crystal,Tier 3,Energy,power_source,0.3,10,legendary,Multi-spectrum energy crystal with self-sustaining properties,Crystal Gardens Collective,0.0,universal
+capacitor_t1,Energy Capacitor,Tier 1,Energy,storage_unit,1.2,8,common,Standard electromagnetic energy storage device,PowerCore Systems,5.1,tier_1_tier_2
+processor_t4,Quantum Processor,Tier 4,Computing,cpu_core,0.15,2,epic,Advanced quantum computing core with parallel processing,Quantum Dynamics Ltd,89.7,tier_4_only
+neural_interface_t3,Neural Interface Module,Tier 3,Interface,connection_hub,0.45,4,rare,Direct neural connection interface for advanced control systems,MindBridge Corp,23.8,organic_compatible
+fusion_cell_t5,Micro Fusion Cell,Tier 5,Energy,power_source,0.6,6,legendary,Miniaturized fusion reactor for high-energy applications,Stellar Energy Works,0.0,tier_4_tier_5
+memory_core_t2,Crystalline Memory Core,Tier 2,Computing,storage_unit,0.25,12,uncommon,High-density data storage using crystalline matrices,DataVault Technologies,8.3,universal
+shield_generator_t3,Personal Shield Generator,Tier 3,Defense,protection_system,3.4,2,epic,Portable energy shield projector with adaptive frequency modulation,Aegis Defense Systems,67.9,personal_use
+transmitter_t1,Quantum Transmitter,Tier 1,Communication,comm_device,0.9,7,common,Basic quantum entanglement communication device,CommLink Universal,15.6,universal
+scanner_t2,Multi-Spectrum Scanner,Tier 2,Sensors,detection_unit,1.1,3,uncommon,Advanced scanning array with multiple detection modes,SensorTech Innovations,28.4,portable_systems
+stabilizer_t4,Reality Stabilizer,Tier 4,Exotic,dimensional_anchor,5.2,1,artifact,Maintains local spacetime stability in high-energy environments,Unknown Origin,156.2,experimental
+converter_t2,Energy Converter Matrix,Tier 2,Utility,transformation_unit,1.8,4,rare,Converts between different energy types and frequencies,Universal Dynamics,34.7,tier_2_tier_3
+amplifier_t3,Psionic Amplifier,Tier 3,Mental,enhancement_device,0.7,3,epic,Enhances mental abilities and psychic phenomena,Mentalist Consortium,19.3,psionic_users
+core_t5,Singularity Core,Tier 5,Exotic,reality_engine,12.8,1,mythic,Contained micro-singularity for unlimited energy generation,Cosmic Engineering Corp,0.0,tier_5_only

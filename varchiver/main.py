@@ -10,30 +10,58 @@ from PyQt6.QtGui import QIcon
 from .widgets.main_widget import MainWidget
 from .utils.archive_utils import get_archive_type
 from .utils.project_constants import PROJECT_CONFIGS
+from .utils.env_manager import EnvManager
+
 
 def parse_args(args):
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description='Varchiver - Advanced Archive Management Tool')
-    parser.add_argument('files', nargs='*', help='Files or directories to archive/extract')
-    parser.add_argument('--extract', '-x', action='store_true', help='Extract mode')
-    parser.add_argument('--browse', '-b', action='store_true', help='Browse archive contents')
-    parser.add_argument('--output', '-o', help='Output directory for extraction')
-    parser.add_argument('--password', '-p', help='Password for encrypted archives')
-    parser.add_argument('--compression', '-c', type=int, choices=range(0, 10), default=5,
-                       help='Compression level (0-9, default: 5)')
-    parser.add_argument('--skip-patterns', '-s', nargs='+', help='Patterns to skip')
-    parser.add_argument('--collision', choices=['skip', 'overwrite', 'rename'],
-                       default='skip', help='Collision handling strategy')
-    parser.add_argument('--preserve-permissions', action='store_true',
-                       help='Preserve file permissions')
-    parser.add_argument('--release', '-r', action='store_true',
-                       help='Open release manager')
+    parser = argparse.ArgumentParser(
+        description="Varchiver - Advanced Archive Management Tool"
+    )
+    parser.add_argument(
+        "files", nargs="*", help="Files or directories to archive/extract"
+    )
+    parser.add_argument("--extract", "-x", action="store_true", help="Extract mode")
+    parser.add_argument(
+        "--browse", "-b", action="store_true", help="Browse archive contents"
+    )
+    parser.add_argument("--output", "-o", help="Output directory for extraction")
+    parser.add_argument("--password", "-p", help="Password for encrypted archives")
+    parser.add_argument(
+        "--compression",
+        "-c",
+        type=int,
+        choices=range(0, 10),
+        default=5,
+        help="Compression level (0-9, default: 5)",
+    )
+    parser.add_argument("--skip-patterns", "-s", nargs="+", help="Patterns to skip")
+    parser.add_argument(
+        "--collision",
+        choices=["skip", "overwrite", "rename"],
+        default="skip",
+        help="Collision handling strategy",
+    )
+    parser.add_argument(
+        "--preserve-permissions", action="store_true", help="Preserve file permissions"
+    )
+    parser.add_argument(
+        "--release", "-r", action="store_true", help="Open release manager"
+    )
     return parser.parse_args(args)
+
 
 def main(args=None):
     """Main entry point for Varchiver"""
     if args is None:
         args = sys.argv[1:]
+
+    # Initialize environment manager to load .env file
+    try:
+        env_manager = EnvManager()
+        print(f"Environment loaded from: {env_manager.get_env_file_path()}")
+    except Exception as e:
+        print(f"Warning: Failed to load environment: {e}")
 
     # Parse command line arguments
     args = parse_args(args)
@@ -42,17 +70,18 @@ def main(args=None):
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
-        app.setApplicationName(PROJECT_CONFIGS['name'])
-        app.setApplicationVersion(PROJECT_CONFIGS['version'])
-        app.setStyle('Fusion')
+        app.setApplicationName(PROJECT_CONFIGS["name"])
+        app.setApplicationVersion(PROJECT_CONFIGS["version"])
+        app.setStyle("Fusion")
 
         # Set application icon
-        icon = QIcon.fromTheme('archive-manager', QIcon.fromTheme('package'))
+        icon = QIcon.fromTheme("archive-manager", QIcon.fromTheme("package"))
         app.setWindowIcon(icon)
 
     # Handle release manager mode
     if args.release:
         from .utils.release_manager import ReleaseManager
+
         release_manager = ReleaseManager()
         release_manager.setWindowIcon(app.windowIcon())
         release_manager.show()
@@ -68,7 +97,10 @@ def main(args=None):
         if args.extract:
             # Extract mode
             if len(args.files) != 1:
-                print("Error: Extract mode requires exactly one archive file", file=sys.stderr)
+                print(
+                    "Error: Extract mode requires exactly one archive file",
+                    file=sys.stderr,
+                )
                 return 1
             archive_file = args.files[0]
             if not os.path.isfile(archive_file):
@@ -80,12 +112,15 @@ def main(args=None):
                 password=args.password,
                 skip_patterns=args.skip_patterns,
                 collision_strategy=args.collision,
-                preserve_permissions=args.preserve_permissions
+                preserve_permissions=args.preserve_permissions,
             )
         elif args.browse:
             # Browse mode
             if len(args.files) != 1:
-                print("Error: Browse mode requires exactly one archive file", file=sys.stderr)
+                print(
+                    "Error: Browse mode requires exactly one archive file",
+                    file=sys.stderr,
+                )
                 return 1
             archive_file = args.files[0]
             if not os.path.isfile(archive_file):
@@ -110,18 +145,21 @@ def main(args=None):
                 if len(valid_files) > 1:
                     for file_path in valid_files[1:]:
                         extraction_info = {
-                            'archive_name': file_path,
-                            'output_dir': os.path.dirname(file_path),
-                            'password': args.password,
-                            'collision_strategy': args.collision or 'skip',
-                            'preserve_permissions': args.preserve_permissions,
-                            'skip_patterns': args.skip_patterns
+                            "archive_name": file_path,
+                            "output_dir": os.path.dirname(file_path),
+                            "password": args.password,
+                            "collision_strategy": args.collision or "skip",
+                            "preserve_permissions": args.preserve_permissions,
+                            "skip_patterns": args.skip_patterns,
                         }
                         widget.extraction_queue.append(extraction_info)
                     widget.start_extract_button.setEnabled(True)
-                    widget.update_status(f"Queued {len(valid_files)-1} archives for extraction")
+                    widget.update_status(
+                        f"Queued {len(valid_files) - 1} archives for extraction"
+                    )
 
     return app.exec()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

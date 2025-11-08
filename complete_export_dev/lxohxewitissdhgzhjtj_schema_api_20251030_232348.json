@@ -1,0 +1,1177 @@
+{
+  "public": {
+    "tables": {
+      "civ_tags": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "color",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "timesheets": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "employee_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "week_start_date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "submitted_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "approved_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "approved_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_hours",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_governance": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "model",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "unit",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "structure_type",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "roles",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rotation_policy",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "decision_method",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "participant_roles",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "decision_process",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tools_used",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "connections",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "roundtuit_homesteads": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "roundtuit_family_members": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "homestead_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avatar",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "can_assign",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "capacity_limit",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "prefers_outdoor",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avoids_repetition",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "emotional_triggers",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_available",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_mood",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "assets": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "acquisition_date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "acquisition_cost",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_value",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigned_to",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "contract_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "amortization_method",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "useful_life_years",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "salvage_value",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "depreciation_rate",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "accumulated_depreciation",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_depreciation_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "depreciation_frequency",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "profiles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "full_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "homestead_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "contracts": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "end_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "collaborative_editing_enabled",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_ambiguities",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_breach_warnings",
+            "type": "bool",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "contract_parties": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "contract_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "obligations",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rights",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "joined_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "contract_timeline_events": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "contract_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "event",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "roundtuit_tasks": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "homestead_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "urgency",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "origin",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "weather_sensitive",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigner_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "effort",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "emotional_weight",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_attempted_by",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "spontaneity_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "due_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "date_added",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "employees": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_active",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pay_rate",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "manager_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_resource_flows": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "resource",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "storage",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sharing",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "distribution_method",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "usage_tracking",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "regeneration",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "regeneration_practice",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "connections",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_domains": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "subcategory",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "ownership",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "transition_plan",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "leasing_opening",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sustainable_practices",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "connections",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "roundtuit_task_assignees": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "task_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigned_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_connections": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_conflict_resolution": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "conflict_type",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "process",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "example",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "guidelines",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "preferred_process",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "facilitators",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "follow_up",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "restorative_outcome",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "connections",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "punches": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "employee_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "punch_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timestamp",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location_data",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "civ_contributions": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "person",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "skillset",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "skills",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_role_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "contributions",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "needs",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "goal_alignment",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "connections",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "user_roles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "contract_documents": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "contract_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "uploaded",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "version",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_edited_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_edited_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      }
+    }
+  }
+}

@@ -1,0 +1,1383 @@
+{
+  "public": {
+    "contract_collaborators": [],
+    "civ_tags": [
+      {
+        "id": "5532a0f3-95eb-4f12-b748-2c9df7b8e3c4",
+        "name": "Economic",
+        "color": "forest"
+      },
+      {
+        "id": "521aa593-bc16-4b35-b760-f8024bafdbeb",
+        "name": "Urgent",
+        "color": "healing"
+      },
+      {
+        "id": "0e15e83d-a20f-433e-96b1-0842afa38574",
+        "name": "In-Planning",
+        "color": "water"
+      },
+      {
+        "id": "d65afa46-1899-4dfa-abd7-b827a843165f",
+        "name": "Military",
+        "color": "earth"
+      },
+      {
+        "id": "c4e0314e-270e-4d6f-b1e8-87f22854778c",
+        "name": "Cultural",
+        "color": "accent"
+      }
+    ],
+    "project_content_items": [],
+    "civ_comments": [],
+    "roundtuit_task_recurrence": [],
+    "clearance_tasks": [],
+    "timesheets": [
+      {
+        "id": "199cacff-80e9-4b9d-85ca-545b9b7cd34d",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "week_start_date": "2025-10-06",
+        "status": "approved",
+        "submitted_at": "2025-10-12T14:52:45.122+00:00",
+        "approved_at": "2025-10-12T14:52:45.122+00:00",
+        "approved_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "total_hours": 0.0030930555555555555,
+        "notes": "",
+        "created_at": "2025-10-12T14:52:46.359215+00:00",
+        "updated_at": "2025-10-13T01:20:36.28189+00:00"
+      }
+    ],
+    "roundtuit_task_updates": [],
+    "civ_governance": [
+      {
+        "id": "2c455cba-9861-4579-8643-8f3211775a94",
+        "model": "Participatory Democracy Enhancement",
+        "unit": null,
+        "structure_type": null,
+        "roles": [
+          "Citizen Assembly",
+          "Expert Council",
+          "Government Liaison",
+          "Implementation Team"
+        ],
+        "rotation_policy": "Citizen assembly members rotate annually with partial continuity",
+        "decision_method": null,
+        "participant_roles": null,
+        "decision_process": "Deliberative process with expert input and transparency requirements",
+        "tools_used": null,
+        "notes": null,
+        "tags": [
+          "In-Planning"
+        ],
+        "connections": [
+          "d4",
+          "c4"
+        ]
+      },
+      {
+        "id": "fe09b337-bac5-484a-abb4-72b357dca147",
+        "model": "Economic Transition Authority",
+        "unit": null,
+        "structure_type": null,
+        "roles": [
+          "Industry Representative",
+          "Policy Expert",
+          "Community Advocate",
+          "Implementation Lead"
+        ],
+        "rotation_policy": "Industry reps serve 2-year terms, experts and advocates 3-year terms",
+        "decision_method": null,
+        "participant_roles": null,
+        "decision_process": "Evidence-based policy development with stakeholder consultation requirements",
+        "tools_used": null,
+        "notes": null,
+        "tags": [
+          "Economic",
+          "Urgent"
+        ],
+        "connections": [
+          "c1",
+          "d1"
+        ]
+      },
+      {
+        "id": "3c8493ae-d893-466a-8dfa-84abda848f8d",
+        "model": "National Security Council Reform",
+        "unit": null,
+        "structure_type": null,
+        "roles": [
+          "Military Leader",
+          "Civilian Expert",
+          "Technology Specialist",
+          "Ethics Advisor"
+        ],
+        "rotation_policy": "Civilian members rotate every 2 years, military aligned with command changes",
+        "decision_method": null,
+        "participant_roles": null,
+        "decision_process": "Balanced civil-military input process with ethical review requirements",
+        "tools_used": null,
+        "notes": null,
+        "tags": [
+          "Military"
+        ],
+        "connections": [
+          "cr2"
+        ]
+      }
+    ],
+    "contract_document_signatories": [],
+    "roundtuit_homesteads": [
+      {
+        "id": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4",
+        "name": "tester's Homestead",
+        "description": null,
+        "created_by": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "created_at": "2025-06-21T00:28:06.772565+00:00"
+      },
+      {
+        "id": "f0c644f0-be30-4cce-8c92-2f6be8aa2a50",
+        "name": "undefined's Homestead",
+        "description": null,
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "created_at": "2025-06-22T12:02:51.692929+00:00"
+      },
+      {
+        "id": "af68bbcb-14f3-45d1-bbbd-de5fad71525b",
+        "name": "Jessica Cecil's Homestead",
+        "description": null,
+        "created_by": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "created_at": "2025-06-24T23:19:39.507974+00:00"
+      },
+      {
+        "id": "d361a9cf-0537-442e-959c-5f2fb5d2917f",
+        "name": "Homestead A's Homestead",
+        "description": null,
+        "created_by": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "created_at": "2025-10-06T13:31:35.725768+00:00"
+      },
+      {
+        "id": "accd96a0-9215-4ae6-a5b5-fda21479f989",
+        "name": "Ryan Diaz's Homestead",
+        "description": null,
+        "created_by": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "created_at": "2025-10-12T17:04:02.792759+00:00"
+      }
+    ],
+    "resource_allocations": [],
+    "roundtuit_family_members": [
+      {
+        "id": "f53f9ee3-6c1e-4868-8347-476fe3c394c5",
+        "user_id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "homestead_id": null,
+        "name": "dog",
+        "role": "dog",
+        "avatar": "\ud83e\udd20",
+        "can_assign": false,
+        "capacity_limit": 4,
+        "prefers_outdoor": false,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "distracted",
+        "created_at": "2025-06-21T00:29:33.401683+00:00",
+        "updated_at": "2025-06-21T00:29:33.401683+00:00"
+      },
+      {
+        "id": "e8bb24ee-d201-459d-9da6-c175ef1f7600",
+        "user_id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "homestead_id": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4",
+        "name": "Mennnnn",
+        "role": "Homesteader",
+        "avatar": "\ud83e\uddd1\u200d\ud83c\udf3e",
+        "can_assign": true,
+        "capacity_limit": 5,
+        "prefers_outdoor": true,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "focused",
+        "created_at": "2025-06-21T00:28:06.772565+00:00",
+        "updated_at": "2025-06-22T03:05:14.634227+00:00"
+      },
+      {
+        "id": "b9c288ae-6b31-403b-8381-383adcecf52f",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "homestead_id": null,
+        "name": "Me",
+        "role": "Homesteader",
+        "avatar": "\ud83d\udc67",
+        "can_assign": false,
+        "capacity_limit": 4,
+        "prefers_outdoor": false,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "steady",
+        "created_at": "2025-06-22T12:04:59.314287+00:00",
+        "updated_at": "2025-06-22T13:02:47.380927+00:00"
+      },
+      {
+        "id": "6fadde46-243a-44a6-a297-e944c93deb13",
+        "user_id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "homestead_id": "af68bbcb-14f3-45d1-bbbd-de5fad71525b",
+        "name": "Me",
+        "role": "Homesteader",
+        "avatar": "\ud83e\uddd1\u200d\ud83c\udf3e",
+        "can_assign": true,
+        "capacity_limit": 5,
+        "prefers_outdoor": true,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "focused",
+        "created_at": "2025-06-24T23:19:39.507974+00:00",
+        "updated_at": "2025-06-24T23:19:39.507974+00:00"
+      },
+      {
+        "id": "3f82366d-05cf-4139-bb0c-fd4fd5e25f32",
+        "user_id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "homestead_id": null,
+        "name": "Billy",
+        "role": "Dad",
+        "avatar": "\ud83d\udc68",
+        "can_assign": true,
+        "capacity_limit": 4,
+        "prefers_outdoor": false,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "steady",
+        "created_at": "2025-06-24T23:24:41.828846+00:00",
+        "updated_at": "2025-06-24T23:24:41.828846+00:00"
+      },
+      {
+        "id": "9716b274-3677-42cb-97d1-0bf7af6faca7",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "homestead_id": null,
+        "name": "Debug",
+        "role": "Debug",
+        "avatar": "\ud83e\uddd1",
+        "can_assign": false,
+        "capacity_limit": 5,
+        "prefers_outdoor": false,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "steady",
+        "created_at": "2025-06-24T23:51:14.411413+00:00",
+        "updated_at": "2025-06-24T23:51:14.411413+00:00"
+      },
+      {
+        "id": "4d60c1b6-cbd5-4ce2-860c-fefed7064164",
+        "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "homestead_id": "d361a9cf-0537-442e-959c-5f2fb5d2917f",
+        "name": "Me",
+        "role": "Homesteader",
+        "avatar": "\ud83e\uddd1\u200d\ud83c\udf3e",
+        "can_assign": true,
+        "capacity_limit": 5,
+        "prefers_outdoor": true,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "focused",
+        "created_at": "2025-10-06T13:31:35.725768+00:00",
+        "updated_at": "2025-10-06T13:31:35.725768+00:00"
+      },
+      {
+        "id": "9b980d13-a4f2-42a1-92d2-12893c4a8999",
+        "user_id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "homestead_id": "accd96a0-9215-4ae6-a5b5-fda21479f989",
+        "name": "Me",
+        "role": "Homesteader",
+        "avatar": "\ud83e\uddd1\u200d\ud83c\udf3e",
+        "can_assign": true,
+        "capacity_limit": 5,
+        "prefers_outdoor": true,
+        "avoids_repetition": false,
+        "emotional_triggers": [],
+        "is_available": true,
+        "current_mood": "focused",
+        "created_at": "2025-10-12T17:04:02.792759+00:00",
+        "updated_at": "2025-10-12T17:04:02.792759+00:00"
+      }
+    ],
+    "assets": [
+      {
+        "id": "f289014b-66f8-4c99-b6ff-0db3fc299a44",
+        "name": "aaaaaaaa",
+        "type": "a",
+        "status": "available",
+        "acquisition_date": "2025-05-27T23:54:46.804667+00:00",
+        "acquisition_cost": null,
+        "current_value": null,
+        "location": null,
+        "assigned_to": null,
+        "contract_id": null,
+        "notes": null,
+        "created_at": "2025-05-27T23:54:46.804667+00:00",
+        "updated_at": "2025-05-27T23:54:46.804667+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "amortization_method": null,
+        "useful_life_years": null,
+        "salvage_value": null,
+        "depreciation_rate": null,
+        "accumulated_depreciation": 0.0,
+        "last_depreciation_date": null,
+        "depreciation_frequency": "monthly"
+      }
+    ],
+    "profiles": [
+      {
+        "id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "email": "thewigglemonster@gmail.com",
+        "full_name": "tester",
+        "homestead_name": null,
+        "created_at": "2025-06-21T00:28:06.772565+00:00",
+        "updated_at": "2025-06-21T00:28:06.772565+00:00",
+        "role": "user"
+      },
+      {
+        "id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "email": "jessicakcecil@icloud.com",
+        "full_name": "Jessica Cecil",
+        "homestead_name": null,
+        "created_at": "2025-06-24T23:19:39.507974+00:00",
+        "updated_at": "2025-06-24T23:19:39.507974+00:00",
+        "role": "user"
+      },
+      {
+        "id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "email": "thisismyname@gmail.com",
+        "full_name": "Homestead A",
+        "homestead_name": null,
+        "created_at": "2025-10-06T13:31:35.725768+00:00",
+        "updated_at": "2025-10-06T13:31:35.725768+00:00",
+        "role": "user"
+      },
+      {
+        "id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "email": "kaedyn.diaz@gmail.com",
+        "full_name": "Ryan Diaz",
+        "homestead_name": null,
+        "created_at": "2025-10-12T17:04:02.792759+00:00",
+        "updated_at": "2025-10-12T17:04:02.792759+00:00",
+        "role": "user"
+      }
+    ],
+    "contracts": [
+      {
+        "id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+        "title": "Advisory Agreement",
+        "description": "Agreement for startup advisors outlining compensation, expectations, and term of service.",
+        "type": "Advisors",
+        "status": "Draft",
+        "created": "2025-04-07T14:35:49.126+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "end_date": null,
+        "collaborative_editing_enabled": false,
+        "has_ambiguities": false,
+        "has_breach_warnings": true
+      },
+      {
+        "id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "title": "Founders' Agreement - Draft",
+        "description": "Comprehensive agreement between startup co-founders defining roles, equity, and governance",
+        "type": "Startup",
+        "status": "Draft",
+        "created": "2025-04-10T03:29:11.916+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "end_date": null,
+        "collaborative_editing_enabled": true,
+        "has_ambiguities": false,
+        "has_breach_warnings": false
+      },
+      {
+        "id": "beaed475-cd2c-4e13-93c3-8337a6a61f59",
+        "title": "New Contract",
+        "description": null,
+        "type": "General",
+        "status": "Draft",
+        "created": "2025-04-14T21:41:07.053+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "end_date": null,
+        "collaborative_editing_enabled": false,
+        "has_ambiguities": false,
+        "has_breach_warnings": false
+      }
+    ],
+    "contract_parties": [
+      {
+        "id": "ce0c8025-464b-46e7-ad25-c30d7f1874aa",
+        "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "Company",
+        "email": null,
+        "status": "active",
+        "obligations": [
+          "Provide equity compensation",
+          "Regular updates"
+        ],
+        "rights": [
+          "Receive advisor services",
+          "Confidentiality"
+        ],
+        "joined_at": "2025-04-07T14:35:49.296753+00:00"
+      },
+      {
+        "id": "2d0a3193-f431-4f0a-9e78-fc6630006d4e",
+        "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "Advisor",
+        "email": null,
+        "status": "active",
+        "obligations": [
+          "Quarterly advising sessions",
+          "Network introductions",
+          "Domain expertise"
+        ],
+        "rights": [
+          "Advisor equity shares",
+          "2-year vesting",
+          "Information rights"
+        ],
+        "joined_at": "2025-04-07T14:35:49.379469+00:00"
+      },
+      {
+        "id": "04fe9aa3-db65-474d-bf89-f2560e57691e",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "Founder",
+        "email": null,
+        "status": "active",
+        "obligations": [
+          "Contribute time and expertise",
+          "Assign relevant IP to company",
+          "Maintain confidentiality"
+        ],
+        "rights": [
+          "Equity ownership",
+          "Board representation",
+          "Decision-making authority"
+        ],
+        "joined_at": "2025-04-10T03:29:11.916+00:00"
+      },
+      {
+        "id": "5d2f0dcb-dac8-4d14-8b2b-f0320683ec80",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "Co-Founder",
+        "email": null,
+        "status": "active",
+        "obligations": [
+          "Contribute time and expertise",
+          "Assign relevant IP to company",
+          "Maintain confidentiality"
+        ],
+        "rights": [
+          "Equity ownership",
+          "Board representation",
+          "Decision-making authority"
+        ],
+        "joined_at": "2025-04-10T03:29:11.916+00:00"
+      },
+      {
+        "id": "4ab60745-ba94-4363-b196-83c660fc9a38",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "Co-Founder",
+        "email": null,
+        "status": "active",
+        "obligations": [
+          "Contribute time and expertise",
+          "Assign relevant IP to company",
+          "Maintain confidentiality"
+        ],
+        "rights": [
+          "Equity ownership",
+          "Board representation",
+          "Decision-making authority"
+        ],
+        "joined_at": "2025-04-10T03:29:11.916+00:00"
+      }
+    ],
+    "contract_timeline_events": [
+      {
+        "id": "51542460-ee28-430e-872b-36eac391b86d",
+        "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+        "date": "2025-04-07",
+        "event": "Contract created from template",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+      },
+      {
+        "id": "55049169-98fa-4ddb-9e10-7a7bbc38fc1d",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "date": "2025-04-10",
+        "event": "Contract created from template",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1"
+      }
+    ],
+    "roundtuit_tasks": [
+      {
+        "id": "cbe35971-4a73-4223-bff8-d3503009e804",
+        "homestead_id": "7ad94637-1e78-4dd8-8b8f-bf4e6c5f2ce4",
+        "title": "test",
+        "description": null,
+        "status": "todo",
+        "urgency": "high",
+        "origin": "emergency",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "effort": 1,
+        "emotional_weight": "moderate",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-06-22T11:48:27.665283+00:00",
+        "tags": [
+          "fire",
+          "urgent"
+        ],
+        "created_at": "2025-06-22T11:48:27.665283+00:00",
+        "updated_at": "2025-06-22T11:48:27.665283+00:00"
+      },
+      {
+        "id": "ab3f7ac7-010a-4b6d-a482-2edbc34045f3",
+        "homestead_id": "af68bbcb-14f3-45d1-bbbd-de5fad71525b",
+        "title": "Call Orthopedic",
+        "description": "Call about MRI scheduling",
+        "status": "todo",
+        "urgency": "medium",
+        "origin": "planned",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "effort": 1,
+        "emotional_weight": "heavy",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-06-24T23:19:39.507974+00:00",
+        "tags": [
+          "demo",
+          "getting-started"
+        ],
+        "created_at": "2025-06-24T23:19:39.507974+00:00",
+        "updated_at": "2025-06-24T23:27:05.931725+00:00"
+      },
+      {
+        "id": "38fc6d3e-db04-4d43-b975-a3c491060396",
+        "homestead_id": "f0c644f0-be30-4cce-8c92-2f6be8aa2a50",
+        "title": "Test",
+        "description": null,
+        "status": "todo",
+        "urgency": "medium",
+        "origin": "discovered",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "effort": 2,
+        "emotional_weight": "light",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-06-24T23:41:57.479379+00:00",
+        "tags": [],
+        "created_at": "2025-06-24T23:41:57.479379+00:00",
+        "updated_at": "2025-07-21T16:10:57.282015+00:00"
+      },
+      {
+        "id": "41c2dca9-6da2-43ce-af67-473a41777434",
+        "homestead_id": "f0c644f0-be30-4cce-8c92-2f6be8aa2a50",
+        "title": "Aaa",
+        "description": null,
+        "status": "todo",
+        "urgency": "medium",
+        "origin": "discovered",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "effort": 2,
+        "emotional_weight": "light",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-06-27T21:26:26.289284+00:00",
+        "tags": [],
+        "created_at": "2025-06-27T21:26:26.289284+00:00",
+        "updated_at": "2025-07-21T16:11:08.352411+00:00"
+      },
+      {
+        "id": "9a6eee6a-a9e0-4e1f-ae32-d39e048466ad",
+        "homestead_id": "d361a9cf-0537-442e-959c-5f2fb5d2917f",
+        "title": "Create your first task",
+        "description": "Welcome! Try adding your own task to get started with organizing your household.",
+        "status": "todo",
+        "urgency": "low",
+        "origin": "planned",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "effort": 1,
+        "emotional_weight": "light",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-10-06T13:31:35.725768+00:00",
+        "tags": [
+          "demo",
+          "getting-started"
+        ],
+        "created_at": "2025-10-06T13:31:35.725768+00:00",
+        "updated_at": "2025-10-06T13:31:35.725768+00:00"
+      },
+      {
+        "id": "f3f28ebf-b2cb-43ae-aca6-83ee76cb56ea",
+        "homestead_id": "accd96a0-9215-4ae6-a5b5-fda21479f989",
+        "title": "Create your first task",
+        "description": "Welcome! Try adding your own task to get started with organizing your household.",
+        "status": "todo",
+        "urgency": "low",
+        "origin": "planned",
+        "location": "General",
+        "weather_sensitive": false,
+        "assigner_id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "effort": 1,
+        "emotional_weight": "light",
+        "last_attempted_by": null,
+        "spontaneity_notes": null,
+        "due_date": null,
+        "date_added": "2025-10-12T17:04:02.792759+00:00",
+        "tags": [
+          "demo",
+          "getting-started"
+        ],
+        "created_at": "2025-10-12T17:04:02.792759+00:00",
+        "updated_at": "2025-10-12T17:04:02.792759+00:00"
+      }
+    ],
+    "employees": [
+      {
+        "id": "94b4200b-f590-42b0-8282-87bdd73ad347",
+        "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "name": "Homestead A",
+        "email": "thisismyname@gmail.com",
+        "role": "employee",
+        "is_active": true,
+        "pay_rate": null,
+        "created_at": "2025-10-06T13:31:35.725768+00:00",
+        "updated_at": "2025-10-06T13:31:35.725768+00:00",
+        "manager_id": null
+      },
+      {
+        "id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "name": "ME",
+        "email": "instance.select@gmail.com",
+        "role": "admin",
+        "is_active": true,
+        "pay_rate": null,
+        "created_at": "2025-10-05T01:10:34+00:00",
+        "updated_at": "2025-10-12T13:39:20.749049+00:00",
+        "manager_id": null
+      },
+      {
+        "id": "9760b4de-6a31-4952-a55c-89ad4191a739",
+        "user_id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "name": "Ryan Diaz",
+        "email": "kaedyn.diaz@gmail.com",
+        "role": "employee",
+        "is_active": true,
+        "pay_rate": null,
+        "created_at": "2025-10-12T17:04:02.792759+00:00",
+        "updated_at": "2025-10-12T17:04:02.792759+00:00",
+        "manager_id": null
+      }
+    ],
+    "roundtuit_homestead_members": [],
+    "civ_resource_flows": [
+      {
+        "id": "f8064238-3515-4a0f-b8db-22423e46497e",
+        "resource": "Funding for Green Transition",
+        "source": "Carbon tax, Green bonds, Federal appropriations",
+        "storage": "National Climate Investment Fund",
+        "sharing": "Competitive grants, Direct investments, Tax incentives",
+        "distribution_method": null,
+        "usage_tracking": null,
+        "regeneration": "Revenue from successful projects reinvested in fund",
+        "regeneration_practice": null,
+        "tags": [
+          "Economic",
+          "In-Planning"
+        ],
+        "connections": [
+          "d1"
+        ]
+      },
+      {
+        "id": "f921cfba-3e83-4a56-be48-a316c668ac96",
+        "resource": "Water",
+        "source": "Watershed management, Aquifer protection, Desalination",
+        "storage": "Reservoir network, Underground storage, Water banking",
+        "sharing": "Rights allocation system, Shortage sharing agreements",
+        "distribution_method": null,
+        "usage_tracking": null,
+        "regeneration": "Aquifer recharge, Watershed restoration",
+        "regeneration_practice": null,
+        "tags": [
+          "Urgent",
+          "Economic"
+        ],
+        "connections": [
+          "d3",
+          "c5"
+        ]
+      },
+      {
+        "id": "21e92a61-07f5-4e2b-80e7-d1b3f91cfebb",
+        "resource": "Military Technology",
+        "source": "R&D funding, Private sector innovation, International cooperation",
+        "storage": "Secured knowledge bases, Training programs, Strategic reserves",
+        "sharing": "Civilian adaptation, Allied sharing, Cross-service implementation",
+        "distribution_method": null,
+        "usage_tracking": null,
+        "regeneration": "Continuous innovation cycle, Skills development pipeline",
+        "regeneration_practice": null,
+        "tags": [
+          "Military"
+        ],
+        "connections": [
+          "d2"
+        ]
+      },
+      {
+        "id": "5d704a5f-4f0c-437b-a7c3-28e7f1b269c0",
+        "resource": "Cultural Knowledge",
+        "source": "Community documentation, Academic research, Digital preservation",
+        "storage": "National Digital Archive, Community centers, Educational curriculum",
+        "sharing": "Public media, Education initiatives, Cultural events",
+        "distribution_method": null,
+        "usage_tracking": null,
+        "regeneration": "Youth engagement, Cultural practice support, Contemporary adaptation",
+        "regeneration_practice": null,
+        "tags": [
+          "Cultural",
+          "In-Planning"
+        ],
+        "connections": [
+          "d5"
+        ]
+      }
+    ],
+    "roundtuit_task_blockers": [],
+    "civ_domains": [
+      {
+        "id": "cc1dca3c-c64a-40d5-b05b-153c8325dd43",
+        "name": "Sustainable Economy",
+        "type": "economic",
+        "category": "Infrastructure",
+        "subcategory": "Green Energy",
+        "description": "Transitioning the US economy to sustainable energy and practices",
+        "ownership": "Public-Private Partnership",
+        "transition_plan": "Phase out fossil fuels by 2040, invest in renewable infrastructure",
+        "leasing_opening": null,
+        "sustainable_practices": "Carbon capture, renewable energy mandates, circular economy",
+        "notes": null,
+        "tags": [
+          "Economic",
+          "In-Planning"
+        ],
+        "connections": [
+          "c1",
+          "r1"
+        ]
+      },
+      {
+        "id": "4bf71deb-0f6d-4813-8df4-35bfdabfb9d5",
+        "name": "Military Modernization",
+        "type": "defense",
+        "category": "Security",
+        "subcategory": "Technology Integration",
+        "description": "Adequately scaling, distributing, and repurposing military capabilities for future threats and peacekeeping",
+        "ownership": "Federal Government",
+        "transition_plan": "AI? Space? Chain of Command? ",
+        "leasing_opening": null,
+        "sustainable_practices": "Reduced carbon footprint, renewable energy for bases",
+        "notes": null,
+        "tags": [
+          "Military",
+          "In-Planning"
+        ],
+        "connections": [
+          "c2",
+          "r3"
+        ]
+      },
+      {
+        "id": "11308f60-0044-4176-b894-71c0b8c83609",
+        "name": "Water Security",
+        "type": "resource",
+        "category": "Infrastructure",
+        "subcategory": "Water Systems",
+        "description": "Ensuring sustainable water access across all regions",
+        "ownership": "State-Federal Partnership",
+        "transition_plan": "Upgrade infrastructure in all major cities by 2035",
+        "leasing_opening": null,
+        "sustainable_practices": "Greywater recycling, rainwater collection, aquifer protection",
+        "notes": null,
+        "tags": [
+          "Urgent",
+          "Economic"
+        ],
+        "connections": [
+          "r2"
+        ]
+      },
+      {
+        "id": "c0f25f08-a91d-4680-bd7e-6e0ba0a9be9b",
+        "name": "Housing Reform",
+        "type": "policy",
+        "category": "Social",
+        "subcategory": "Housing",
+        "description": "Creating affordable, sustainable housing nationwide",
+        "ownership": "Multi-level Government Coordination",
+        "transition_plan": "Phase 1: Policy reform by 2026, Phase 2: Construction incentives by 2028",
+        "leasing_opening": null,
+        "sustainable_practices": "Green building standards, community land trusts, mixed-income developments",
+        "notes": null,
+        "tags": [
+          "In-Planning",
+          "Economic"
+        ],
+        "connections": [
+          "c3",
+          "g1"
+        ]
+      },
+      {
+        "id": "060c13c1-d80b-4d35-a9c5-c53b0f85b5b9",
+        "name": "Cultural Heritage Preservation",
+        "type": "culture",
+        "category": "Social",
+        "subcategory": "Arts & Heritage",
+        "description": "Protecting and promoting diverse American cultural heritage",
+        "ownership": "Public-Private-Community Partnership",
+        "transition_plan": "Digital preservation initiative by 2025, education integration by 2027",
+        "leasing_opening": null,
+        "sustainable_practices": "Community stewardship, sustainable tourism, digital preservation",
+        "notes": null,
+        "tags": [
+          "Cultural",
+          "In-Planning"
+        ],
+        "connections": [
+          "r4",
+          "c1"
+        ]
+      }
+    ],
+    "feedback": [],
+    "asset_utilization": [],
+    "projects": [],
+    "document_signatures": [],
+    "timesheet_edits": [],
+    "roundtuit_task_assignees": [
+      {
+        "id": "8f6a811e-aa7d-4016-8e2d-01ba0d9db7f9",
+        "task_id": "ab3f7ac7-010a-4b6d-a482-2edbc34045f3",
+        "user_id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "assigned_at": "2025-06-24T23:27:06.168238+00:00"
+      },
+      {
+        "id": "fe427176-f40d-4058-a7f9-68ac70d1f165",
+        "task_id": "9a6eee6a-a9e0-4e1f-ae32-d39e048466ad",
+        "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "assigned_at": "2025-10-06T13:31:35.725768+00:00"
+      },
+      {
+        "id": "e95d3114-3b74-4041-8ce0-8197d77ce4b1",
+        "task_id": "f3f28ebf-b2cb-43ae-aca6-83ee76cb56ea",
+        "user_id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "assigned_at": "2025-10-12T17:04:02.792759+00:00"
+      }
+    ],
+    "rights_detective_queries": [],
+    "queue_attendees": [],
+    "contract_comments": [],
+    "contract_party_signatures": [],
+    "roundtuit_interrupts": [],
+    "civ_connections": [
+      {
+        "id": "49754e7a-b360-4fef-9d46-94b458ae8436",
+        "source": "d1",
+        "target": "c1",
+        "type": "coordinated by"
+      },
+      {
+        "id": "56594649-2b39-4c12-b078-47b0a395efdf",
+        "source": "d1",
+        "target": "r1",
+        "type": "funded by"
+      },
+      {
+        "id": "d6c9ed47-a8c9-4a57-86fe-c77690c89d5e",
+        "source": "d2",
+        "target": "c2",
+        "type": "led by"
+      },
+      {
+        "id": "ef398992-cedf-43bb-b6d9-501499218911",
+        "source": "d2",
+        "target": "r3",
+        "type": "leverages"
+      },
+      {
+        "id": "fb47b2a1-cac1-4ed2-8a16-6645fc000663",
+        "source": "d3",
+        "target": "r2",
+        "type": "manages"
+      },
+      {
+        "id": "31603b03-8acd-486c-a565-c4a197fc508d",
+        "source": "d4",
+        "target": "c3",
+        "type": "designed by"
+      },
+      {
+        "id": "b1ee98f3-3373-43f8-ad25-f453c7f2f121",
+        "source": "d4",
+        "target": "g1",
+        "type": "governed by"
+      },
+      {
+        "id": "044ff4f6-4a9f-44bd-a81b-3fe8165e8010",
+        "source": "d5",
+        "target": "r4",
+        "type": "preserves"
+      },
+      {
+        "id": "49048026-0c2b-484c-a578-8f7e48fb4d8f",
+        "source": "d5",
+        "target": "c1",
+        "type": "supported by"
+      },
+      {
+        "id": "e60d1cc1-f88f-4561-90c2-2795a14318ec",
+        "source": "c1",
+        "target": "g2",
+        "type": "advises"
+      },
+      {
+        "id": "49421198-fa31-47a4-a41c-a35fa7e650b1",
+        "source": "c3",
+        "target": "cr1",
+        "type": "implements"
+      },
+      {
+        "id": "8bee49f5-d44e-4553-beb7-d6899fec03c3",
+        "source": "c4",
+        "target": "g1",
+        "type": "advises"
+      },
+      {
+        "id": "928f9004-fd1b-4443-a54c-a96af6cca21e",
+        "source": "c4",
+        "target": "cr1",
+        "type": "facilitates"
+      },
+      {
+        "id": "e9517fd6-f3cb-4a84-b29c-a98628925e7b",
+        "source": "c4",
+        "target": "cr2",
+        "type": "develops"
+      },
+      {
+        "id": "40805365-5349-4103-a229-07ce147ff19b",
+        "source": "c5",
+        "target": "d3",
+        "type": "directs"
+      },
+      {
+        "id": "86ce52be-65f6-4f1e-ad8b-261835c04cc6",
+        "source": "c5",
+        "target": "r2",
+        "type": "monitors"
+      },
+      {
+        "id": "08b1d042-c8d9-4a0b-aec7-343d9ef44ced",
+        "source": "g3",
+        "target": "cr2",
+        "type": "uses"
+      }
+    ],
+    "civ_conflict_resolution": [
+      {
+        "id": "7e975dfb-f95c-4dcd-9bb0-441796def121",
+        "type": "partisan",
+        "conflict_type": null,
+        "process": "Structured Dialogue Process",
+        "example": null,
+        "guidelines": "Focus on shared values, evidence-based discussion, professionally facilitated",
+        "preferred_process": null,
+        "facilitators": "National Mediation Center",
+        "follow_up": null,
+        "restorative_outcome": null,
+        "tags": [
+          "Urgent"
+        ],
+        "connections": [
+          "c3",
+          "c4"
+        ]
+      },
+      {
+        "id": "b2d20690-ae0a-4645-b839-6485b622c8fd",
+        "type": "intergovernmental",
+        "conflict_type": null,
+        "process": "Collaborative Governance Framework",
+        "example": null,
+        "guidelines": "Subsidiarity principle, shared responsibility approach, outcomes focused",
+        "preferred_process": null,
+        "facilitators": "Council of Governments",
+        "follow_up": null,
+        "restorative_outcome": null,
+        "tags": [
+          "Urgent",
+          "In-Planning"
+        ],
+        "connections": [
+          "g3",
+          "c4"
+        ]
+      },
+      {
+        "id": "88a6b738-3d0b-4539-9059-b600c1db031e",
+        "type": "systemic",
+        "conflict_type": null,
+        "process": "Truth and Reconciliation Commission",
+        "example": null,
+        "guidelines": "Historical acknowledgment, forward-looking remedies, inclusive participation",
+        "preferred_process": null,
+        "facilitators": "Multi-sector Leadership Council",
+        "follow_up": null,
+        "restorative_outcome": null,
+        "tags": [
+          "In-Planning",
+          "Cultural"
+        ],
+        "connections": []
+      }
+    ],
+    "punches": [
+      {
+        "id": "55f1b56e-dabe-4b20-bac9-ff5c0d1c993d",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_in",
+        "timestamp": "2025-10-05T01:11:41.042+00:00",
+        "created_at": "2025-10-05T01:11:41.594105+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "5df8c456-91eb-400e-9f37-296d86d20a75",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_out",
+        "timestamp": "2025-10-05T01:11:52.39+00:00",
+        "created_at": "2025-10-05T01:11:53.002056+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "bab2604b-8076-4c10-a2b1-32d30adcf56e",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_in",
+        "timestamp": "2025-10-12T13:54:19.666+00:00",
+        "created_at": "2025-10-12T13:54:19.83673+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "d9b0bc48-b7fe-46ea-9f4a-22d72cd107bb",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_out",
+        "timestamp": "2025-10-12T13:54:23.822+00:00",
+        "created_at": "2025-10-12T13:54:23.985381+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "f2f58296-fdf1-43e9-9f88-cf29f38bac60",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_in",
+        "timestamp": "2025-10-12T14:38:21.37+00:00",
+        "created_at": "2025-10-12T14:38:21.461059+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "15dcb122-cfa6-4cf2-ace5-8561c6412412",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "break_start",
+        "timestamp": "2025-10-12T14:38:23.505+00:00",
+        "created_at": "2025-10-12T14:38:23.596073+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "8a008e70-775b-45d9-b39a-9157867a3339",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_in",
+        "timestamp": "2025-10-12T14:38:27.107+00:00",
+        "created_at": "2025-10-12T14:38:27.202358+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "ff910ce3-f749-4e92-b685-d9e45c0bfefc",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_out",
+        "timestamp": "2025-10-12T14:38:28.349+00:00",
+        "created_at": "2025-10-12T14:38:28.432171+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      },
+      {
+        "id": "f1dff600-17ba-46d9-962f-f75ff27d8a25",
+        "employee_id": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "punch_type": "clock_in",
+        "timestamp": "2025-10-12T14:52:51.421+00:00",
+        "created_at": "2025-10-12T14:52:53.059516+00:00",
+        "created_by": "568296f6-27cd-4107-a38e-d6ca5714b97e",
+        "source": "mobile_web",
+        "location_data": null
+      }
+    ],
+    "civ_contributions": [
+      {
+        "id": "03fb6bbf-52ab-4e33-9f65-314c7cc425a5",
+        "person": "Maya Johnson",
+        "name": null,
+        "skillset": null,
+        "skills": [
+          "Policy development",
+          "Systems thinking",
+          "Stakeholder engagement"
+        ],
+        "current_role_name": "Economic Transition Advisor",
+        "contributions": "Develops green economy frameworks, coordinates between sectors, advises on policy",
+        "needs": "Additional research support, cross-sector collaboration",
+        "goal_alignment": null,
+        "notes": null,
+        "tags": [
+          "Economic"
+        ],
+        "connections": [
+          "d1",
+          "g2"
+        ]
+      },
+      {
+        "id": "9ec8d44d-f28b-4e8f-a240-9e7a50511de6",
+        "person": "Colonel James Rivera",
+        "name": null,
+        "skillset": null,
+        "skills": [
+          "Strategic planning",
+          "Cybersecurity",
+          "Defense technology"
+        ],
+        "current_role_name": "Defense Innovation Lead",
+        "contributions": "Coordinates military modernization efforts, develops tech integration roadmaps",
+        "needs": "Civilian-military cooperation framework, ethical AI standards",
+        "goal_alignment": null,
+        "notes": null,
+        "tags": [
+          "Military",
+          "In-Planning"
+        ],
+        "connections": [
+          "d2"
+        ]
+      },
+      {
+        "id": "b3174863-8a3f-41a1-a066-83490666f2d1",
+        "person": "Sarah Chen",
+        "name": null,
+        "skillset": null,
+        "skills": [
+          "Urban planning",
+          "Housing policy",
+          "Community development"
+        ],
+        "current_role_name": "Housing Reform Specialist",
+        "contributions": "Designs housing policy frameworks, coordinates between levels of government",
+        "needs": "Community engagement resources, funding mechanism design support",
+        "goal_alignment": null,
+        "notes": null,
+        "tags": [
+          "In-Planning"
+        ],
+        "connections": [
+          "d4",
+          "cr1"
+        ]
+      },
+      {
+        "id": "d7bf3bdb-598c-49a8-bdc3-3832da5257b9",
+        "person": "Dr. Robert Okoye",
+        "name": null,
+        "skillset": null,
+        "skills": [
+          "Conflict mediation",
+          "Governance systems",
+          "International relations"
+        ],
+        "current_role_name": "National Unity Advisor",
+        "contributions": "Develops frameworks for cross-partisan cooperation, mediates societal conflicts",
+        "needs": "Additional facilitation team, broader outreach capacity",
+        "goal_alignment": null,
+        "notes": null,
+        "tags": [
+          "Urgent"
+        ],
+        "connections": [
+          "g1",
+          "cr1",
+          "cr2"
+        ]
+      },
+      {
+        "id": "7f33af89-8116-454c-b672-8d32f31919b9",
+        "person": "Elena Martinez",
+        "name": null,
+        "skillset": null,
+        "skills": [
+          "Infrastructure engineering",
+          "Water systems",
+          "Climate adaptation"
+        ],
+        "current_role_name": "Water Security Director",
+        "contributions": "Coordinates water infrastructure planning, develops climate resilience strategies",
+        "needs": "Advanced modeling tools, regional coordination frameworks",
+        "goal_alignment": null,
+        "notes": null,
+        "tags": [
+          "Urgent",
+          "Economic"
+        ],
+        "connections": [
+          "d3",
+          "r2"
+        ]
+      }
+    ],
+    "user_roles": [
+      {
+        "id": "4672f6f4-caca-4056-8bc5-81f9f7775c2f",
+        "user_id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "role": "employee",
+        "created_at": "2025-10-11T02:39:42.293411+00:00"
+      },
+      {
+        "id": "09cff98b-20ad-4449-adda-529b7577d857",
+        "user_id": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "role": "admin",
+        "created_at": "2025-10-12T13:39:20.749049+00:00"
+      },
+      {
+        "id": "d911094b-13fd-4455-9eab-1d23ba15c0cd",
+        "user_id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "role": "employee",
+        "created_at": "2025-10-12T17:04:02.792759+00:00"
+      }
+    ],
+    "contract_documents": [
+      {
+        "id": "9077ffe5-7fac-42d3-b255-6875f9076695",
+        "contract_id": "2cede0d4-dfc6-4bc0-8a2d-79af1b4fa204",
+        "name": "Advisory Agreement",
+        "type": "DOCX",
+        "uploaded": "2025-04-07T14:35:49.425+00:00",
+        "status": "draft",
+        "version": 1,
+        "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "content": "{\"content\":\"Template document for Advisory Agreement\"}",
+        "created_at": "2025-04-07T14:35:49.425+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "last_edited_at": "2025-04-07T14:35:49.425+00:00"
+      },
+      {
+        "id": "7e796a54-2144-4a65-b386-626a69a76a88",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "name": "Founders' Agreement.docx",
+        "type": "DOCX",
+        "uploaded": "2025-04-10T03:29:12.36819+00:00",
+        "status": "draft",
+        "version": 1,
+        "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "content": "{\"content\":\"Template document for Founders' Agreement.docx\"}",
+        "created_at": "2025-04-10T03:29:11.916+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "last_edited_at": "2025-04-10T03:29:11.916+00:00"
+      },
+      {
+        "id": "d81fb48b-70d6-4928-ab1c-7cf5949e71a3",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "name": "Equity Vesting Schedule.docx",
+        "type": "DOCX",
+        "uploaded": "2025-04-10T03:29:12.473479+00:00",
+        "status": "draft",
+        "version": 1,
+        "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "content": "{\"content\":\"Template document for Equity Vesting Schedule.docx\"}",
+        "created_at": "2025-04-10T03:29:11.916+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "last_edited_at": "2025-04-10T03:29:11.916+00:00"
+      },
+      {
+        "id": "35498976-3e6a-4ed4-8f38-b3d84e46285c",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "name": "Intellectual Property Assignment.docx",
+        "type": "DOCX",
+        "uploaded": "2025-04-10T03:29:12.543127+00:00",
+        "status": "draft",
+        "version": 1,
+        "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "content": "{\"content\":\"Template document for Intellectual Property Assignment.docx\"}",
+        "created_at": "2025-04-10T03:29:11.916+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "last_edited_at": "2025-04-10T03:29:11.916+00:00"
+      },
+      {
+        "id": "3c48e067-78d1-4f69-86e1-1029f5e95251",
+        "contract_id": "10701533-7c16-4a5a-9519-ed2d4659ae7e",
+        "name": "Dispute Resolution Protocol.docx",
+        "type": "DOCX",
+        "uploaded": "2025-04-10T03:29:12.654493+00:00",
+        "status": "draft",
+        "version": 1,
+        "last_edited_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "content": "{\"content\":\"Template document for Dispute Resolution Protocol.docx\"}",
+        "created_at": "2025-04-10T03:29:11.916+00:00",
+        "created_by": "2354d407-f267-4c07-a48b-2e9d7ea334e1",
+        "last_edited_at": "2025-04-10T03:29:11.916+00:00"
+      }
+    ],
+    "content_items": [],
+    "contract_document_comments": [],
+    "queues": [],
+    "platform_integrations": [],
+    "roundtuit_profiles": [],
+    "attribution_requirements": [],
+    "roundtuit_user_availability": []
+  }
+}

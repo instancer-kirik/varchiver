@@ -1,0 +1,47 @@
+{
+  "public": {
+    "tables": {
+      "profiles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "full_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "homestead_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      }
+    }
+  }
+}

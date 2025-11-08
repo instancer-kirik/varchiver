@@ -1,0 +1,112 @@
+# Supamerge Configuration Example - Real Project Format
+# This example shows how to configure migration with actual Supabase project URLs and API keys
+
+# Source project configuration
+source:
+  project_ref: "your-source-project-ref"
+  db_url: "${SOURCE_DB_URL}"  # Get from Supabase Dashboard -> Settings -> Database -> Connection string
+  supabase_url: "https://your-source-project.supabase.co"
+
+  # For NEW API format (recommended):
+  publishable_key: "${SOURCE_PUBLISHABLE_KEY}"  # sb_publishable_...
+  secret_key: "${SOURCE_SECRET_KEY}"            # sb_secret_...
+
+  # OR for LEGACY API format (still supported):
+  # anon_key: "${SOURCE_ANON_KEY}"              # eyJhbGciOiJIUzI1NiIs...
+  # service_role_key: "${SOURCE_SERVICE_KEY}"   # eyJ... (service role JWT)
+
+# Target project configuration
+target:
+  project_ref: "your-target-project-ref"
+  db_url: "${TARGET_DB_URL}"
+  supabase_url: "https://your-target-project.supabase.co"
+
+  # For NEW API format:
+  publishable_key: "${TARGET_PUBLISHABLE_KEY}"
+  secret_key: "${TARGET_SECRET_KEY}"
+
+  # OR for LEGACY API format:
+  # anon_key: "${TARGET_ANON_KEY}"
+  # service_role_key: "${TARGET_SERVICE_KEY}"
+
+# What to include in the migration
+include:
+  # Database schemas to migrate
+  schemas: ["public"]
+
+  # Include table data
+  include_data: true
+
+  # Include Row Level Security policies
+  include_policies: true
+
+  # Include storage buckets and files
+  include_storage: true
+
+# Migration options
+options:
+  # Create backup of target database before migration
+  backup_target_first: true
+
+  # Automatically handle conflicting table names
+  remap_conflicts: true
+
+  # Skip auth.users table migration (recommended)
+  skip_auth: false
+
+  # Preview mode - show what would be migrated without making changes
+  dry_run: false
+
+# ==============================================================================
+# SETUP INSTRUCTIONS:
+# ==============================================================================
+
+# 1. Get your Database Connection String:
+#    - Go to Supabase Dashboard → Settings → Database
+#    - Copy the "Connection string" (URI format)
+#    - Example: postgresql://postgres.xlmibzeenudmkqgiyaif:[password]@aws-0-us-west-1.pooler.supabase.com:5432/postgres
+#    - Replace [password] with your actual database password
+
+# 2. Get your API Keys:
+#
+#    NEW FORMAT (Recommended):
+#    - Dashboard → Settings → API → "Publishable key": sb_publishable_[YOUR_KEY]
+#    - Dashboard → Settings → API → "Secret keys": sb_secret_[YOUR_KEY]
+#
+#    LEGACY FORMAT (Still supported):
+#    - Dashboard → Settings → API → "anon public": eyJhbGciOiJIUzI1NiIs...
+#    - Dashboard → Settings → API → "service_role secret": eyJ... (click Reveal)
+
+# 3. Set Environment Variables:
+export SOURCE_DB_URL="postgresql://postgres.[PROJECT_REF]:[YOUR_DB_PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
+export SOURCE_PUBLISHABLE_KEY="sb_publishable_[YOUR_PUBLISHABLE_KEY]"
+export SOURCE_SECRET_KEY="sb_secret_[YOUR_SECRET_KEY]"
+
+export TARGET_DB_URL="postgresql://postgres.your-target:[YOUR_TARGET_DB_PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
+export TARGET_PUBLISHABLE_KEY="sb_publishable_your_target_key"
+export TARGET_SECRET_KEY="sb_secret_your_target_key"
+
+# 4. Usage Examples:
+
+# Validate configuration:
+# supamerge validate --config real_project_example.yaml
+
+# Dry run (safe to test):
+# supamerge migrate --config real_project_example.yaml --dry-run
+
+# Actual migration:
+# supamerge migrate --config real_project_example.yaml
+
+# Quick migration from environment variables only:
+# supamerge migrate --from-env SOURCE --to-env TARGET --backup --include-data
+
+# ==============================================================================
+# NOTES:
+# ==============================================================================
+
+# - Always test with --dry-run first
+# - The source project will be read from (replace with your actual project ref)
+# - The target project will be modified - make sure it's correct!
+# - Database passwords are separate from API keys
+# - New API format (sb_publishable_/sb_secret_) is recommended over legacy JWT tokens
+# - Both formats are supported for backward compatibility

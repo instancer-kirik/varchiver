@@ -1,0 +1,151 @@
+  player:
+      id: player_12847
+      username: Kirik_the_Collector
+      display_name: Kirik the Collector
+      created_at: "2023-03-15T08:30:00Z"
+      last_login: "2025-01-27T14:30:00Z"
+      total_playtime_hours: 156.7
+      level: 47
+      experience:
+          current: 125430
+          required_for_next: 145000
+          percentage_to_next: 86.5
+      stats:
+          base:
+              strength: 28
+              dexterity: 31
+              intelligence: 45
+              wisdom: 38
+              constitution: 33
+              charisma: 22
+          combat:
+              health:
+                  current: 280
+                  maximum: 280
+              mana:
+                  current: 195
+                  maximum: 195
+              stamina:
+                  current: 150
+                  maximum: 150
+              armor_class: 18
+              damage_reduction: 12
+          skills:
+              archiving: 89
+              data_recovery: 76
+              tech_analysis: 92
+              combat: 45
+              crafting: 68
+              exploration: 72
+              negotiation: 34
+      currency:
+          gold: 8750
+          silver: 3420
+          data_tokens: 156
+          premium_credits: 23
+      inventory:
+          slots_total: 48
+          slots_used: 32
+          weight_limit_kg: 85.0
+          current_weight_kg: 67.3
+          categories:
+              weapons: 4
+              armor: 6
+              tech_components: 8
+              consumables: 12
+              crafting_materials: 18
+              quest_items: 3
+              misc: 1
+  achievements:
+      total_unlocked: 42
+      total_available: 147
+      completion_percentage: 28.6
+      recent[3]{id,name,description,unlocked_at,rarity,points}:
+        tech_master,Tech Master,Analyze 100 different tech components,"2025-01-25T16:45:00Z",rare,50
+        vault_explorer,Vault Explorer,Discover 10 ancient vaults,"2025-01-20T12:15:00Z",uncommon,25
+        data_archaeologist,Data Archaeologist,Recover 500 corrupted data files,"2025-01-18T09:30:00Z",epic,100
+      categories:
+          exploration: 15
+          combat: 8
+          crafting: 7
+          social: 4
+          collection: 8
+  guild:
+      id: guild_digital_archivists
+      name: Digital Archivists
+      member_since: "2023-04-10T14:20:00Z"
+      rank: Master Archivist
+      rank_level: 7
+      contributions:
+          weekly: 2400
+          monthly: 9650
+          total: 847230
+      permissions[4]: access_vault_tier_3,initiate_expeditions,mentor_apprentices,approve_research_proposals
+      benefits[4]: storage_bonus_50pct,xp_boost_15pct,craft_discount_20pct,rare_access_tier_4
+  locations:
+      discovered_count: 23
+      favorite: Ancient Vault
+      current: Stellar Observatory
+      unlocked_regions[5]: Techno Ruins,Crystal Caverns,Void Nexus Outskirts,Digital Archives,Quantum Laboratory
+      exploration_stats:
+          total_distance_km: 1247.8
+          secrets_found: 89
+          rare_encounters: 34
+          boss_encounters: 12
+          completion_percentage: 67.3
+  preferences:
+      ui:
+          theme: dark_archive
+          scale: 1.2
+          colorblind_mode: false
+          high_contrast: false
+          tooltip_delay_ms: 500
+      gameplay:
+          auto_save_interval_seconds: 300
+          difficulty: adaptive
+          combat_pause: true
+          auto_loot: false
+          quest_tracking: true
+      audio:
+          master_volume: 0.8
+          music_volume: 0.6
+          sfx_volume: 0.9
+          voice_volume: 0.7
+          ambient_volume: 0.4
+      graphics:
+          quality: high
+          resolution: 1920x1080
+          fullscreen: true
+          vsync: true
+          anti_aliasing: fxaa
+          shadow_quality: medium
+          particle_density: 0.85
+  statistics:
+      session:
+          current_session_start: "2025-01-27T12:00:00Z"
+          session_duration_minutes: 150
+          actions_performed: 847
+          experience_gained: 2340
+          items_collected: 12
+          quests_completed: 1
+      lifetime:
+          total_sessions: 234
+          items_collected: 12847
+          quests_completed: 156
+          monsters_defeated: 2341
+          distance_traveled_km: 1247.8
+          data_recovered_gb: 847.2
+          vaults_explored: 23
+          rare_items_found: 89
+          legendary_items_found: 12
+          deaths: 7
+          resurrections: 7
+  metadata:
+      version: 2.1.0
+      last_updated: "2025-01-27T14:30:00Z"
+      save_file_checksum: "sha256:a1b2c3d4e5f6789..."
+      backup_count: 15
+      cloud_sync_enabled: true
+      last_cloud_sync: "2025-01-27T14:29:45Z"
+      data_integrity_verified: true
+      profile_size_kb: 89.7

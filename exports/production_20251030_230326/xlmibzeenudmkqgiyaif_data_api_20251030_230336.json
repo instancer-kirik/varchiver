@@ -1,0 +1,99 @@
+{
+  "public": {
+    "profiles": [
+      {
+        "id": "361c3e2f-90a0-4ea4-8ce2-66690135cc2f",
+        "username": "asrt",
+        "full_name": "asrt",
+        "avatar_url": null,
+        "bio": "s",
+        "created_at": "2025-04-02T13:26:08.092704+00:00",
+        "updated_at": "2025-04-02T13:26:08.035+00:00",
+        "profile_types": [
+          "regular",
+          "artist",
+          "brand"
+        ],
+        "role_attributes": {
+          "artist": {
+            "styles": [
+              "contemporary"
+            ],
+            "discipline": "visual_art"
+          }
+        }
+      },
+      {
+        "id": "2603d9b1-82cb-4ced-99a3-ce194b30c7c7",
+        "username": "r",
+        "full_name": "r",
+        "avatar_url": null,
+        "bio": "",
+        "created_at": "2025-04-02T15:25:06.49471+00:00",
+        "updated_at": "2025-04-02T15:25:06.384+00:00",
+        "profile_types": [
+          "user"
+        ],
+        "role_attributes": {
+          "user": {
+            "interests": "a"
+          }
+        }
+      }
+    ],
+    "posts": [
+      {
+        "id": "1f0ac4f8-63e5-44ea-b788-6a4064855304",
+        "title": "Calendar Management Tips",
+        "date": "2024-04-20T00:00:00+00:00",
+        "author": "0102f59d-1c2c-4216-ad02-709dd4838577",
+        "category": "technology",
+        "excerpt": "Effective calendar management is crucial for productivity. Here are some tips for utilizing instance.select's calendar features.",
+        "image": null,
+        "content": "# Calendar Management Tips\\n\\nEffective time management is essential for productivity...",
+        "created_at": "2025-05-02T01:31:31.30095+00:00",
+        "updated_at": "2025-05-02T01:31:31.30095+00:00",
+        "slug": "calendarmanagementtips"
+      },
+      {
+        "id": "ba05d2df-0610-4329-897a-5253c084cb7c",
+        "title": "Creating a Markdown Blog System",
+        "date": "2024-05-01T00:00:00+00:00",
+        "author": "ce04d9c3-2487-4d96-92a7-d52cd89d9e33",
+        "category": "tutorials",
+        "excerpt": "Learn how to create a flexible blog system using markdown files for content management and easy editing.",
+        "image": "/blog/images/markdown-editor.jpg",
+        "content": "# Creating a Markdown Blog System\\n\\nUsing markdown files for your blog posts offers several advantages...",
+        "created_at": "2025-05-02T01:31:31.30095+00:00",
+        "updated_at": "2025-05-02T01:31:31.30095+00:00",
+        "slug": "creatingamarkdownblogsystem"
+      },
+      {
+        "id": "34cd3370-adad-4e75-8f3c-4e9c4b672c8e",
+        "title": "Getting Started with instance.select",
+        "date": "2024-04-22T00:00:00+00:00",
+        "author": "f46690b4-9213-43bc-8048-a5d71f4f7bef",
+        "category": "updates",
+        "excerpt": "Welcome to instance.select! This platform provides various tools and features to help you manage projects...",
+        "image": null,
+        "content": "# Getting Started with instance.select\\n\\nWelcome to instance.select, your new hub for productivity tools...",
+        "created_at": "2025-05-02T01:31:31.30095+00:00",
+        "updated_at": "2025-05-02T01:31:31.30095+00:00",
+        "slug": "gettingstartedwithinstanceselect"
+      },
+      {
+        "id": "d0258dcb-f89d-498c-852a-b648db5451b7",
+        "title": "Navigating Chart Space",
+        "date": "2024-07-10T00:00:00+00:00",
+        "author": "361c3e2f-90a0-4ea4-8ce2-66690135cc2f",
+        "category": "Tutorial",
+        "excerpt": "Learn how to effectively use the new Chart Space feature to visualize complex data flows and relationships.",
+        "image": null,
+        "content": "# Navigating Chart Space\\n\\nChart Space is a powerful feature for visualizing complex data flows and relationships. This tutorial will guide you through navigating and utilizing its core functionalities.\\n\\n## Understanding the Interface\\n\\nWhen you open Chart Space, you'll see:\\n\\n- **Canvas**: The main area where nodes and connections are displayed.\\n- **Toolbar**: Contains tools for creating nodes, connections, zooming, and panning.\\n- **Node Palette**: A library of available node types you can drag onto the canvas.\\n- **Inspector Panel**: Displays details and settings for the selected node or connection.\\n\\n## Basic Navigation\\n\\n- **Panning**: Click and drag on an empty area of the canvas, or use the scroll wheel (horizontal/vertical depending on settings).\\n- **Zooming**: Use the mouse scroll wheel, pinch gestures on touch devices, or the zoom buttons in the toolbar.\\n- **Selecting**: Click on a node or connection to select it. Hold `Shift` to select multiple items.\\n\\n## Working with Nodes\\n\\n- **Adding Nodes**: Drag a node type from the Node Palette onto the canvas.\\n- **Moving Nodes**: Click and drag a selected node.\\n- **Editing Nodes**: Double-click a node or use the Inspector Panel to modify its properties (e.g., labels, settings).\\n- **Deleting Nodes**: Select a node and press the `Delete` key or use the delete option in the context menu/toolbar.\\n\\n## Making Connections\\n\\n- **Creating Connections**: Click and drag from an output port on one node to an input port on another.\\n- **Editing Connections**: Select a connection to modify its properties (e.g., labels, routing) in the Inspector Panel.\\n- **Deleting Connections**: Select a connection and press `Delete`.\\n\\n## Layout and Organization\\n\\n- **Grouping**: Select multiple nodes and group them together for better organization.\\n- **Auto-Layout**: Use the auto-layout feature (if available) to automatically arrange nodes and connections.\\n- **Saving Views**: Save different arrangements or zoom levels as named views for quick access.\\n\\n## Tips for Effective Use\\n\\n- **Start Simple**: Begin with a few core nodes and gradually build complexity.\\n- **Use Labels**: Clearly label nodes and connections for better understanding.\\n- **Consistent Coloring**: Use colors consistently to represent different types of data or processes.\\n- **Regularly Save**: Save your chart frequently to avoid losing work.\\n\\nBy mastering these navigation and interaction techniques, you can leverage Chart Space to create clear and insightful visualizations of your systems and workflows.",
+        "created_at": "2025-05-02T02:27:42.8401+00:00",
+        "updated_at": "2025-05-02T02:27:42.8401+00:00",
+        "slug": "navigatingchartspace"
+      }
+    ]
+  }
+}

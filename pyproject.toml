@@ -18,11 +18,12 @@ dependencies = [
     "pyinstaller>=6.11.1",
     "requests>=2.32.3",
     "pillow>=11.1.0",
-    "psycopg2>=2.9.10",
     "supabase>=2.15.1",
     "sqlalchemy>=2.0.41",
     "psycopg2-binary>=2.9.10",
     "PyYAML>=6.0.0",
+    "python-dotenv>=1.0.0",
+    "psycopg2>=2.9.11",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,7 @@ dev = ["pyinstaller>=6.11.1", "pyarmor>=8.5.12"]
 
 [project.scripts]
 varchiver = "varchiver.main:main"
+supamerge = "varchiver.supamerge.cli:cli_entry_point"
 
 [tool.hatch.build.targets.wheel]
 packages = ["varchiver"]

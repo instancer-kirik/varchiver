@@ -1,0 +1,42 @@
+{
+  "public": {
+    "profiles": [
+      {
+        "id": "ff4dff54-cad5-41d1-a870-14eecdb2bfd1",
+        "email": "thewigglemonster@gmail.com",
+        "full_name": "tester",
+        "homestead_name": null,
+        "created_at": "2025-06-21T00:28:06.772565+00:00",
+        "updated_at": "2025-06-21T00:28:06.772565+00:00",
+        "role": "user"
+      },
+      {
+        "id": "fb32037c-4483-40d1-a830-e74f4ac3348c",
+        "email": "jessicakcecil@icloud.com",
+        "full_name": "Jessica Cecil",
+        "homestead_name": null,
+        "created_at": "2025-06-24T23:19:39.507974+00:00",
+        "updated_at": "2025-06-24T23:19:39.507974+00:00",
+        "role": "user"
+      },
+      {
+        "id": "f0abd2f7-7f74-4925-b41f-fb075ce17d92",
+        "email": "thisismyname@gmail.com",
+        "full_name": "Homestead A",
+        "homestead_name": null,
+        "created_at": "2025-10-06T13:31:35.725768+00:00",
+        "updated_at": "2025-10-06T13:31:35.725768+00:00",
+        "role": "user"
+      },
+      {
+        "id": "6b3a821e-2db9-4af9-bbd8-f232a320e0aa",
+        "email": "kaedyn.diaz@gmail.com",
+        "full_name": "Ryan Diaz",
+        "homestead_name": null,
+        "created_at": "2025-10-12T17:04:02.792759+00:00",
+        "updated_at": "2025-10-12T17:04:02.792759+00:00",
+        "role": "user"
+      }
+    ]
+  }
+}

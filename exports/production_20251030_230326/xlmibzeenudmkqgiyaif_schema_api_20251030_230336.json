@@ -1,0 +1,118 @@
+{
+  "public": {
+    "tables": {
+      "profiles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "full_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avatar_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "bio",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "profile_types",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role_attributes",
+            "type": "dict",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "posts": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "author",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "excerpt",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "slug",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      }
+    }
+  }
+}

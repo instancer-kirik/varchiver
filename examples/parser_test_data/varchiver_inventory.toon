@@ -1,0 +1,119 @@
+# VArchiver Inventory Sample Data in TOON Format
+# Demonstrates comprehensive TOON features for testing
+
+tech_components[5]{id,name,tech_tier,category,type,weight_kg,stack_size,rarity}:
+  resonator_t1,Basic Resonator,Tier 1,Modular,tech_module,0.8,5,common
+  magitek_core_t2,Advanced Magitek Core,Tier 2,Modular,tech_module,2.1,3,rare
+  crystal_t3,Prismatic Crystal,Tier 3,Energy,power_source,0.3,10,legendary
+  capacitor_t1,Energy Capacitor,Tier 1,Energy,storage_unit,1.2,8,common
+  processor_t4,Quantum Processor,Tier 4,Computing,cpu_core,0.15,2,epic
+
+weapons[4]{id,name,damage,durability,type,enchantment,value_gold}:
+  sword_iron,Iron Sword,25,100,melee,none,250
+  staff_magic,Arcane Staff,45,80,magic,fire_boost,800
+  blade_dragon,Dragon Blade,95,150,melee,critical_strike,5000
+  bow_elven,Elven Longbow,60,120,ranged,precision,1200
+
+consumables[6]{id,name,effect,duration_seconds,stack_size,cost_gold}:
+  potion_health,Health Potion,heal_50hp,0,20,25
+  potion_mana,Mana Elixir,restore_100mp,0,15,40
+  scroll_teleport,Teleport Scroll,instant_travel,0,5,150
+  food_bread,Traveler's Bread,stamina_regen,300,50,5
+  gem_experience,Experience Crystal,boost_xp_25pct,3600,3,500
+  oil_weapon,Weapon Oil,damage_boost_10pct,1800,10,75
+
+crafting_materials[8]: obsidian_shard,mithril_ore,dragon_scale,phoenix_feather,void_essence,starlight_dust,ancient_rune,crystallized_time
+
+player_stats:
+  name: Kirik the Collector
+  level: 47
+  experience: 125430
+  gold: 8750
+  health: 280
+  mana: 195
+  stamina: 150
+  inventory_slots: 48
+  inventory_used: 32
+
+locations[3]:
+  - name: Ancient Vault
+    type: dungeon
+    level_requirement: 25
+    discovered: true
+    completion_rate: 75
+    notable_loot[3]: dragon_scale,ancient_rune,mithril_ore
+  - name: Celestial Observatory
+    type: tower
+    level_requirement: 40
+    discovered: true
+    completion_rate: 100
+    notable_loot[2]: starlight_dust,experience_crystal
+  - name: Void Nexus
+    type: endgame_zone
+    level_requirement: 45
+    discovered: false
+    completion_rate: 0
+    notable_loot[4]: void_essence,crystallized_time,quantum_processor,legendary_artifact
+
+guild_info:
+  name: Digital Archivists
+  rank: Master Archivist
+  members: 127
+  guild_level: 8
+  weekly_contribution: 2400
+  benefits[4]: storage_bonus,xp_boost,craft_discount,rare_access
+
+quest_log[3]:
+  - id: Q001
+    title: The Lost Algorithm
+    status: active
+    progress: 60
+    objectives[3]:
+      - description: Collect 5 Data Crystals
+        completed: true
+        count: 5
+      - description: Decode Ancient Script
+        completed: true
+        count: 1
+      - description: Reach the Core Archive
+        completed: false
+        count: 0
+    rewards:
+      experience: 15000
+      gold: 2500
+      items[2]: quantum_processor,master_key
+  - id: Q002
+    title: The Magitek Conspiracy
+    status: pending
+    progress: 0
+    prerequisites[1]: The Lost Algorithm
+    objectives[2]:
+      - description: Investigate Magitek Labs
+        completed: false
+        count: 0
+      - description: Confront Dr. Synthweaver
+        completed: false
+        count: 0
+    rewards:
+      experience: 25000
+      gold: 5000
+      items[1]: legendary_magitek_core
+
+metadata:
+  version: 2.1.0
+  last_updated: 2025-01-27T14:30:00Z
+  save_file_size_kb: 247
+  play_time_hours: 156.7
+  achievements_unlocked: 42
+  total_items_discovered: 1247
+  rarest_item: void_essence
+  favorite_location: Ancient Vault
+  next_milestone: Reach Level 50
+
+system_settings:
+  auto_save_interval: 300
+  graphics_quality: high
+  audio_enabled: true
+  notifications: true
+  ui_scale: 1.2
+  colorblind_mode: false

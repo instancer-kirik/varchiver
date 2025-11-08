@@ -1,0 +1,4465 @@
+{
+  "public": {
+    "tables": {
+      "loreum_template_relationships": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_template_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target_template_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "relationship_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "relationship_strength",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_bidirectional",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "brands": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_brand_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "item_pairings": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pairing_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rating",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "occasion",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "would_recommend",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "content_ownership": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "owner_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_creative_sessions": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "session_start",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "session_end",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "words_written",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "words_edited",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "activity_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "productivity_rating",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "mood_rating",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "flow_state_rating",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "session_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "breakthrough_moments",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "starting_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_instance_usage_tracking": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_instance_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "usage_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "usage_context",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "accessed_by",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "access_timestamp",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "radio_channels": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "names": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "aliases",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_timelines": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "universe_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "start_year",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "end_year",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "fork_point",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_work_hierarchy": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_work_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_number",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "depth",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "path",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "root_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "root_title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "root_type",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_civilizations": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "population_dynamics",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_magic_systems": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rules",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "structure",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "project_tasks": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "project_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "priority",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigned_to",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "due_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "redirect_sources": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_key",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "snacks": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "brand_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_subtype",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_recipe",
+            "type": "bool",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "project_components": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "project_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "dependencies",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigned_to",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "due_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_multiverses": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_ipsumarium_templates": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "version",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_template_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "version_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_deprecated",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_category",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "resources": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "subtype",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "size_sqft",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "availability",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "capacity",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "price_per_hour",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "specifications",
+            "type": "dict",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "game_jam_submissions": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "team_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "game_jam_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "score",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "submitted_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_template_instances_with_templates": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "instance_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "instance_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "multiverse_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "universe_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "civilization_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "local_variations",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "override_metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by_character_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "discovered_year",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "origin_location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "multiverse_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "universe_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "civilization_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "companies": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "logo",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "industry",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_company_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avg_rating",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "trending_direction",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "trending_percentage",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "profiles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "full_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avatar_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "bio",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "profile_types",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role_attributes",
+            "type": "dict",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "game_jam_teams": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "game_jam_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_item_instances": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_instance_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "condition_rating",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "quantity",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_location",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "ownership_history",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "applied_enchantments",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "physical_modifications",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_owner_character_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_owner_civilization_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by_civilization_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "topshelf_faves": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "snack_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pairings",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_template_collections": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "collection_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "recipe_ingredients": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "recipe_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "recipe_version_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "ingredient_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "ingredient_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "quantity",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "unit",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_optional",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "preparation_notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sort_order",
+            "type": "int",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "game_jams": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "theme",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "start_date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "end_date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "project_components_with_metrics": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "project_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "dependencies",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "assigned_to",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "due_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_tasks",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completed_tasks",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pending_tasks",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "in_progress_tasks",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "task_completion_percentage",
+            "type": "int",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "posts": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "date",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "author",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "excerpt",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "slug",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_universes": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "multiverse_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "physical_laws",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_discoverable_works": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_format",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_work_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_number",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "primary_location_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pov_character_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "featured_characters",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_locations",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_events",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_cultures",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "genre",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "mood",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "themes",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tone",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "style_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "outline",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "summary",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "external_links",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "collection",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completion_percentage",
+            "type": "float",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "pockets_channels": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "theme_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "theme_data",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_active",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "min_delay_between_replays",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "preferred_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "banned_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "energy_curve",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "track_pool_filter",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "channel_type",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "context_drops_enhanced": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "raw_content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "conversation_context",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "participants",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "annotations",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "message_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "annotation_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "participant_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "entity_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "linked_entities",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_length",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "searchable_content",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_worlds": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "communities": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_creative_work_tree": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_work_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_number",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "depth",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "path",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "root_title",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "community_posts": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "community_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "projects": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "budget",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "version",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "repo_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "progress",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "system_environment_info",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_control_details",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "documentation_references",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "owner_type",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "owner_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "featured",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "view_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "like_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "landing_page",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_custom_landing",
+            "type": "bool",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_enchantments": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "effect",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "associated_magic_system",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "recipe_steps": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "recipe_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "recipe_version_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "step_number",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "instruction",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "duration_amount",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "duration_unit",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "temperature",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "temperature_unit",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "technique",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tips",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "pockets_playlists": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "channel_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "current_index",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "shuffle",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "repeat",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_reservoir",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_channels",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "exclusive_to_channel",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_work_discovery": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "root_work_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_work_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "depth",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "full_path",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "direct_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "child_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completed_child_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "searchable_content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "all_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_medium",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_length",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_modified",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_session",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "session_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_writing_time_hours",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completion_percentage",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_outline",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "has_summary",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "waitlist": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "message",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "context_drops": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "raw_content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "conversation_context",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "participants",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "annotations",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "message_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "annotation_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "participant_count",
+            "type": "int",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "user_profiles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "email",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "avatar_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "user_roles": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "pockets_tracks": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "channel_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "artist",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "duration",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "file_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "cdn_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "genre",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "year",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "album",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "uploaded_by",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "upload_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sort_order",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "weight",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_played_at",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "blocklist",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "file_size",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_verified",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "access_count",
+            "type": "int",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_creative_works": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content_format",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "parent_work_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_number",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "primary_location_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pov_character_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "featured_characters",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_locations",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_events",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "referenced_cultures",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "genre",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "mood",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "themes",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tone",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "style_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "outline",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "summary",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "external_links",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "collection",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "recipes_with_latest_version": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "prep_time_minutes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "difficulty",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "yield_amount",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "yield_unit",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_original",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_attribution",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_number",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_name",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_changes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_rating",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "latest_version_notes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_subtype",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_image_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creator_username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rating_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "average_rating",
+            "type": "int",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "cookie_phrases": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "phrase",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "community_members": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "community_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "role",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "joined_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "recipes": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "prep_time_minutes",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "difficulty",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "yield_amount",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "yield_unit",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_original",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "source_attribution",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "artists": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "subtype",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "multidisciplinary",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "styles",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "disciplines",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "bio",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "social_links",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "events": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "subtype",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "start_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "end_date",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "capacity",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "slots",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "requested_items",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "featured_artists",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "gallery_items",
+            "type": "list",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "ingredients": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "category",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_common",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "alternatives",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "snack_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "pockets_bumpers": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "channel_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "content",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "voice",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "file_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "cdn_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "trigger_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "trigger_value",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sort_order",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_group",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sequence_order",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "priority",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "time_restrictions",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "weather_dependent",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "weight",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_played_at",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_template_instances": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "template_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "instance_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "instance_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "multiverse_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "universe_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "timeline_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "world_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "civilization_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "local_variations",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "override_metadata",
+            "type": "dict",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_by_character_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "discovered_year",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "origin_location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "snack_ratings": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "snack_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rating",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "comment",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_writing_progress": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creative_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "target_word_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completion_percentage",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "child_count",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "completed_children",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "total_child_words",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "last_session",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "sessions_this_week",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "venues": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "capacity",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "amenities",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "location",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "image_url",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "item_pairings_with_details": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "created_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "updated_at",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "user_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pairing_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "rating",
+            "type": "float",
+            "inferred_from_api": true
+          },
+          {
+            "name": "description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "notes",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "occasion",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "would_recommend",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "is_public",
+            "type": "bool",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_subtype",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_image_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item1_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_name",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_subtype",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_image_url",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "item2_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "creator_username",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "pairing_category",
+            "type": "str",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      },
+      "loreum_works_with_components": {
+        "type": "BASE TABLE",
+        "columns": [
+          {
+            "name": "work_id",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_title",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_type",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_description",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_status",
+            "type": "str",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_direct_words",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_target",
+            "type": "int",
+            "inferred_from_api": true
+          },
+          {
+            "name": "genre",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "collection",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "work_tags",
+            "type": "list",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_id",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_title",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_type",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_sequence",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_word_count",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_status",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_content",
+            "type": "NoneType",
+            "inferred_from_api": true
+          },
+          {
+            "name": "component_summary",
+            "type": "NoneType",
+            "inferred_from_api": true
+          }
+        ],
+        "extraction_method": "REST API (limited)"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+export_options:
+  include_data: true
+  include_policies: true
+  include_schema: true
+  include_storage: false
+  output_dir: ./exports
+  output_format: dump
+  schemas:
+  - public
+  tables: []
+source:
+  anon_key: your-anon-key
+  db_url: postgresql://postgres:password@db.project.supabase.co:5432/postgres
+  project_ref: your-project-ref
+  service_role_key: your-service-key
+  supabase_url: https://your-project.supabase.co

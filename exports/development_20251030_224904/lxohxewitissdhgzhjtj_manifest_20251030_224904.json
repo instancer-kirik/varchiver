@@ -1,0 +1,41 @@
+{
+  "export_info": {
+    "project_ref": "lxohxewitissdhgzhjtj",
+    "timestamp": "20251030_224904",
+    "format": "json",
+    "version": "1.0"
+  },
+  "options": {
+    "include_schema": true,
+    "include_data": false,
+    "include_policies": true,
+    "include_storage": false,
+    "include_auth": false,
+    "schemas": [
+      "public"
+    ],
+    "tables": [],
+    "output_format": "json",
+    "output_dir": "exports/development_20251030_224904"
+  },
+  "files": [
+    "exports/development_20251030_224904/lxohxewitissdhgzhjtj_schema_20251030_224904.json",
+    "exports/development_20251030_224904/lxohxewitissdhgzhjtj_policies_20251030_224904.json"
+  ],
+  "metadata": {
+    "format": "json",
+    "includes_schema": true,
+    "includes_data": false,
+    "includes_policies": true,
+    "schemas": [
+      "public"
+    ],
+    "tables": []
+  },
+  "instructions": {
+    "restore_dump": "Use pg_restore to restore .dump files",
+    "restore_sql": "Use psql < file.sql to restore .sql files",
+    "restore_json": "Use custom scripts to import JSON data",
+    "restore_yaml": "Use custom scripts to import YAML data"
+  }
+}
